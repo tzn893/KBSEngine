@@ -2,24 +2,31 @@
 
 #include "graphic.h"
 
-bool UploadBatch::initialized = false;
-bool UploadBatch::isOccupied = false;
-size_t UploadBatch::fenceValue = 0;
+
+static ComPtr<ID3D12GraphicsCommandList> mCmdList;
+static ComPtr<ID3D12CommandAllocator> mCmdAlloc;
+static ComPtr<ID3D12Fence> mFence;
+static HANDLE mEvent;
+static ID3D12Device* mDevice;
+static size_t fenceValue = 0;
+static bool initialized = false;
+static bool isOccupied = false;
 
 bool UploadBatch::initialize() {
 	ID3D12Device* device = gGraphic.GetDevice();
 	mDevice = device;
 
-	HRESULT hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&mCmdAlloc));
+	HRESULT hr = device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCmdAlloc));
 	if (FAILED(hr)) {
 		OUTPUT_DEBUG_STRING("fail to create command allocator for upload batch\n");
 		return false;
 	}
-	hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, mCmdAlloc.Get(), nullptr, IID_PPV_ARGS(&mCmdList));
+	hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCmdAlloc.Get(), nullptr, IID_PPV_ARGS(&mCmdList));
 	if (FAILED(hr)) {
 		OUTPUT_DEBUG_STRING("fail to create command list for upload batch\n");
 		return false;
 	}
+	mCmdList->Close();
 
 	mEvent = CreateEventEx(NULL, NULL, NULL, EVENT_ALL_ACCESS);
 	if (mEvent == NULL) {
@@ -83,9 +90,6 @@ void UploadBatch::End(bool wait) {
 
 	mCmdList->Close();
 
-	uploadBuffers.clear();
-	
-
 	if (wait) {
 		ID3D12CommandList* toExcute[] = {mCmdList.Get()};
 		cmdQueue->ExecuteCommandLists(_countof(toExcute), toExcute);
@@ -100,6 +104,10 @@ void UploadBatch::End(bool wait) {
 			WaitForSingleObject(mEvent, INFINITE);
 		}
 	}
+
+	uploadBuffers.clear();
+	barriersDest.clear();
+	barrierTarget.clear();
 }
 
 ID3D12Resource* UploadBatch::UploadBuffer(size_t size,void* buffer,D3D12_RESOURCE_STATES initState) {
@@ -141,5 +149,6 @@ ID3D12Resource* UploadBatch::UploadBuffer(size_t size,void* buffer,D3D12_RESOURC
 		));
 	}
 
-	uploadBuffers.push_back(data);
+	uploadBuffers.push_back(std::move(data));
+	return uploadBuffers[uploadBuffers.size() - 1].buffer.Get();
 }

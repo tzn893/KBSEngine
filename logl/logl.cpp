@@ -4,6 +4,7 @@
 #include "framework.h"
 #include "logl.h"
 #include "../loglcore/graphic.h"
+#include "Application.h"
 
 #define MAX_LOADSTRING 100
 
@@ -54,10 +55,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
 		}else{
 			gGraphic.begin();
-
+			gApp.update();
 			gGraphic.end();
 		}
     }
+	gApp.finalize();
+	gGraphic.finalize();
 
     return (int) msg.wParam;
 }
@@ -112,6 +115,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
    if (!gGraphic.initialize(hWnd,width,height)) {
+	   return FALSE;
+   }
+   if (!gApp.initialize()) {
 	   return FALSE;
    }
    ShowWindow(hWnd, nCmdShow);

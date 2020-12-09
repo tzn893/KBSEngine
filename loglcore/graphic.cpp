@@ -2,7 +2,6 @@
 
 #include "RootSignature.h"
 #include "PipelineStateObject.h"
-#include "Shader.h"
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -30,6 +29,7 @@ bool Graphic::createCommandObject() {
 		OUTPUT_DEBUG_STRING("fail to create the draw command list");
 		return false;
 	}
+	mDrawCmdList->Close();
 
 	return true;
 }
@@ -60,7 +60,6 @@ bool Graphic::createSwapChain() {
 	}
 	return true;
 }
-
 
 bool Graphic::createRTV_DSV() {
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc{};
@@ -108,11 +107,16 @@ bool Graphic::createRTV_DSV() {
 	dsDesc.SampleDesc.Quality = 0;
 	dsDesc.SampleDesc.Count = 1;
 
+	D3D12_CLEAR_VALUE dsvClear;
+	dsvClear.DepthStencil.Depth = 1.0f;
+	dsvClear.DepthStencil.Stencil = 0;
+	dsvClear.Format = mBackBufferDepthFormat;
+
 	hr = mDevice->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
 		&dsDesc,
 		D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		nullptr,
+		&dsvClear,
 		IID_PPV_ARGS(&mDepthStencilBuffer));
 
 	if (FAILED(hr)) {
@@ -124,9 +128,7 @@ bool Graphic::createRTV_DSV() {
 	return true;
 }
 
-
 bool Graphic::createShaderAndRootSignatures() {
-
 	Game::RootSignature Default3DRootSigWithoutLight(2,0);
 	Default3DRootSigWithoutLight[0].initAsConstantBuffer(0, 0, D3D12_SHADER_VISIBILITY_ALL);
 	Default3DRootSigWithoutLight[1].initAsConstantBuffer(1, 0, D3D12_SHADER_VISIBILITY_ALL);
@@ -159,7 +161,13 @@ bool Graphic::createShaderAndRootSignatures() {
 
 	Game::GraphicPSO WithoutLightPso;
 	WithoutLightPso.SetInputElementDesc(result->inputLayout);
+
 	WithoutLightPso.LazyBlendDepthRasterizeDefault();
+	CD3DX12_RASTERIZER_DESC rsDesc(D3D12_DEFAULT);
+	rsDesc.FillMode = D3D12_FILL_MODE_WIREFRAME;
+	rsDesc.CullMode = D3D12_CULL_MODE_NONE;
+	WithoutLightPso.SetRasterizerState(rsDesc);
+
 	WithoutLightPso.SetDepthStencilViewFomat(mBackBufferDepthFormat);
 	WithoutLightPso.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
 	WithoutLightPso.SetNodeMask(0);
@@ -187,6 +195,15 @@ bool Graphic::createShaderAndRootSignatures() {
 }
 
 bool Graphic::initialize(HWND winHnd, size_t width, size_t height) {
+#ifdef _DEBUG
+	{
+		ComPtr<ID3D12Debug> debug;
+		D3D12GetDebugInterface(IID_PPV_ARGS(&debug));
+		debug->EnableDebugLayer();
+		debug->Release();
+	}
+#endif
+
 	mWinHeight = height, mWinWidth = width;
 	winHandle = winHnd;
 	
@@ -236,6 +253,30 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height) {
 		return false;
 	}
 
+	mainCamera.initialize(45.,(float)width / (float)height,
+		0.1,1000.,Game::Vector3(0.,0.,0.),Game::Vector3(0.,0.,0.));
+	size_t cameraBufferSize = sizeof(CameraPassBufferData);
+	cameraBufferSize = (cameraBufferSize + 255) & (~255);
+	hr = mDevice->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(cameraBufferSize),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&cameraPassBuffer)
+	);
+	if (FAILED(hr)) {
+		OUTPUT_DEBUG_STRING("ERROR : fail to create main camera pass for graphic\n");
+		return false;
+	}
+	void* ptr;
+	cameraPassBuffer->Map(0, nullptr, &ptr);
+	cameraPassBufferData = reinterpret_cast<CameraPassBufferData*>(ptr);
+
+	cameraPassBufferData->cameraPos = mainCamera.getPosition();
+	cameraPassBufferData->view = mainCamera.getViewMat().T();
+	cameraPassBufferData->perspect = mainCamera.getPerspectMat().T();
+
 	viewPort.Width = width;
 	viewPort.Height = height;
 	viewPort.TopLeftX = 0;
@@ -247,6 +288,8 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height) {
 	sissorRect.top = 0;
 	sissorRect.left = 0;
 	sissorRect.right = width;
+
+	state = READY;
 
 	return true;
 }
@@ -263,8 +306,9 @@ void Graphic::FlushCommandQueue() {
 	}
 }
 
-
 void Graphic::begin() {
+	if (state != READY) return;
+	state = BEGIN_COMMAND_RECORDING;
 
 	mDrawCmdAlloc->Reset();
 	mDrawCmdList->Reset(mDrawCmdAlloc.Get(),nullptr);
@@ -283,12 +327,14 @@ void Graphic::begin() {
 	rtv.Offset(mCurrBackBuffer, mDescriptorHandleSizeRTV);
 	mDrawCmdList->OMSetRenderTargets(1,&rtv,true,&dsv);
 	mDrawCmdList->ClearRenderTargetView(rtv,mRTVClearColor,0,nullptr);
-	mDrawCmdList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
-		1., 0, 0, nullptr);
+	mDrawCmdList->ClearDepthStencilView(mBackBufferDSVhHeap->GetCPUDescriptorHandleForHeapStart(), 
+		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+		1.f, 0, 0, nullptr);
 
 }
 
 void Graphic::end() {
+	if (state != BEGIN_COMMAND_RECORDING) return;
 
 	mDrawCmdList->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[mCurrBackBuffer].Get(),
@@ -304,10 +350,15 @@ void Graphic::end() {
 	mCurrBackBuffer = (mCurrBackBuffer + 1) % Graphic_mBackBufferNum;
 
 	FlushCommandQueue();
+	
+	state = READY;
 }
 
-Graphic::~Graphic() {
+void Graphic::finalize() {
 	FlushCommandQueue();
+
+	cameraPassBuffer->Unmap(0,nullptr);
+	cameraPassBuffer->Release();
 
 	mRootSignatures.clear();
 	mPsos.clear();
@@ -328,4 +379,49 @@ Graphic::~Graphic() {
 	mDxgiFactory->Release();
 	mDxgiSwapChain->Release();
 	mDevice->Release();
+}
+
+void Graphic::BindShader(Shader* shader) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+	ID3D12PipelineState* pipelineState = mPsos[shader->name].Get();
+	ID3D12RootSignature* rootSig = mRootSignatures[shader->rootSignatureName].Get();
+
+	mDrawCmdList->SetPipelineState(pipelineState);
+	mDrawCmdList->SetGraphicsRootSignature(rootSig);
+}
+
+void Graphic::BindConstantBuffer(ID3D12Resource* res, size_t slot) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+	
+	mDrawCmdList->SetGraphicsRootConstantBufferView(slot,res->GetGPUVirtualAddress());
+}
+
+void Graphic::BindMainCameraPass(size_t slot) {
+	if (state == BEGIN_COMMAND_RECORDING) {
+		cameraPassBufferData->cameraPos = mainCamera.getPosition();
+		cameraPassBufferData->view = mainCamera.getViewMat().T();
+		cameraPassBufferData->perspect = mainCamera.getPerspectMat().T();
+
+		if (slot > 16) { return; }
+
+		mDrawCmdList->SetGraphicsRootConstantBufferView(1, cameraPassBuffer->GetGPUVirtualAddress());
+	}
+}
+
+void Graphic::Draw(D3D12_VERTEX_BUFFER_VIEW* vbv, size_t start, size_t num, D3D_PRIMITIVE_TOPOLOGY topolgy) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+	
+	mDrawCmdList->IASetPrimitiveTopology(topolgy);
+	mDrawCmdList->IASetVertexBuffers(0, 1, vbv);
+	mDrawCmdList->DrawInstanced(num, 1, start, 0);
+}
+
+void Graphic::Draw(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_BUFFER_VIEW* ibv, size_t start, size_t num, D3D_PRIMITIVE_TOPOLOGY topolgy) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+
+	mDrawCmdList->IASetPrimitiveTopology(topolgy);
+
+	mDrawCmdList->IASetIndexBuffer(ibv);
+	mDrawCmdList->IASetVertexBuffers(0, 1, vbv);
+	mDrawCmdList->DrawIndexedInstanced(num, 1, start, 0, 0);
 }

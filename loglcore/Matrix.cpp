@@ -510,6 +510,7 @@ namespace Game {
 	Mat4x4 MatrixRotation(Vector3 axis,float angle) {
 		axis = normalize(axis);
 
+		angle = angle * (PI / 180.);
 		float s = sin(angle), c = cos(angle),
 			& x = axis[0],& y = axis[1],&z = axis[2],oc = 1 - c;
 
@@ -524,6 +525,7 @@ namespace Game {
 	}
 
 	Mat4x4 MatrixRotateX(float angle) {
+		angle = angle * (PI / 180.);
 		float s = sin(angle), c = cos(angle);
 
 		float buffer[16] = {
@@ -537,6 +539,7 @@ namespace Game {
 	}
 
 	Mat4x4 MatrixRotateY(float angle) {
+		angle = angle * (PI / 180.);
 		float s = sin(angle), c = cos(angle);
 
 		float buffer[16] = {
@@ -550,6 +553,7 @@ namespace Game {
 	}
 
 	Mat4x4 MatrixRotateZ(float angle) {
+		angle = angle * (PI / 180.);
 		float s = sin(angle), c = cos(angle);
 
 		float buffer[16] = {
@@ -592,6 +596,8 @@ namespace Game {
 	}
 
 	Mat4x4 MatrixRotation(Vector3 eulerAngle) {
+		eulerAngle = eulerAngle * (PI / 180.);
+
 		//rotation order axis x,axis y,axis z
 		float cr = cos(eulerAngle.x), sr = sin(eulerAngle.x);
 		float cb = cos(eulerAngle.y), sb = sin(eulerAngle.y);
@@ -650,7 +656,7 @@ namespace Game {
 			cr = trans.a[2][2] / (cb * scal_z);
 		}
 
-		rotation = Vector3(get_angle(sr, cr), get_angle(sb, cb), get_angle(sa, ca));
+		rotation = Vector3(get_angle(sr, cr), get_angle(sb, cb), get_angle(sa, ca)) * (180. / PI);
 		position = Vector3(trans.a[0][3], trans.a[1][3], trans.a[2][3]);
 		scale = Vector3(scal_x, scal_y, scal_z);
 	}

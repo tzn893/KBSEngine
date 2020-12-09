@@ -11,15 +11,6 @@ public:
 private:
 	static bool initialize();
 
-	static ComPtr<ID3D12GraphicsCommandList> mCmdList;
-	static ComPtr<ID3D12CommandAllocator> mCmdAlloc;
-	static ComPtr<ID3D12Fence> mFence;
-	static HANDLE mEvent;
-	static ID3D12Device* mDevice;
-	static size_t fenceValue;
-	static bool initialized;
-	static bool isOccupied;
-	
 	struct UploadBufferData {
 		ComPtr<ID3D12Resource> buffer;
 		ComPtr<ID3D12Resource> uploadBuffer;
