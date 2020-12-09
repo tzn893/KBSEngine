@@ -43,6 +43,9 @@
     <ClCompile Include="CopyBatch.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="GeometryGenerator.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -103,6 +106,12 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="CopyBatch.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="GeometryGenerator.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstantBuffer.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

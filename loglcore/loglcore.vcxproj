@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="CopyBatch.cpp" />
+    <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="graphic.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -32,9 +33,11 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Color.h" />
+    <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="CopyBatch.h" />
     <ClInclude Include="d3d12x.h" />
     <ClInclude Include="d3dcommon.h" />
+    <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="graphic.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="MathFunctions.h" />

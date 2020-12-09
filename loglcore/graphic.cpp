@@ -164,8 +164,6 @@ bool Graphic::createShaderAndRootSignatures() {
 
 	WithoutLightPso.LazyBlendDepthRasterizeDefault();
 	CD3DX12_RASTERIZER_DESC rsDesc(D3D12_DEFAULT);
-	rsDesc.FillMode = D3D12_FILL_MODE_WIREFRAME;
-	rsDesc.CullMode = D3D12_CULL_MODE_NONE;
 	WithoutLightPso.SetRasterizerState(rsDesc);
 
 	WithoutLightPso.SetDepthStencilViewFomat(mBackBufferDepthFormat);
@@ -200,7 +198,7 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height) {
 		ComPtr<ID3D12Debug> debug;
 		D3D12GetDebugInterface(IID_PPV_ARGS(&debug));
 		debug->EnableDebugLayer();
-		debug->Release();
+		debug = nullptr;
 	}
 #endif
 
@@ -358,27 +356,27 @@ void Graphic::finalize() {
 	FlushCommandQueue();
 
 	cameraPassBuffer->Unmap(0,nullptr);
-	cameraPassBuffer->Release();
+	cameraPassBuffer = nullptr;
 
 	mRootSignatures.clear();
 	mPsos.clear();
 
-	mBackBufferDSVhHeap->Release();
-	mBackBufferRTVHeap->Release();
+	mBackBufferDSVhHeap = nullptr;
+	mBackBufferRTVHeap = nullptr;
 
 	for (size_t i = 0; i != Graphic_mBackBufferNum;i++) {
 		mBackBuffers[i] = nullptr;
 	}
-	mDepthStencilBuffer->Release();
+	mDepthStencilBuffer = nullptr;
 
-	mCommandQueue->Release();
-	mDrawCmdList->Release();
-	mDrawCmdAlloc->Release();
+	mCommandQueue = nullptr;
+	mDrawCmdList = nullptr;
+	mDrawCmdAlloc = nullptr;
 
-	mFence->Release();
-	mDxgiFactory->Release();
-	mDxgiSwapChain->Release();
-	mDevice->Release();
+	mFence = nullptr;
+	mDxgiFactory = nullptr;
+	mDxgiSwapChain = nullptr;
+	mDevice = nullptr;
 }
 
 void Graphic::BindShader(Shader* shader) {
@@ -424,4 +422,77 @@ void Graphic::Draw(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_BUFFER_VIEW* ibv, 
 	mDrawCmdList->IASetIndexBuffer(ibv);
 	mDrawCmdList->IASetVertexBuffers(0, 1, vbv);
 	mDrawCmdList->DrawIndexedInstanced(num, 1, start, 0, 0);
+}
+
+void Graphic::onResize(size_t width, size_t height) {
+	FlushCommandQueue();
+
+	for (int i = 0; i != Graphic_mBackBufferNum; i++) {
+		mBackBuffers[i] = nullptr;
+	}
+
+	HRESULT hr = mDxgiSwapChain->ResizeBuffers(Graphic_mBackBufferNum,
+		width, height,
+		mBackBufferFormat, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+	if (FAILED(hr)) {
+		OUTPUT_DEBUG_STRING("fail to resize the swapchains\n");
+		exit(-1);
+	}
+
+	//mCurrentFrameIndex = mDxgiSwapChain->GetCurrentBackBufferIndex();
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mBackBufferRTVHeap->GetCPUDescriptorHandleForHeapStart());
+
+	for (int i = 0; i != Graphic_mBackBufferNum; i++) {
+		mDxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(&mBackBuffers[i]));
+
+		mDevice->CreateRenderTargetView(mBackBuffers[i].Get(), nullptr, rtvHandle);
+		rtvHandle.Offset(1, mDescriptorHandleSizeRTV);
+	}
+
+	D3D12_RESOURCE_DESC depthDesc;
+	depthDesc.Format = mBackBufferDepthFormat;
+	depthDesc.Alignment = 0;
+	depthDesc.DepthOrArraySize = 1;
+	depthDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	depthDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	depthDesc.Height = height;
+	depthDesc.Width = width;
+	depthDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	depthDesc.MipLevels = 1;
+	depthDesc.SampleDesc.Count = 1;
+	depthDesc.SampleDesc.Quality = 0;
+
+	mDepthStencilBuffer = nullptr;
+	//We assume that the default depth stencil compare function is less so the 
+	//default value of the depth buffer is 1.0f
+	D3D12_CLEAR_VALUE cValue = {};
+	cValue.Format = mBackBufferDepthFormat;
+	cValue.DepthStencil.Depth = 1.f;
+	cValue.DepthStencil.Stencil = 0;
+
+	hr = mDevice->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE, &depthDesc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&cValue, IID_PPV_ARGS(&mDepthStencilBuffer));
+
+	if (FAILED(hr)) {
+		OUTPUT_DEBUG_STRING("fail to create new depth buffer for resized buffers\n");
+		exit(-1);
+	}
+
+	mDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), nullptr,
+		mBackBufferDSVhHeap->GetCPUDescriptorHandleForHeapStart());
+
+	viewPort.Width = width;
+	viewPort.Height = height;
+	viewPort.TopLeftX = 0;
+	viewPort.TopLeftY = 0;
+	viewPort.MinDepth = 0;
+	viewPort.MaxDepth = 1.0f;
+
+	sissorRect.bottom = height;
+	sissorRect.top = 0;
+	sissorRect.left = 0;
+	sissorRect.right = width;
 }

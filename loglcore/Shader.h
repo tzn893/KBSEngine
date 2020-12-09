@@ -19,11 +19,15 @@ struct Shader {
 		name(name),path(path),shaderByteCodeVS(shaderByteCodeVS),
 		rootSignatureName(rootSig),shaderByteCodePS(shaderByteCodePS),
 		inputLayout(inputLayout){
-		shaderByteSizeVS = shaderByteCodeVS->GetBufferSize();
-		shaderByteSizePS = shaderByteCodePS->GetBufferSize();
+		if (shaderByteCodeVS != nullptr) {
+			shaderByteSizeVS = shaderByteCodeVS->GetBufferSize();
+		}
+		if (shaderByteCodePS != nullptr) {
+			shaderByteSizePS = shaderByteCodePS->GetBufferSize();
+		}
 	}
 
-	~Shader() { shaderByteCodeVS->Release(), shaderByteCodePS->Release(); }
+	~Shader() { shaderByteCodeVS = nullptr, shaderByteCodePS = nullptr; }
 };
 
 class ShaderManager {

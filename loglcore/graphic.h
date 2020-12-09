@@ -23,7 +23,7 @@ public:
 	void end();
 
 	void finalize();
-	void onResize(size_t width, size_t height) {/*TODO*/}
+	void onResize(size_t width, size_t height);
 
 	ID3D12Device* GetDevice() {  return mDevice.Get(); }
 	ID3D12CommandQueue* GetCommandQueue() { return mCommandQueue.Get(); }

@@ -105,25 +105,25 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   hInst = hInstance; // 将实例句柄存储在全局变量中
+	hInst = hInstance; // 将实例句柄存储在全局变量中
 
-   HWND hWnd = CreateWindowW(szWindowClass, L"Linux 作业", WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, width, height, nullptr, nullptr, hInstance, nullptr);
+	HWND hWnd = CreateWindowW(szWindowClass, L"Linux 作业", WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME),
+	CW_USEDEFAULT, 0, width, height, nullptr, nullptr, hInstance, nullptr);
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
-   if (!gGraphic.initialize(hWnd,width,height)) {
-	   return FALSE;
-   }
-   if (!gApp.initialize()) {
-	   return FALSE;
-   }
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+	if (!hWnd)
+	{
+		return FALSE;
+	}
+	if (!gGraphic.initialize(hWnd,width,height)) {
+		return FALSE;
+	}
+	if (!gApp.initialize()) {
+		return FALSE;
+	}
+	ShowWindow(hWnd, nCmdShow);
+	UpdateWindow(hWnd);
 
-   return TRUE;
+	return TRUE;
 }
 
 //
@@ -161,6 +161,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
 		Quit = true;
         break;
+	case WM_SIZE:
+		//gGraphic.onResize(LOWORD(lParam), HIWORD(lParam));
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }

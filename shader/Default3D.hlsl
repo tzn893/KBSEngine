@@ -63,6 +63,7 @@ VertexOut VS(VertexIn vin){
 }
 
 float4 PS(VertexOut vin) : SV_TARGET {
-
-    return float4(1.,1.,1.,1.);
+    float3 norm = normalize(vin.WorldNor);
+    float3 color = float3(1.,1.,1.) * dot(normalize(float3(0.,0.,-1.)),norm);
+    return float4(color,1.);
 }

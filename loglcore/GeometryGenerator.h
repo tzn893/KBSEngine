@@ -9,7 +9,7 @@ namespace GeometryGenerator {
 	};
 	
 	std::vector<float> Cube(float scalex,float scaley,float scalez,GEOMETRY_FLAG flag = GEOMETRY_FLAG_NONE);
-	std::vector<float> Plane(float width,float height,size_t gridu,size_t gridv,GEOMETRY_FLAG flag = GEOMETRY_FLAG_NONE);
-	std::vector<float> Squre(float width,float height,GEOMETRY_FLAG flag = GEOMETRY_FLAG_NONE);
-	std::vector<float> Sphere(float radius, size_t gridu, size_t gridv, GEOMETRY_FLAG flag = GEOMETRY_FLAG_NONE);
+	std::vector<float> Plane(float width,float height,size_t gridu,size_t gridv,std::vector<uint16_t>& indices,GEOMETRY_FLAG flag = GEOMETRY_FLAG_NONE);
+	std::vector<float> Squre(float width,float height,std::vector<uint16_t>& indices,GEOMETRY_FLAG flag = GEOMETRY_FLAG_NONE);
+	std::vector<float> Sphere(float radius, size_t gridu, size_t gridv,std::vector<uint16_t>& indices, GEOMETRY_FLAG flag = GEOMETRY_FLAG_NONE);
 }
