@@ -8,9 +8,11 @@ Shader* ShaderManager::loadShader( const wchar_t* path,const char* VS,const char
 
 	if (name == nullptr) {
 		static std::wstring name_buffer;
-		name_buffer = L"__unnamed_shader_";
 		static int id = 0;
-		name_buffer += std::to_wstring(id++);
+		name_buffer = L"__unnamed_shader_" + std::to_wstring(id++);
+		while (getShaderByName(name_buffer.c_str()) != nullptr) {
+			name_buffer = L"__unnamed_shader_" + std::to_wstring(id++);
+		}
 		name = name_buffer.c_str();
 	}
 

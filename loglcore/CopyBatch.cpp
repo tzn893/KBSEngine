@@ -80,13 +80,22 @@ void UploadBatch::End(bool wait) {
 	mCmdAlloc->Reset();
 	mCmdList->Reset(mCmdAlloc.Get(), nullptr);
 
-	mCmdList->ResourceBarrier(barriersDest.size(), barriersDest.data());
+	mCmdList->ResourceBarrier(barriersBefore.size(), barriersBefore.data());
 
 	for (auto& buffer : uploadBuffers) {
-		mCmdList->CopyResource(buffer.buffer.Get(), buffer.uploadBuffer.Get());
+		if (buffer.type == UPLOAD_BUFFER_TYPE_CONSTANT)
+			mCmdList->CopyResource(buffer.buffer.Get(), buffer.uploadBuffer.Get());
+		else if (buffer.type == UPLOAD_BUFFER_TYPE_TEXTURE)
+			UpdateSubresources(
+				mCmdList.Get(),
+				buffer.buffer.Get(),
+				buffer.uploadBuffer.Get(),
+				0, 0, buffer.subResources.size(),
+				buffer.subResources.data()
+			);
 	}
 
-	mCmdList->ResourceBarrier(barrierTarget.size(), barrierTarget.data());
+	mCmdList->ResourceBarrier(barriersAfter.size(), barriersAfter.data());
 
 	mCmdList->Close();
 
@@ -106,8 +115,8 @@ void UploadBatch::End(bool wait) {
 	}
 
 	uploadBuffers.clear();
-	barriersDest.clear();
-	barrierTarget.clear();
+	barriersBefore.clear();
+	barriersAfter.clear();
 }
 
 ID3D12Resource* UploadBatch::UploadBuffer(size_t size,void* buffer,D3D12_RESOURCE_STATES initState) {
@@ -139,16 +148,67 @@ ID3D12Resource* UploadBatch::UploadBuffer(size_t size,void* buffer,D3D12_RESOURC
 	memcpy(bufferWriter, buffer, size);
 	data.uploadBuffer->Unmap(0, nullptr);
 
-	barriersDest.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+	barriersBefore.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
 		data.buffer.Get(),D3D12_RESOURCE_STATE_COMMON,
 		D3D12_RESOURCE_STATE_COPY_DEST));
 	if (initState != D3D12_RESOURCE_STATE_COPY_DEST) {
-		barrierTarget.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+		barriersAfter.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
 			data.buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
 			initState
 		));
 	}
+	data.type = UPLOAD_BUFFER_TYPE_CONSTANT;
 
 	uploadBuffers.push_back(std::move(data));
 	return uploadBuffers[uploadBuffers.size() - 1].buffer.Get();
+}
+
+ID3D12Resource* UploadBatch::UploadTexture(D3D12_SUBRESOURCE_DATA* subdata, size_t subdata_num,
+	D3D12_RESOURCE_DESC desc, D3D12_RESOURCE_STATES initState) {
+
+	UploadBufferData data;
+
+	ID3D12Device* mDevice = gGraphic.GetDevice();
+	HRESULT hr = mDevice->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&desc,
+		D3D12_RESOURCE_STATE_COMMON,
+		nullptr,
+		IID_PPV_ARGS(&data.buffer)
+	);
+	if (FAILED(hr)) {
+		return nullptr;
+	}
+
+	size_t uploadBufferSize = GetRequiredIntermediateSize(data.buffer.Get(), 0, subdata_num);
+	hr = mDevice->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+		D3D12_HEAP_FLAG_NONE,
+		&CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&data.uploadBuffer)
+	);
+	if (FAILED(hr)) {
+		return nullptr;
+	}
+
+	data.subResources.insert(data.subResources.begin(), subdata, subdata + subdata_num);
+
+	barriersBefore.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+		data.buffer.Get(),D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_COPY_DEST
+	));
+
+	data.type = UPLOAD_BUFFER_TYPE_TEXTURE;
+
+	ID3D12Resource* rv = data.buffer.Get();
+	if(initState != D3D12_RESOURCE_STATE_COPY_DEST)
+		barriersAfter.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+			data.buffer.Get(),D3D12_RESOURCE_STATE_COPY_DEST,initState));
+
+	this->uploadBuffers.push_back(std::move(data));
+
+	return rv;
 }

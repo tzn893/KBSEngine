@@ -14,6 +14,12 @@
     <Filter Include="Core">
       <UniqueIdentifier>{5ebad02d-a463-419e-8d4f-7e7a6b402f94}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThridParty">
+      <UniqueIdentifier>{c024cbf8-677b-47e6-bc76-4c580c456dad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThridParty\stb_image">
+      <UniqueIdentifier>{07d6ff23-cbf9-40c6-b5f1-b5a37df6de46}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Color.cpp">
@@ -44,6 +50,15 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="GeometryGenerator.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ThridParty\stb\stb_image.cpp">
+      <Filter>ThridParty\stb_image</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
       <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
@@ -113,6 +128,9 @@
     </ClInclude>
     <ClInclude Include="ConstantBuffer.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ThridParty\stb\stb_image.h">
+      <Filter>ThridParty\stb_image</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

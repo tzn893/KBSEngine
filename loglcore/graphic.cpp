@@ -35,6 +35,22 @@ bool Graphic::createCommandObject() {
 }
 
 bool Graphic::createSwapChain() {
+	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
+	msQualityLevels.Format = mBackBufferFormat;
+	msQualityLevels.SampleCount = 4;
+	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+	msQualityLevels.NumQualityLevels = 0;
+	HRESULT hr = mDevice->CheckFeatureSupport(
+		D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
+		&msQualityLevels,
+		sizeof(msQualityLevels));
+	if (FAILED(hr)) {
+		OUTPUT_DEBUG_STRING("fail to query the maximun quality level number\n");
+		return false;
+	}
+
+	massQuality = msQualityLevels.NumQualityLevels;
+
 	DXGI_SWAP_CHAIN_DESC swDesc{};
 	swDesc.BufferCount = Graphic_mBackBufferNum;
 	
@@ -50,10 +66,10 @@ bool Graphic::createSwapChain() {
 	swDesc.Windowed = true;
 	swDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swDesc.SampleDesc.Count = useMass ? 4 : 1;
-	swDesc.SampleDesc.Quality = useMass ? 1 : 0;
+	swDesc.SampleDesc.Quality = useMass ? (massQuality - 1) : 0;
 	swDesc.OutputWindow = winHandle;
 
-	HRESULT hr = mDxgiFactory->CreateSwapChain(mCommandQueue.Get(), &swDesc, mDxgiSwapChain.GetAddressOf());
+	hr = mDxgiFactory->CreateSwapChain(mCommandQueue.Get(), &swDesc, mDxgiSwapChain.GetAddressOf());
 	if (FAILED(hr)) {
 		OUTPUT_DEBUG_STRING("fail to create swap chain\n");
 		return false;

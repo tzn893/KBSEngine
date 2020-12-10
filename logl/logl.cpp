@@ -1,5 +1,8 @@
 ﻿// logl.cpp : 定义应用程序的入口点。
 //
+#if (_MSC_VER >= 1915)
+#define no_init_all deprecated
+#endif
 
 #include "framework.h"
 #include "logl.h"

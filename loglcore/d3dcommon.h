@@ -1,4 +1,7 @@
 #pragma once
+#if (_MSC_VER >= 1915)
+#define no_init_all deprecated
+#endif
 
 #include <d3d12.h>
 #include <dxgi1_4.h>

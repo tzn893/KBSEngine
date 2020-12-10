@@ -76,6 +76,7 @@ private:
 	Game::Color mClearColor;
 	size_t mWinWidth, mWinHeight;
 	bool useMass = false;
+	size_t massQuality;
 
 	HWND winHandle;
 	

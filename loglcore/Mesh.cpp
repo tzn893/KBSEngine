@@ -86,6 +86,7 @@ DynamicMesh::DynamicMesh(size_t indexNum, uint16_t* indices, size_t vertexNum, M
 bool DynamicMesh::WriteVertex(MeshVertex* vertex,size_t index, size_t num) {
 	if (index > vertexBufferSize) return false;
 	memcpy(vertexUploadBufferPtr + index, vertex, num * sizeof(MeshVertex));
+	return true;
 }
 
 StaticMesh::StaticMesh(size_t vertexNum, MeshVertex* vertexs, UploadBatch* batch) {
