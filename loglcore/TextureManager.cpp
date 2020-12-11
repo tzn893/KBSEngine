@@ -18,7 +18,7 @@ ManagedTexture* TextureManager::getTextureByPath(const wchar_t* path) {
 }
 
 
-ManagedTexture* TextureManager::loadTexture(const wchar_t* path,const wchar_t* name,UploadBatch* batch) {
+ManagedTexture* TextureManager::loadTexture(const wchar_t* path,const wchar_t* name,bool filp_vertically,UploadBatch* batch) {
 	if (ManagedTexture* tex = getTextureByPath(path);tex != nullptr) {
 		return tex;
 	}
@@ -47,17 +47,19 @@ ManagedTexture* TextureManager::loadTexture(const wchar_t* path,const wchar_t* n
 	//check the avaliable extension names
 	if (extName == L".png" || extName == L".bmp" || extName == L".jpeg" ||
 		extName == L".hdr" || extName == L".tga") {
-		return loadTextureBySTB(path,name,batch);
+		return loadTextureBySTB(path,name,filp_vertically,batch);
 	}
 
 	//the image extension name is not supportted
 	return nullptr;
 }
 
-ManagedTexture* TextureManager::loadTextureBySTB(const wchar_t* path, const wchar_t* name,UploadBatch* batch) {
+ManagedTexture* TextureManager::loadTextureBySTB(const wchar_t* path, const wchar_t* name,bool filp_vertically,UploadBatch* batch) {
 	FILE* target_file = nullptr;
 	errno_t error = _wfopen_s(&target_file,path,L"rb");
 	if (error != 0) return nullptr;
+
+	stbi_set_flip_vertically_on_load(filp_vertically);
 
 	int iwidth, iheight;
 	void* idata = stbi_load_from_file(target_file, &iwidth, &iheight, nullptr, 4);

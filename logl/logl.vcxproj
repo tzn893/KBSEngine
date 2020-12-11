@@ -158,6 +158,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="FFTWave.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="logl.h" />
     <ClInclude Include="Resource.h" />
@@ -165,6 +166,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="FFTWave.cpp" />
     <ClCompile Include="logl.cpp" />
   </ItemGroup>
   <ItemGroup>

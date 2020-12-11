@@ -32,6 +32,8 @@ public:
 	void BindConstantBuffer(ID3D12Resource* res,size_t slot);
 	//if some shader need main camera pass data.they can get it by binding it to any slot
 	void BindMainCameraPass(size_t slot = 1);
+	void BindDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle,size_t slot);
+	void BindDescriptorHeap(ID3D12DescriptorHeap* const * heap,size_t num = 1);
 	void Draw(D3D12_VERTEX_BUFFER_VIEW* vbv,size_t start,size_t num,D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	void Draw(D3D12_VERTEX_BUFFER_VIEW* vbv,D3D12_INDEX_BUFFER_VIEW* ibv,size_t start,size_t num,D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -47,6 +49,7 @@ private:
 	bool createSwapChain();
 	bool createRTV_DSV();
 	bool createShaderAndRootSignatures();
+	bool createSpriteRenderingPipeline();
 
 	void FlushCommandQueue();
 

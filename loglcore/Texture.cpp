@@ -159,3 +159,19 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	isValid = true;
 
 }
+
+void Texture::CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOURCE_VIEW_DESC srv) {
+	ID3D12Device* device = gGraphic.GetDevice();
+	device->CreateShaderResourceView(mRes.Get(),&srv,descriptor.cpuHandle);
+	mSRV = descriptor;
+}
+
+void Texture::CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC uav) {
+	if (!flag & TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS) {
+		return;
+	}
+
+	ID3D12Device* device = gGraphic.GetDevice();
+	device->CreateUnorderedAccessView(mRes.Get(), nullptr, &uav, descriptor.cpuHandle);
+	mUAV = descriptor;
+}

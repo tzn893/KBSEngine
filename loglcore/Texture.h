@@ -1,6 +1,7 @@
 #pragma once
 #include "d3dcommon.h"
 #include "CopyBatch.h"
+#include "DescriptorAllocator.h"
 
 enum TEXTURE_FORMAT {
 	//TEXTURE_FORMAT_RGB,
@@ -45,7 +46,24 @@ public:
 	size_t GetHeight() { return height; }
 
 	TEXTURE_TYPE GetType() { return type; }
+	DXGI_FORMAT GetFormat() { return format; }
 	bool IsValid() { return isValid; }
+
+	void CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOURCE_VIEW_DESC srv);
+	D3D12_CPU_DESCRIPTOR_HANDLE GetShaderResourceViewCPU() {
+		return mSRV.cpuHandle;
+	}
+	D3D12_GPU_DESCRIPTOR_HANDLE GetShaderResourceViewGPU() {
+		return mSRV.gpuHandle;
+	}
+
+	void CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC uav);
+	D3D12_CPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewCPU() {
+		return mUAV.cpuHandle;
+	}
+	D3D12_GPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewGPU() {
+		return mUAV.gpuHandle;
+	}
 protected:
 	TEXTURE_TYPE type;
 	TEXTURE_FLAG flag;
@@ -54,4 +72,7 @@ protected:
 
 	ComPtr<ID3D12Resource> mRes;
 	bool isValid;
+
+	Descriptor mSRV;
+	Descriptor mUAV;
 };

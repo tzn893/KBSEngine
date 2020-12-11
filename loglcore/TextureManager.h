@@ -32,7 +32,7 @@ private:
 
 class TextureManager{
 public:
-	ManagedTexture* loadTexture(const wchar_t* path,const wchar_t* name = nullptr,UploadBatch* batch = nullptr);
+	ManagedTexture* loadTexture(const wchar_t* path,const wchar_t* name = nullptr,bool filp_vertically = true,UploadBatch* batch = nullptr);
 	ManagedTexture* getTextureByName(const wchar_t* name);
 	ManagedTexture* getTextureByPath(const wchar_t* path);
 private:
@@ -40,7 +40,7 @@ private:
 	std::map<std::wstring, std::unique_ptr<ManagedTexture>> texturesByPath;
 	std::map<std::wstring, ManagedTexture*> texturesByName;
 
-	ManagedTexture* loadTextureBySTB(const wchar_t* path,const wchar_t* name,UploadBatch* batch);
+	ManagedTexture* loadTextureBySTB(const wchar_t* path,const wchar_t* name,bool filp_vertically,UploadBatch* batch);
 };
 
 inline TextureManager gTextureManager;

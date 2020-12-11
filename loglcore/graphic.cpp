@@ -177,11 +177,9 @@ bool Graphic::createShaderAndRootSignatures() {
 
 	Game::GraphicPSO WithoutLightPso;
 	WithoutLightPso.SetInputElementDesc(result->inputLayout);
-
 	WithoutLightPso.LazyBlendDepthRasterizeDefault();
 	CD3DX12_RASTERIZER_DESC rsDesc(D3D12_DEFAULT);
 	WithoutLightPso.SetRasterizerState(rsDesc);
-
 	WithoutLightPso.SetDepthStencilViewFomat(mBackBufferDepthFormat);
 	WithoutLightPso.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
 	WithoutLightPso.SetNodeMask(0);
@@ -204,6 +202,65 @@ bool Graphic::createShaderAndRootSignatures() {
 		return false;
 	}
 	mPsos[result->name] = WithoutLightPso.GetPSO();
+
+	return true;
+}
+
+bool Graphic::createSpriteRenderingPipeline() {
+	Game::RootSignature RootSig(3, 1);
+	RootSig[0].initAsConstantBuffer(0, 0, D3D12_SHADER_VISIBILITY_ALL);
+	RootSig[1].initAsConstantBuffer(1, 0, D3D12_SHADER_VISIBILITY_ALL);
+	RootSig[2].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	RootSig.InitializeSampler(0, CD3DX12_STATIC_SAMPLER_DESC(0));
+
+	if (!RootSig.EndEditingAndCreate(mDevice.Get())) {
+		OUTPUT_DEBUG_STRING("fail to create root signature for sprite pipeline\n");
+		return false;
+	}
+
+	std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayout = {
+		{"POSITION",0,DXGI_FORMAT_R32G32_FLOAT,0,0,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
+		{"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,8,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0}
+	};
+
+	Shader* shader = gShaderManager.loadShader(L"../shader/DrawSprite.hlsl","VS","PS",L"Sprite",
+		inputLayout,L"DrawSprite");
+	if (shader == nullptr) {
+		OUTPUT_DEBUG_STRING("fail to create shader for sprite rendering\n");
+		return false;
+	}
+
+	Game::GraphicPSO Pso;
+	Pso.SetInputElementDesc(shader->inputLayout);
+	Pso.LazyBlendDepthRasterizeDefault();
+	CD3DX12_RASTERIZER_DESC rsDesc(D3D12_DEFAULT);
+	rsDesc.CullMode = D3D12_CULL_MODE_NONE;
+	Pso.SetRasterizerState(rsDesc);
+
+
+	Pso.SetDepthStencilViewFomat(mBackBufferDepthFormat);
+	Pso.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
+	Pso.SetNodeMask(0);
+	Pso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+	Pso.SetRenderTargetFormat(mBackBufferFormat);
+	Pso.SetRootSignature(&RootSig);
+	if (useMass) {
+		Pso.SetSampleDesc(4, 1);
+	}
+	else {
+		Pso.SetSampleDesc(1, 0);
+	}
+	Pso.SetSampleMask(UINT_MAX);
+
+	Pso.SetVertexShader(shader->shaderByteCodeVS->GetBufferPointer(), shader->shaderByteSizeVS);
+	Pso.SetPixelShader(shader->shaderByteCodePS->GetBufferPointer(), shader->shaderByteSizePS);
+
+	if (!Pso.Create(mDevice.Get())) {
+		OUTPUT_DEBUG_STRING("fail to create pso for with out light pipeline\n");
+		return false;
+	}
+	mPsos[shader->name] = Pso.GetPSO();
+	mRootSignatures[L"Sprite"] = RootSig.GetRootSignature();
 
 	return true;
 }
@@ -253,6 +310,11 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height) {
 
 	if (!createShaderAndRootSignatures()) {
 		OUTPUT_DEBUG_STRING("ERROR : fail to create shaders and root signatures");
+		return false;
+	}
+
+	if (!createSpriteRenderingPipeline()) {
+		OUTPUT_DEBUG_STRING("ERROR : fail to create sprite renderer\n");
 		return false;
 	}
 
@@ -511,4 +573,20 @@ void Graphic::onResize(size_t width, size_t height) {
 	sissorRect.top = 0;
 	sissorRect.left = 0;
 	sissorRect.right = width;
+}
+
+void Graphic::BindDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE handle,size_t slot) {
+	if (state != BEGIN_COMMAND_RECORDING) {
+		return;
+	}
+
+	if (slot >= 16) return;
+	mDrawCmdList->SetGraphicsRootDescriptorTable(slot, handle);
+}
+
+void Graphic::BindDescriptorHeap(ID3D12DescriptorHeap* const* heap,size_t heap_num) {
+	if (state != BEGIN_COMMAND_RECORDING) {
+		return;
+	}
+	mDrawCmdList->SetDescriptorHeaps(heap_num, heap);
 }

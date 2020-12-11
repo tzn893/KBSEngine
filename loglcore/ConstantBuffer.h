@@ -56,6 +56,45 @@ public:
 			return (D3D12_GPU_VIRTUAL_ADDRESS)0;
 		return buffer->GetGPUVirtualAddress() + index * elementSize;
 	}
+
+	void Resize(ID3D12Device* mDevice,size_t num) {
+		size_t oldSize = this->num * elementSize;
+		size_t newSize = num * elementSize;
+
+		size_t bufferSize = oldSize > newSize ? newSize : oldSize;
+		void* membuffer = malloc(bufferSize);
+
+		memcpy(membuffer, this->bufferPtr, bufferSize);
+
+		buffer->Unmap(0, nullptr);
+		buffer = nullptr;
+
+		HRESULT hr = mDevice->CreateCommittedResource(
+			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+			D3D12_HEAP_FLAG_NONE,
+			&CD3DX12_RESOURCE_DESC::Buffer(newSize),
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&buffer)
+		);
+		if (FAILED(hr)) {
+			free(membuffer);
+			isValid = false;
+			return;
+		}
+
+		this->num = num;
+
+		void* ptr;
+		buffer->Map(0, nullptr, &ptr);
+		bufferPtr = reinterpret_cast<uint8_t*>(ptr);
+		isValid = true;
+
+		memcpy(bufferPtr, membuffer, bufferSize);
+
+		free(membuffer);
+	}
+
 	~ConstantBuffer() {
 		buffer->Unmap(0, nullptr);
 		buffer = nullptr;

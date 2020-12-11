@@ -61,6 +61,9 @@
     <ClCompile Include="TextureManager.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="DescriptorAllocator.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -131,6 +134,9 @@
     </ClInclude>
     <ClInclude Include="ThridParty\stb\stb_image.h">
       <Filter>ThridParty\stb_image</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorAllocator.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
