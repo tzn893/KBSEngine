@@ -32,6 +32,12 @@
     <ClInclude Include="FFTWave.h">
       <Filter>源文件</Filter>
     </ClInclude>
+    <ClInclude Include="InputBuffer.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="logl.cpp">
@@ -41,6 +47,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="FFTWave.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="InputBuffer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Timer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

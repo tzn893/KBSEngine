@@ -64,4 +64,38 @@ namespace Game {
 		std::vector<D3D12_INPUT_ELEMENT_DESC> m_InputLayouts;
 	};
 
+	class GraphicPSORP : public GraphicPSO{
+		/*
+		void SetBlendState(D3D12_BLEND_DESC desc);
+		void LazyBlendDepthRasterizeDefault();
+		void SetDepthStencilState(D3D12_DEPTH_STENCIL_DESC desc);
+		void SetFlag(D3D12_PIPELINE_STATE_FLAGS flag);
+		void SetNodeMask(UINT nodeMask);
+		void SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE top);
+		void SetRasterizerState(D3D12_RASTERIZER_DESC state);
+		*/
+	private:
+		void SetRootSignature(ID3D12RootSignature* rootSig) = delete;
+		void SetRootSignature(RootSignature* rootSig) = delete;
+
+		void SetSampleDesc(UINT count, UINT quality) = delete;
+		void SetSampleMask(UINT mask) = delete;
+
+		void SetInputElementDesc(std::vector<D3D12_INPUT_ELEMENT_DESC>& desc) = delete;
+		void PushBackInputElementDesc(D3D12_INPUT_ELEMENT_DESC desc) = delete;
+		void SetDepthStencilViewFomat(DXGI_FORMAT format) = delete;
+		void SetRenderTargetFormat(DXGI_FORMAT format) = delete;
+		void SetRenderTargetFormat(UINT num, const DXGI_FORMAT* formats) = delete;
+
+		void SetVertexShader(const void* bytecode, UINT size) = delete;
+		void SetPixelShader(const void* bytecode, UINT size) = delete;
+		void SetGeometryShader(const void* bytecode, UINT size) = delete;
+		void SetHullingShader(const void* bytecode, UINT size) = delete; 
+		void SetDomainShader(const void* bytecode, UINT size) = delete;
+
+		bool Create(ID3D12Device* device) = delete;
+
+
+		ID3D12PipelineState* GetPSO() = delete;
+	};
 }

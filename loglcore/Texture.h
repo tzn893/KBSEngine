@@ -49,7 +49,7 @@ public:
 	DXGI_FORMAT GetFormat() { return format; }
 	bool IsValid() { return isValid; }
 
-	void CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOURCE_VIEW_DESC srv);
+	void CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOURCE_VIEW_DESC* srv = nullptr);
 	D3D12_CPU_DESCRIPTOR_HANDLE GetShaderResourceViewCPU() {
 		return mSRV.cpuHandle;
 	}

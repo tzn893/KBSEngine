@@ -4,11 +4,12 @@
 template<typename T>
 class ConstantBuffer {
 public:
-	ConstantBuffer(ID3D12Device* mDevice,size_t num = 1, T* data = nullptr) {
+	ConstantBuffer(ID3D12Device* mDevice,size_t num = 1,bool isStructed = false, T* data = nullptr) {
 		if (num == 0) {
-			isValid = true;
+			isValid = false;
 			return;
 		}
+		elementSize = isStructed ? sizeof(T) : (sizeof(T) + 255) & (~255);
 		HRESULT hr = mDevice->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -30,8 +31,13 @@ public:
 		isValid = true;
 
 		if (data != nullptr) {
-			for (size_t i = 0; i != num; i++) {
-				memcpy(bufferPtr + i * elementSize, data + i, sizeof(T));
+			if (!isStructed) {
+				for (size_t i = 0; i != num; i++) {
+					memcpy(bufferPtr + i * elementSize, data + i, sizeof(T));
+				}
+			}
+			else {
+				memcpy(bufferPtr, data, BufferSize());
 			}
 		}
 	}
@@ -101,8 +107,9 @@ public:
 	}
 private:
 	uint8_t* bufferPtr;
-	static constexpr size_t elementSize = (sizeof(T) + 255) & (~255);
+	size_t elementSize;
 	size_t num;
 	ComPtr<ID3D12Resource> buffer;
+	bool isStructed;
 	bool isValid;
 };

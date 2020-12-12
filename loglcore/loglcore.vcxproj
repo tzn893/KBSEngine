@@ -29,6 +29,7 @@
     <ClCompile Include="PipelineStateObject.cpp" />
     <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="SpriteRenderPass.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="ThridParty\stb\stb_image.cpp" />
@@ -52,9 +53,10 @@
     <ClInclude Include="ModelManager.h" />
     <ClInclude Include="PipelineStateObject.h" />
     <ClInclude Include="Reflect_Registry.h" />
-    <ClInclude Include="RenderItem.h" />
+    <ClInclude Include="RenderPass.h" />
     <ClInclude Include="RootSignature.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="SpriteRenderPass.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="ThridParty\stb\stb_image.h" />

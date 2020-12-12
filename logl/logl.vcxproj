@@ -160,14 +160,18 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="FFTWave.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="InputBuffer.h" />
     <ClInclude Include="logl.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Timer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="FFTWave.cpp" />
+    <ClCompile Include="InputBuffer.cpp" />
     <ClCompile Include="logl.cpp" />
+    <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="logl.rc" />

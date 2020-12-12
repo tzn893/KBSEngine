@@ -124,8 +124,11 @@ namespace Game {
 		float near =  0.1f,float far = 1000.f);
 
 	Mat4x4 MatrixPosition(Vector3 Offset);
+	inline Mat4x4 MatrixPosition(float x, float y, float z) { return MatrixPosition(Game::Vector3(x, y, z)); }
+
 	Mat4x4 MatrixRotation(Vector3 axis,float angle);
 	Mat4x4 MatrixRotation(Vector3 eulerAngle);
+	inline Mat4x4 MatrixRotation(float eulerX, float eulerY, float eulerZ) { return MatrixRotation(Game::Vector3(eulerX, eulerY, eulerZ)); }
 
 	void UnpackTransfrom(Mat4x4 trans,Vector3& position,Vector3& rotation,Vector3& scaling);
 	Mat4x4 PackTransfrom(Vector3 position,Vector3 rotation,Vector3 scaling);
@@ -135,6 +138,7 @@ namespace Game {
 	Mat4x4 MatrixRotateZ(float angle);
 
 	Mat4x4 MatrixScale(Vector3 Scaling);
+	inline Mat4x4 MatrixScale(float x, float y, float z) { return MatrixScale(Game::Vector3(x, y, z)); };
 
 	Mat4x4 mul(const Mat4x4& lhs,const Mat4x4& rhs);
 	Mat3x3 mul(const Mat3x3& lhs,const Mat3x3& rhs);

@@ -8,6 +8,7 @@
 #include "logl.h"
 #include "../loglcore/graphic.h"
 #include "Application.h"
+#include "InputBuffer.h"
 
 #define MAX_LOADSTRING 100
 
@@ -60,6 +61,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			gGraphic.begin();
 			gApp.update();
 			gGraphic.end();
+
+			gInput.update();
 		}
     }
 	gApp.finalize();
@@ -123,6 +126,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	if (!gApp.initialize()) {
 		return FALSE;
 	}
+	gInput.initialize();
+	
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
 
@@ -164,8 +169,49 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
 		Quit = true;
         break;
-	case WM_SIZE:
-		//gGraphic.onResize(LOWORD(lParam), HIWORD(lParam));
+#ifndef GET_X_FROM_LPARAM
+#define GET_X_FROM_LPARAM(lParam) lParam & 0xffff
+#endif
+#ifndef GET_Y_FROM_LPARAM
+#define GET_Y_FROM_LPARAM(lParam) lParam >> 16
+#endif
+	case WM_LBUTTONDOWN:
+		gInput.BufferWriteKeyDown(InputBuffer::KeyCode::MOUSE_LEFT);
+		break;
+	case WM_RBUTTONDOWN:
+		gInput.BufferWriteKeyDown(InputBuffer::KeyCode::MOUSE_RIGHT);
+		break;
+	case WM_MBUTTONDOWN:
+		gInput.BufferWriteKeyDown(InputBuffer::KeyCode::MOUSE_MIDDLE);
+		break;
+	case WM_MBUTTONUP:
+		gInput.BufferWriteKeyUp(InputBuffer::KeyCode::MOUSE_MIDDLE);
+		break;
+	case WM_LBUTTONUP:
+		gInput.BufferWriteKeyUp(InputBuffer::KeyCode::MOUSE_LEFT);
+		break;
+	case WM_RBUTTONUP:
+		gInput.BufferWriteKeyUp(InputBuffer::KeyCode::MOUSE_RIGHT);
+		break;
+	case WM_MOUSEMOVE:
+		gInput.BufferWriteMousePosition(GET_X_FROM_LPARAM(lParam), GET_Y_FROM_LPARAM(lParam));
+		break;
+	case WM_KEYDOWN: 
+		{
+			int keycode = wParam - 0x41;
+			if (keycode >= 0 && keycode < 26) {
+				gInput.BufferWriteKeyDown((InputBuffer::KeyCode)keycode);
+			}
+		}
+		break;
+	case WM_KEYUP:
+		{
+			int keycode = wParam - 0x41;
+			if (keycode >= 0 && keycode < 26) {
+				gInput.BufferWriteKeyUp((InputBuffer::KeyCode)keycode);
+			}
+		}
+		break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }

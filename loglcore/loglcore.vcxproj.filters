@@ -64,6 +64,9 @@
     <ClCompile Include="DescriptorAllocator.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="SpriteRenderPass.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -94,9 +97,6 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="graphic.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderItem.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="TextureManager.h">
@@ -136,6 +136,12 @@
       <Filter>ThridParty\stb_image</Filter>
     </ClInclude>
     <ClInclude Include="DescriptorAllocator.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPass.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteRenderPass.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

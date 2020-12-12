@@ -1,7 +1,5 @@
 #include "graphic.h"
 
-#include "RootSignature.h"
-#include "PipelineStateObject.h"
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -205,7 +203,7 @@ bool Graphic::createShaderAndRootSignatures() {
 
 	return true;
 }
-
+/*
 bool Graphic::createSpriteRenderingPipeline() {
 	Game::RootSignature RootSig(3, 1);
 	RootSig[0].initAsConstantBuffer(0, 0, D3D12_SHADER_VISIBILITY_ALL);
@@ -264,6 +262,7 @@ bool Graphic::createSpriteRenderingPipeline() {
 
 	return true;
 }
+*/
 
 bool Graphic::initialize(HWND winHnd, size_t width, size_t height) {
 #ifdef _DEBUG
@@ -309,15 +308,19 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height) {
 	}
 
 	if (!createShaderAndRootSignatures()) {
-		OUTPUT_DEBUG_STRING("ERROR : fail to create shaders and root signatures");
+		OUTPUT_DEBUG_STRING("ERROR : fail to create shaders and root signatures\n");
 		return false;
 	}
-
+	/*
 	if (!createSpriteRenderingPipeline()) {
 		OUTPUT_DEBUG_STRING("ERROR : fail to create sprite renderer\n");
 		return false;
 	}
-
+	*/
+	if (!createRenderPasses()) {
+		OUTPUT_DEBUG_STRING("ERROR : fail to create default render passes\n");
+		return false;
+	}
 	fenceEvent = CreateEventEx(NULL, NULL, NULL, EVENT_ALL_ACCESS);
 	if (fenceEvent == NULL) {
 		OUTPUT_DEBUG_STRING("ERROR : fail to create fence event\n");
@@ -412,6 +415,25 @@ void Graphic::begin() {
 void Graphic::end() {
 	if (state != BEGIN_COMMAND_RECORDING) return;
 
+	auto renderLayer = [&](RENDER_PASS_LAYER layer) {
+		for (auto& rps : RPQueue) {
+			for (auto& RP : rps.second) {
+				RP->Render(this, layer);
+			}
+		}
+	};
+
+	renderLayer(RENDER_PASS_LAYER_BEFORE_ALL);
+	renderLayer(RENDER_PASS_LAYER_OPAQUE);
+	renderLayer(RENDER_PASS_LAYER_TRANSPARENT);
+	renderLayer(RENDER_PASS_LAYER_AFTER_ALL);
+
+	for (auto& rps : RPQueue) {
+		for (auto& RP : rps.second) {
+			RP->PostProcess(mBackBuffers[mCurrBackBuffer].Get());
+		}
+	}
+
 	mDrawCmdList->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[mCurrBackBuffer].Get(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
@@ -466,10 +488,28 @@ void Graphic::BindShader(Shader* shader) {
 	mDrawCmdList->SetGraphicsRootSignature(rootSig);
 }
 
-void Graphic::BindConstantBuffer(ID3D12Resource* res, size_t slot) {
+void Graphic::BindConstantBuffer(ID3D12Resource* res, size_t slot,size_t offset) {
 	if (state != BEGIN_COMMAND_RECORDING) return;
 	
-	mDrawCmdList->SetGraphicsRootConstantBufferView(slot,res->GetGPUVirtualAddress());
+	mDrawCmdList->SetGraphicsRootConstantBufferView(slot,res->GetGPUVirtualAddress() + offset);
+}
+
+void Graphic::BindShaderResource(ID3D12Resource* res, size_t slot,size_t offset) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+
+	mDrawCmdList->SetGraphicsRootShaderResourceView(slot, res->GetGPUVirtualAddress() + offset);
+}
+
+void Graphic::BindConstantBuffer(D3D12_GPU_VIRTUAL_ADDRESS vaddr, size_t slot) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+
+	mDrawCmdList->SetGraphicsRootConstantBufferView(slot, vaddr);
+}
+
+void Graphic::BindShaderResource(D3D12_GPU_VIRTUAL_ADDRESS vaddr, size_t slot) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+	
+	mDrawCmdList->SetGraphicsRootShaderResourceView(slot, vaddr);
 }
 
 void Graphic::BindMainCameraPass(size_t slot) {
@@ -500,6 +540,24 @@ void Graphic::Draw(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_BUFFER_VIEW* ibv, 
 	mDrawCmdList->IASetIndexBuffer(ibv);
 	mDrawCmdList->IASetVertexBuffers(0, 1, vbv);
 	mDrawCmdList->DrawIndexedInstanced(num, 1, start, 0, 0);
+}
+
+void Graphic::DrawInstance(D3D12_VERTEX_BUFFER_VIEW* vbv, size_t start, size_t num, size_t instanceNum, D3D_PRIMITIVE_TOPOLOGY topolgy) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+
+	mDrawCmdList->IASetPrimitiveTopology(topolgy);
+	mDrawCmdList->IASetVertexBuffers(0, 1, vbv);
+	mDrawCmdList->DrawInstanced(num, instanceNum, start, 0);
+}
+
+void Graphic::DrawInstance(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_BUFFER_VIEW* ibv, size_t start, size_t num, size_t instanceNum, D3D_PRIMITIVE_TOPOLOGY topolgy) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+
+	mDrawCmdList->IASetPrimitiveTopology(topolgy);
+
+	mDrawCmdList->IASetIndexBuffer(ibv);
+	mDrawCmdList->IASetVertexBuffers(0, 1, vbv);
+	mDrawCmdList->DrawIndexedInstanced(num, instanceNum, start, 0, 0);
 }
 
 void Graphic::onResize(size_t width, size_t height) {
@@ -589,4 +647,78 @@ void Graphic::BindDescriptorHeap(ID3D12DescriptorHeap* const* heap,size_t heap_n
 		return;
 	}
 	mDrawCmdList->SetDescriptorHeaps(heap_num, heap);
+}
+
+bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO) {
+	ID3D12PipelineState* mPSO;
+	auto iter = mRootSignatures.find(shader->rootSignatureName);
+	if (iter == mRootSignatures.end()) {
+		return false;
+	}
+	PSO->SetRootSignature(iter->second.Get());
+	if (useMass) {
+		PSO->SetSampleDesc(4, 1);
+	}
+	else {
+		PSO->SetSampleDesc(1, 0);
+	}
+	PSO->SetSampleMask(UINT_MAX);
+	PSO->SetVertexShader(shader->shaderByteCodeVS->GetBufferPointer(), shader->shaderByteSizeVS);
+	PSO->SetPixelShader(shader->shaderByteCodePS->GetBufferPointer(), shader->shaderByteSizePS);
+	PSO->SetInputElementDesc(shader->inputLayout);
+	PSO->SetRenderTargetFormat(mBackBufferFormat);
+	PSO->SetDepthStencilViewFomat(mBackBufferDepthFormat);
+
+	if (!PSO->Create(mDevice.Get())) {
+		return false;
+	}
+
+	mPSO = PSO->GetPSO();
+	mPsos[shader->name] = mPSO;
+	return true;
+}
+
+bool Graphic::CreateRootSignature(std::wstring name, Game::RootSignature* rootSig) {
+	if (mRootSignatures.find(name) != mRootSignatures.end()) {
+		return false;
+	}
+	if (!rootSig->EndEditingAndCreate(mDevice.Get())) {
+		return false;
+	}
+
+	mRootSignatures[name] = rootSig->GetRootSignature();
+	return true;
+}
+
+bool Graphic::RegisterRenderPasses(RenderPass** RP,size_t num) {
+	UploadBatch mbatch = UploadBatch::Begin();
+	for (size_t i = 0; i != num; i++) {
+		if (!RP[i]->Initialize(&mbatch)) {
+			RP[i]->finalize();
+			return false;
+		}
+	}
+	mbatch.End();
+
+	for (size_t i = 0; i != num; i++) {
+		size_t priority = RP[i]->GetPriority();
+		auto iter = RPQueue.find(priority);
+		if (iter == RPQueue.end()) {
+			RPQueue[priority] = { RP[i] };
+		}
+		else {
+			iter->second.push_back(RP[i]);
+		}
+	}
+
+	return true;
+}
+
+bool Graphic::createRenderPasses() {
+	UploadBatch mbacth;
+
+	spriteRenderPass = std::make_unique<SpriteRenderPass>();
+	
+	RenderPass* rpList[] = { spriteRenderPass.get() };
+	return RegisterRenderPasses(rpList, _countof(rpList));
 }

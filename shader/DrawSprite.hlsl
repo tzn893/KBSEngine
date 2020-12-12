@@ -3,33 +3,40 @@ struct VertexIn{
     float2 TexCoord : TEXCOORD0;
 };
 
-cbuffer SpriteConstant : register(b0) {
+struct SpriteConstant{
     float4 color;
     float4x4 worldTrans;
 };
 
+StructuredBuffer<SpriteConstant> spriteBuffer : register(t1);
+
 cbuffer ViewConstant : register(b1){
-    float4x4 viewTrans;  
+    float4x4 viewTrans;
 };
 
 struct VertexOut{
     float4 ScreenPos : SV_POSITION;
-    float2 TexCoord : TEXCOORD0;
+    float2 TexCoord  : TEXCOORD0;
+    float4 Color     : TEXCOORD1;
 };
 
 Texture2D sprite : register(t0);
 SamplerState defaultSampler : register(s0);
 
-VertexOut VS(VertexIn vin){
+VertexOut VS(VertexIn vin,uint iid : SV_INSTANCEID){
+    float4x4 worldTrans = spriteBuffer[iid].worldTrans;
+
     VertexOut vout;
-    vout.ScreenPos = mul(viewTrans,mul(worldTrans,float4(vin.Position,1.,1.)));//float4(mul(viewTrans,mul(worldTrans,float3(vin.Position,1.f))),1.f);
-    vout.TexCoord = vin.TexCoord;
+    vout.ScreenPos = mul(viewTrans,mul(worldTrans,float4(vin.Position,1.,1.)));
+    vout.TexCoord  = vin.TexCoord;
+    vout.Color     = spriteBuffer[iid].color;
+
     return vout;
 }
 
 float4 PS(VertexOut vin) : SV_TARGET{
-    float4 result = sprite.Sample(defaultSampler,vin.TexCoord) * color;
-	if (result.a < 1e-3) {
+    float4 result = sprite.Sample(defaultSampler,vin.TexCoord) * vin.Color;
+	if (result.a == 0.f) {
 		discard;
 	}
     return result;
