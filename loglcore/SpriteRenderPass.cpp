@@ -24,26 +24,50 @@ bool SpriteRenderPass::Initialize(UploadBatch* batch) {
 	
 	Game::GraphicPSORP Pso;
 	Pso.LazyBlendDepthRasterizeDefault();
-	CD3DX12_RASTERIZER_DESC rsDesc(D3D12_DEFAULT);
-	rsDesc.CullMode = D3D12_CULL_MODE_NONE;
-	Pso.SetRasterizerState(rsDesc);
-
 	Pso.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
 	Pso.SetNodeMask(0);
 	Pso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 	
 
-	if (!gGraphic.CreatePipelineStateObject(spriteShader, &Pso)) {
+	if (!gGraphic.CreatePipelineStateObject(spriteShader, &Pso,L"SpriteOpaque")) {
+		return false;
+	}
+	
+	Game::GraphicPSORP TPso = Pso;
+	CD3DX12_BLEND_DESC blendDesc(D3D12_DEFAULT);
+
+	D3D12_RENDER_TARGET_BLEND_DESC RTBlendDesc;
+	RTBlendDesc.LogicOpEnable = false;
+	RTBlendDesc.LogicOp = D3D12_LOGIC_OP_NOOP;
+
+	RTBlendDesc.BlendEnable = true;
+	RTBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
+	RTBlendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	RTBlendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	RTBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	RTBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+	RTBlendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+
+	RTBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	blendDesc.RenderTarget[0] = RTBlendDesc;
+	TPso.SetBlendState(blendDesc);
+	
+	CD3DX12_DEPTH_STENCIL_DESC dsDesc(D3D12_DEFAULT);
+	dsDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	TPso.SetDepthStencilState(dsDesc);
+
+	if (!gGraphic.CreatePipelineStateObject(spriteShader,&TPso,L"SpriteTransparent")) {
 		return false;
 	}
 
 	float square[] = {
 		 .5, .5, 1., 1.,
+		 .5,-.5, 1., 0.,
+		-.5, .5, 0., 1.,
+		-.5,-.5, 0., 0.,
 		-.5, .5, 0., 1.,
 		 .5,-.5, 1., 0.,
-		-.5,-.5, 0., 0.,
-		 .5,-.5, 1., 0.,
-		-.5, .5, 0., 1.
 	};
 	if (batch != nullptr) {
 		mVBuffer = batch->UploadBuffer(sizeof(square), square);
@@ -92,9 +116,17 @@ void SpriteRenderPass::Render(Graphic* graphic,RENDER_PASS_LAYER layer) {
 	std::vector<SpriteGroup>* targetGroup;
 	if (layer == RENDER_PASS_LAYER_OPAQUE) {
 		targetGroup = &renderGroupOpaque;
+		if (!graphic->BindPSOAndRootSignature(L"SpriteOpaque", L"Sprite")) {
+			targetGroup->clear();
+			return;
+		}
 	}
 	else if (layer == RENDER_PASS_LAYER_TRANSPARENT) {
 		targetGroup = &renderGroupTransparent;
+		if (!graphic->BindPSOAndRootSignature(L"SpriteTransparent", L"Sprite")) {
+			targetGroup->clear();
+			return;
+		}
 	}
 	else {return;}
 
@@ -102,7 +134,6 @@ void SpriteRenderPass::Render(Graphic* graphic,RENDER_PASS_LAYER layer) {
 		return;
 	}
 
-	graphic->BindShader(spriteShader);
 	ID3D12DescriptorHeap* heaps[] = {heap->GetHeap()};
 	graphic->BindDescriptorHeap(heaps,_countof(heaps));
 	graphic->BindConstantBuffer(spriteViewConstant->GetADDR(), 1);
@@ -114,6 +145,9 @@ void SpriteRenderPass::Render(Graphic* graphic,RENDER_PASS_LAYER layer) {
 		graphic->DrawInstance(&mVbv, 0, 6, item.instanceNum);
 	}
 	targetGroup->clear();
+}
+
+void SpriteRenderPass::PostProcess(ID3D12Resource* renderTarget) {
 	allocatedBufferSize = 0;
 }
 

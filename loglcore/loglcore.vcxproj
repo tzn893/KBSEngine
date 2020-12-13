@@ -26,6 +26,7 @@
     <ClCompile Include="graphic.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="PhongRenderPass.cpp" />
     <ClCompile Include="PipelineStateObject.cpp" />
     <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="Shader.cpp" />
@@ -51,11 +52,13 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="ModelManager.h" />
+    <ClInclude Include="PhongRenderPass.h" />
     <ClInclude Include="PipelineStateObject.h" />
     <ClInclude Include="Reflect_Registry.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="RootSignature.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="ShaderDataStruct.h" />
     <ClInclude Include="SpriteRenderPass.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />

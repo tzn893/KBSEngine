@@ -47,6 +47,7 @@ public:
 			return nullptr;
 		return reinterpret_cast<T*>(bufferPtr + index * elementSize);
 	}
+
 	size_t BufferSize(){
 		return elementSize * num;
 	}

@@ -9,46 +9,26 @@
 #include "../loglcore/DescriptorAllocator.h"
 
 #include "../loglcore/SpriteRenderPass.h"
+#include "../loglcore/PhongRenderPass.h"
 
 #include "InputBuffer.h"
-
-
-std::unique_ptr<StaticMesh> box;
-
-struct BoxConstantBuffer {
-	Game::Mat4x4 world;
-	Game::Mat4x4 transInvWorld;
-};
-
-std::unique_ptr<ConstantBuffer<BoxConstantBuffer>>  boxBuffer;
-BoxConstantBuffer* boxConstantBufferPtr;
-
-Shader* shader;
-
+#include "Timer.h"
 
 SpriteRenderPass* srp;
 SpriteID spriteID;
 
 SpriteData data[100];
 
+PhongRenderPass* prp;
+PhongObjectID    pid;
+std::unique_ptr<DynamicMesh> pMesh;
+
 void upload(){
-	std::vector<float> vertices = std::move(GeometryGenerator::Cube(1.,1.,1.));
-	box = std::make_unique<StaticMesh>( vertices.size() / 8, reinterpret_cast<MeshVertex*>(vertices.data()));
-
-	boxBuffer = std::make_unique<ConstantBuffer<BoxConstantBuffer>>(gGraphic.GetDevice());
-	boxConstantBufferPtr = boxBuffer->GetBufferPtr();
-
-	boxConstantBufferPtr->world = Game::PackTransfrom(Game::Vector3(0., 0., 9), Game::Vector3(0., 0., 0.), Game::Vector3(1., 1., 1.));
-	boxConstantBufferPtr->transInvWorld = boxConstantBufferPtr->world.R();
-	boxConstantBufferPtr->world = boxConstantBufferPtr->world.T();
-
-	shader = gShaderManager.getShaderByName(L"with_out_light");
-
 	for (int x = 0; x != 10; x++) {
 		for (int y = 0; y != 10; y++) {
-			data[x + y * 10].Color = Game::Vector4(x / 10., y / 10., 1., 1.);
+			data[x + y * 10].Color = Game::Vector4(x / 10., y / 10., 1., .5);
 			data[x + y * 10].Scale = Game::Vector2(.1, .1);
-			data[x + y * 10].Position = Game::Vector3((x - 5)/ 11., (y - 5)/ 11., .5);
+			data[x + y * 10].Position = Game::Vector3((x - 5)/ 11., (y - 5)/ 11., .05);
 		}
 	}
 }
@@ -62,21 +42,38 @@ bool Application::initialize() {
 
 	Texture* tex = gTextureManager.loadTexture(L"../asserts/awesomeface.png", L"face");
 	spriteID = srp->RegisterTexture(tex);
+
+	prp = gGraphic.GetRenderPass<PhongRenderPass>();
+	if (prp == nullptr) {
+		return false;
+	}
+
+	pid = prp->AllocateObjectPass();
+	std::vector<float> varray = GeometryGenerator::Cube(.5, .5, .5);
+	pMesh = std::make_unique<DynamicMesh>(varray.size() * sizeof(float) / sizeof(MeshVertex),reinterpret_cast<MeshVertex*>(varray.data()));
+
+	auto objPass = prp->GetObjectPass(pid);
+	objPass->world = Game::Mat4x4::I();
+	objPass->transInvWorld = Game::Mat4x4::I();
+	objPass->material.diffuse = Game::ConstColor::White;
+	objPass->material.FresnelR0 = Game::Vector3(.1, .1, .1);
+	objPass->material.Roughness = .4;
+	
+	prp->BindAmbientLightData(Game::Vector3(.5, .5, .5));
+	
+	LightData lData;
+	lData.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
+	lData.direction = Game::normalize(Game::Vector3(-1.,-1.,0.));
+	lData.intensity = Game::Vector3(1., 1., 1.);
+	lData.fallEnd = 10.f;
+	prp->BindLightData(&lData);
+
 	return true;
 }
+
 float r = 0.;
 void Application::update() {
-	r += 1e-2;
-
-	boxConstantBufferPtr->world = Game::PackTransfrom(Game::Vector3(0., 0., 9), Game::Vector3(r, 0., 0.), Game::Vector3(1., 1., 1.));
-	boxConstantBufferPtr->transInvWorld = boxConstantBufferPtr->world.R();
-	boxConstantBufferPtr->world = boxConstantBufferPtr->world.T();
-
-	gGraphic.BindShader(shader);
-	gGraphic.BindMainCameraPass();
-	gGraphic.BindConstantBuffer(boxBuffer->GetBuffer(), 0);
-	gGraphic.Draw(box->GetVBV(), 0, box->GetVertexNum());
-
+	r += 90. * gTimer.DeltaTime();
 
 	for (int x = 0; x != 10; x++) {
 		for (int y = 0; y != 10; y++) {
@@ -85,9 +82,10 @@ void Application::update() {
 		}
 	}
 
-	srp->DrawSprite(100, data, spriteID);
+	srp->DrawSprite(50, data, spriteID);
+	srp->DrawSpriteTransparent(50, data + 50, spriteID);
+
+	prp->DrawObject(pMesh->GetVBV(), 0, pMesh->GetVertexNum(), pid);
 }
 
-void Application::finalize() {
-	box.release();
-}
+void Application::finalize() {}

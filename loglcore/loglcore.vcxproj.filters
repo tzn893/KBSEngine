@@ -67,6 +67,9 @@
     <ClCompile Include="SpriteRenderPass.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="PhongRenderPass.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -142,6 +145,12 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="SpriteRenderPass.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="PhongRenderPass.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderDataStruct.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

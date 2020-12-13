@@ -17,6 +17,8 @@ enum RENDER_PASS_LAYER {
 class RenderPass {
 public:
 	virtual size_t GetPriority() = 0;
+
+	virtual void   PreProcess() {}
 	virtual bool   Initialize(UploadBatch* batch = nullptr) = 0;
 	virtual void   Render(Graphic* graphic,RENDER_PASS_LAYER layer) = 0;
 	virtual void   PostProcess(ID3D12Resource* renderTarget) {}

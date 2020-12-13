@@ -185,7 +185,7 @@ bool Graphic::createShaderAndRootSignatures() {
 	WithoutLightPso.SetRenderTargetFormat(mBackBufferFormat);
 	WithoutLightPso.SetRootSignature(&Default3DRootSigWithoutLight);
 	if (useMass) {
-		WithoutLightPso.SetSampleDesc(4, 1);
+		WithoutLightPso.SetSampleDesc(4, massQuality - 1);
 	}
 	else {
 		WithoutLightPso.SetSampleDesc(1, 0);
@@ -264,7 +264,7 @@ bool Graphic::createSpriteRenderingPipeline() {
 }
 */
 
-bool Graphic::initialize(HWND winHnd, size_t width, size_t height) {
+bool Graphic::initialize(HWND winHnd, size_t width, size_t height){
 #ifdef _DEBUG
 	{
 		ComPtr<ID3D12Debug> debug;
@@ -282,14 +282,10 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height) {
 		OUTPUT_DEBUG_STRING("ERROR : fail to create d3d dxgi factory\n");
 		return false;
 	}
-
-	hr = D3D12CreateDevice(nullptr,
-		D3D_FEATURE_LEVEL_12_0,
-		IID_PPV_ARGS(&mDevice));
-
-	if (FAILED(hr)) {
-		OUTPUT_DEBUG_STRING("ERROR : fail to create device");
+	if (!createDevice()) {
+		OUTPUT_DEBUG_STRING("ERROR : fail to create device \n");
 		return false;
+
 	}
 
 	if(!createCommandObject()){
@@ -334,27 +330,12 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height) {
 
 	mainCamera.initialize(45.,(float)width / (float)height,
 		0.1,1000.,Game::Vector3(0.,0.,0.),Game::Vector3(0.,0.,0.));
-	size_t cameraBufferSize = sizeof(CameraPassBufferData);
-	cameraBufferSize = (cameraBufferSize + 255) & (~255);
-	hr = mDevice->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Buffer(cameraBufferSize),
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&cameraPassBuffer)
-	);
-	if (FAILED(hr)) {
-		OUTPUT_DEBUG_STRING("ERROR : fail to create main camera pass for graphic\n");
-		return false;
-	}
-	void* ptr;
-	cameraPassBuffer->Map(0, nullptr, &ptr);
-	cameraPassBufferData = reinterpret_cast<CameraPassBufferData*>(ptr);
+	
+	cameraPassData = std::make_unique<ConstantBuffer<CameraPass>>(mDevice.Get());
 
-	cameraPassBufferData->cameraPos = mainCamera.getPosition();
-	cameraPassBufferData->view = mainCamera.getViewMat().T();
-	cameraPassBufferData->perspect = mainCamera.getPerspectMat().T();
+	cameraPassData->GetBufferPtr()->cameraPos = mainCamera.getPosition();
+	cameraPassData->GetBufferPtr()->viewMat = mainCamera.getViewMat().T();
+	cameraPassData->GetBufferPtr()->perspectMat = mainCamera.getPerspectMat().T();
 
 	viewPort.Width = width;
 	viewPort.Height = height;
@@ -370,6 +351,61 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height) {
 
 	state = READY;
 
+	return true;
+}
+
+static size_t ScoreAdapter(IDXGIAdapter* adapter) {
+	DXGI_ADAPTER_DESC adaDesc;
+	adapter->GetDesc(&adaDesc);
+	//À¬»øÎ¢Èíguna
+	if (std::wstring(adaDesc.Description) == L"Microsoft Basic Render Driver") {
+		return 0;
+	}
+	//memory is justice
+	return adaDesc.DedicatedSystemMemory + adaDesc.SharedSystemMemory + adaDesc.DedicatedVideoMemory;
+}
+
+bool Graphic::createDevice() {
+
+	ComPtr<IDXGIAdapter> adapter,targetAda = nullptr;
+	size_t iadapter = 0,score = 0;
+	while ( mDxgiFactory->EnumAdapters(iadapter, &adapter) != DXGI_ERROR_NOT_FOUND) {
+		size_t mScore = ScoreAdapter(adapter.Get());
+		if (mScore > score) {
+			targetAda = adapter;
+			score = mScore;
+		}
+		iadapter++;
+	}
+
+	HRESULT hr;
+
+	if (targetAda == nullptr) {
+		hr = D3D12CreateDevice(nullptr,
+			D3D_FEATURE_LEVEL_12_0,
+			IID_PPV_ARGS(&mDevice));
+	}
+	else {
+		hr = D3D12CreateDevice(targetAda.Get(),
+			D3D_FEATURE_LEVEL_12_0,
+			IID_PPV_ARGS(&mDevice));
+	}
+
+	if (FAILED(hr)) {
+		return false;
+	}
+
+	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
+	msQualityLevels.Format = mBackBufferFormat;
+	msQualityLevels.SampleCount = 4;
+	msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+	msQualityLevels.NumQualityLevels = 0;
+	mDevice->CheckFeatureSupport(
+		D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
+		&msQualityLevels,
+		sizeof(msQualityLevels));
+
+	massQuality = msQualityLevels.NumQualityLevels;
 	return true;
 }
 
@@ -455,8 +491,7 @@ void Graphic::end() {
 void Graphic::finalize() {
 	FlushCommandQueue();
 
-	cameraPassBuffer->Unmap(0,nullptr);
-	cameraPassBuffer = nullptr;
+	cameraPassData.release();
 
 	mRootSignatures.clear();
 	mPsos.clear();
@@ -488,6 +523,28 @@ void Graphic::BindShader(Shader* shader) {
 	mDrawCmdList->SetGraphicsRootSignature(rootSig);
 }
 
+bool Graphic::BindPSOAndRootSignature(const wchar_t* psoName,const wchar_t* rootSigName) {
+	if (state != BEGIN_COMMAND_RECORDING) return false;
+	ID3D12PipelineState* pso;
+	if (auto query = mPsos.find(psoName);query == mPsos.end()) {
+		return false;
+	}
+	else {
+		pso = query->second.Get();
+	}
+	ID3D12RootSignature* rootSig;
+	if (auto query = mRootSignatures.find(rootSigName);query != mRootSignatures.end()) {
+		rootSig = query->second.Get();
+	}
+	else {
+		return false;
+	}
+
+	mDrawCmdList->SetPipelineState(pso);
+	mDrawCmdList->SetGraphicsRootSignature(rootSig);
+	return true;
+}
+
 void Graphic::BindConstantBuffer(ID3D12Resource* res, size_t slot,size_t offset) {
 	if (state != BEGIN_COMMAND_RECORDING) return;
 	
@@ -514,13 +571,15 @@ void Graphic::BindShaderResource(D3D12_GPU_VIRTUAL_ADDRESS vaddr, size_t slot) {
 
 void Graphic::BindMainCameraPass(size_t slot) {
 	if (state == BEGIN_COMMAND_RECORDING) {
-		cameraPassBufferData->cameraPos = mainCamera.getPosition();
-		cameraPassBufferData->view = mainCamera.getViewMat().T();
-		cameraPassBufferData->perspect = mainCamera.getPerspectMat().T();
+		cameraPassData->GetBufferPtr()->cameraPos = mainCamera.getPosition();
+		cameraPassData->GetBufferPtr()->viewMat = mainCamera.getViewMat().T();
+		cameraPassData->GetBufferPtr()->perspectMat = mainCamera.getPerspectMat().T();
+
+		CameraPass* data = cameraPassData->GetBufferPtr();
 
 		if (slot > 16) { return; }
 
-		mDrawCmdList->SetGraphicsRootConstantBufferView(1, cameraPassBuffer->GetGPUVirtualAddress());
+		mDrawCmdList->SetGraphicsRootConstantBufferView(1, cameraPassData->GetADDR());
 	}
 }
 
@@ -649,7 +708,7 @@ void Graphic::BindDescriptorHeap(ID3D12DescriptorHeap* const* heap,size_t heap_n
 	mDrawCmdList->SetDescriptorHeaps(heap_num, heap);
 }
 
-bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO) {
+bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO,const wchar_t* name) {
 	ID3D12PipelineState* mPSO;
 	auto iter = mRootSignatures.find(shader->rootSignatureName);
 	if (iter == mRootSignatures.end()) {
@@ -657,7 +716,7 @@ bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO) {
 	}
 	PSO->SetRootSignature(iter->second.Get());
 	if (useMass) {
-		PSO->SetSampleDesc(4, 1);
+		PSO->SetSampleDesc(4, massQuality);
 	}
 	else {
 		PSO->SetSampleDesc(1, 0);
@@ -674,7 +733,10 @@ bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO) {
 	}
 
 	mPSO = PSO->GetPSO();
-	mPsos[shader->name] = mPSO;
+	if (name == nullptr)
+		mPsos[shader->name] = mPSO;
+	else
+		mPsos[name] = mPSO;
 	return true;
 }
 
@@ -718,7 +780,8 @@ bool Graphic::createRenderPasses() {
 	UploadBatch mbacth;
 
 	spriteRenderPass = std::make_unique<SpriteRenderPass>();
+	phongRenderPass = std::make_unique<PhongRenderPass>();
 	
-	RenderPass* rpList[] = { spriteRenderPass.get() };
+	RenderPass* rpList[] = { spriteRenderPass.get(),phongRenderPass.get() };
 	return RegisterRenderPasses(rpList, _countof(rpList));
 }

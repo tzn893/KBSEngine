@@ -25,11 +25,27 @@ public:
 	virtual bool   Initialize(UploadBatch* batch)  override;
 	virtual void   Render(Graphic* graphic,RENDER_PASS_LAYER layer)      override;
 	virtual void   finalize()    override;
+	virtual void   PostProcess(ID3D12Resource* renderTarget) override;
+	
 
 	SpriteID RegisterTexture(Texture* tex,D3D12_SHADER_RESOURCE_VIEW_DESC* srv = nullptr);
 	//all the sprites's color's alpha value will be ignored on this pipeline
 	void     DrawSprite(size_t num,SpriteData* data,SpriteID sprite);
 	void     DrawSpriteTransparent(size_t num, SpriteData* data, SpriteID sprite);
+
+	inline void SetViewCenter(float y, float x = -1.) {
+		if (x < 0) {
+			viewCenter.x = viewCenter.x / viewCenter.y * y;
+		}
+		viewCenter.y = y;
+		UpdateViewConstant();
+	}
+
+	inline void	SetViewScale(const Game::Vector2& vec) { SetViewScale(vec.x,vec.y); }
+	inline void SetViewScale(float x, float y) {
+		viewScale.x = x, viewScale.y = y;
+		UpdateViewConstant();
+	}
 private:
 	void     UpdateViewConstant();
 	struct SpriteGroup {

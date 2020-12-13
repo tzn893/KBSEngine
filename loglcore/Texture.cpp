@@ -8,6 +8,7 @@ static size_t  getFormatElementSize(TEXTURE_FORMAT format) {
 	case TEXTURE_FORMAT_RGBA:
 		return 4;
 	}
+	return 0;
 }
 
 static DXGI_FORMAT getDXGIFormatFromTextureFormat(TEXTURE_FORMAT format) {
@@ -17,6 +18,7 @@ static DXGI_FORMAT getDXGIFormatFromTextureFormat(TEXTURE_FORMAT format) {
 	case TEXTURE_FORMAT_RGBA:
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
 	}
+	return DXGI_FORMAT(0);
 }
 
 static D3D12_RESOURCE_FLAGS getResourceFlagFromTextureFlag(TEXTURE_FLAG flag) {
@@ -166,6 +168,7 @@ static D3D12_SRV_DIMENSION GetMostPossibleDimension(TEXTURE_TYPE type) {
 	case TEXTURE_TYPE_2D:
 		return D3D12_SRV_DIMENSION_TEXTURE2D;
 	}
+	return D3D12_SRV_DIMENSION(0);
 }
 
 void Texture::CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOURCE_VIEW_DESC* srv) {

@@ -9,6 +9,7 @@
 #include "../loglcore/graphic.h"
 #include "Application.h"
 #include "InputBuffer.h"
+#include "Timer.h"
 
 #define MAX_LOADSTRING 100
 
@@ -58,6 +59,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             TranslateMessage(&msg);
             DispatchMessage(&msg);
 		}else{
+			gTimer.tick();
+
 			gGraphic.begin();
 			gApp.update();
 			gGraphic.end();
@@ -124,6 +127,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		return FALSE;
 	}
 	if (!gApp.initialize()) {
+		return FALSE;
+	}
+	if (!gTimer.initialize()) {
 		return FALSE;
 	}
 	gInput.initialize();

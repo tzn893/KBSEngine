@@ -66,4 +66,5 @@ ID3D12DescriptorHeap* DescriptorHeap::GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) {
 	case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
 		return mHeaps[M_DESCRIPTOR_HEAP_TYPE_RTV].Get();
 	}
+	return nullptr;
 }

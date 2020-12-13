@@ -15,7 +15,8 @@
 #include "PipelineStateObject.h"
 
 #include "SpriteRenderPass.h"
-
+#include "PhongRenderPass.h"
+#include "ShaderDataStruct.h"
 
 constexpr int Graphic_mBackBufferNum = 3;
 
@@ -33,6 +34,8 @@ public:
 	ID3D12CommandQueue* GetCommandQueue() { return mCommandQueue.Get(); }
 
 	void BindShader(Shader* shader);
+	bool BindPSOAndRootSignature(const wchar_t* psoName,const wchar_t* rootSignatureName);
+	
 	void BindConstantBuffer(ID3D12Resource* res,size_t slot,size_t offset = 0);
 	void BindShaderResource(ID3D12Resource* res,size_t slot,size_t offset = 0);
 	void BindConstantBuffer(D3D12_GPU_VIRTUAL_ADDRESS vaddr, size_t slot);
@@ -50,7 +53,7 @@ public:
 	void DrawInstance(D3D12_VERTEX_BUFFER_VIEW* vbv,D3D12_INDEX_BUFFER_VIEW* ibv,size_t start,size_t num,size_t instanceNum,D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	bool CreateRootSignature(std::wstring name,Game::RootSignature* rootSig);
-	bool CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* pso);
+	bool CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* pso,const wchar_t* name = nullptr);
 
 	Camera* GetMainCamera() { return &mainCamera; }
 	float   GetHeightWidthRatio() { return (float)mWinWidth / (float)mWinHeight; }
@@ -59,6 +62,9 @@ public:
 	RPType* GetRenderPass() {
 		if constexpr (std::is_same<RPType, SpriteRenderPass>::value) {
 			return spriteRenderPass.get();
+		}
+		else if constexpr(std::is_same<RPType,PhongRenderPass>::value){
+			return phongRenderPass.get();
 		}
 		else {
 			return nullptr;
@@ -77,7 +83,7 @@ private:
 	bool createSwapChain();
 	bool createRTV_DSV();
 	bool createShaderAndRootSignatures();
-	//bool createSpriteRenderingPipeline();
+	bool createDevice();
 
 	bool createRenderPasses();
 
@@ -125,16 +131,12 @@ private:
 	std::map<std::wstring, ComPtr<ID3D12PipelineState>> mPsos;
 
 	Camera mainCamera;
-	ComPtr<ID3D12Resource> cameraPassBuffer;
-	struct CameraPassBufferData{
-		Game::Mat4x4 view;
-		Game::Mat4x4 perspect;
-		Game::Vector3 cameraPos;
-	}* cameraPassBufferData;
+	std::unique_ptr<ConstantBuffer<CameraPass>> cameraPassData;
 
 	//map is a BST.So we can use it as a iterable priority queue
 	std::map<size_t, std::vector<RenderPass*>> RPQueue;
 	std::unique_ptr<SpriteRenderPass> spriteRenderPass;
+	std::unique_ptr<PhongRenderPass>  phongRenderPass;
 };
 
 inline Graphic gGraphic;
