@@ -5,8 +5,15 @@
 
 #include "ConstantBuffer.h"
 #include "ShaderDataStruct.h"
+#include "DescriptorAllocator.h"
+#include "Texture.h"
 
 using PhongObjectID = size_t;
+
+struct PhongMaterialTexture {
+	Texture* diffuseMap;
+	Texture* normalMap;
+};
 
 class PhongRenderPass : public RenderPass {
 public:
@@ -21,17 +28,20 @@ public:
 	void		   BindAmbientLightData(Game::Vector3 color);
 	
 	PhongObjectID  AllocateObjectPass();
-	void		   DeallocateObjectPass(PhongObjectID objId);
+	void		   DeallocateObjectPass(PhongObjectID& objId);
 
 	ObjectPass*    GetObjectPass(PhongObjectID id);
 
 	void		   DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv,size_t start,size_t num,
-							PhongObjectID id);
+							PhongObjectID id,PhongMaterialTexture* tex = nullptr);
 	void		   DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv,D3D12_INDEX_BUFFER_VIEW* ibv,
-							size_t start,size_t num,PhongObjectID id);
+							size_t start,size_t num,PhongObjectID id,PhongMaterialTexture* tex = nullptr);
 private:
 	std::wstring psoName = L"Phong";
 	std::wstring rootSigName = L"Phong";
+
+	std::wstring texPsoName = L"PhongTex";
+	std::wstring texRootSigName = L"PhongTex";
 
 	std::unique_ptr<ConstantBuffer<LightPass>> lightPass;
 	std::unique_ptr<ConstantBuffer<ObjectPass>> objectPass;
@@ -46,7 +56,13 @@ private:
 		size_t start;
 		size_t num;
 		PhongObjectID objectID;
+
+		D3D12_GPU_DESCRIPTOR_HANDLE diffuseMap;
+		D3D12_GPU_DESCRIPTOR_HANDLE normalMap;
 	};
 
 	std::vector<ObjectElement> objQueue;
+	std::vector<ObjectElement> objTexQueue;
+	std::unique_ptr<DescriptorHeap> mHeap;
+
 };

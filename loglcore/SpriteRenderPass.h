@@ -49,7 +49,8 @@ public:
 private:
 	void     UpdateViewConstant();
 	struct SpriteGroup {
-		Texture* texture;
+		//Texture* texture;
+		D3D12_GPU_DESCRIPTOR_HANDLE sprite;
 		size_t   startInstance;
 		size_t   instanceNum;
 	};
@@ -65,6 +66,11 @@ private:
 		Game::Mat4x4 view;
 	};
 
+	struct RegisteredTexture {
+		Texture* tex;
+		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+	};
+
 	size_t instanceBufferSize, allocatedBufferSize;
 	std::unique_ptr<ConstantBuffer<SpriteInstanceConstant>> spriteInstances;
 	
@@ -73,7 +79,7 @@ private:
 	Game::Vector2 viewScale;
 
 	std::unique_ptr<DescriptorHeap>  heap;
-	std::vector<Texture*> registedTextures;
+	std::vector<RegisteredTexture> registedTextures;
 
 	std::vector<SpriteGroup> renderGroupOpaque;
 	std::vector<SpriteGroup> renderGroupTransparent;

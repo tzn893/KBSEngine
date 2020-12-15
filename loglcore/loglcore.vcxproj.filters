@@ -43,9 +43,6 @@
     <ClCompile Include="Shader.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Mesh.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="CopyBatch.cpp">
       <Filter>Core</Filter>
     </ClCompile>

@@ -45,7 +45,7 @@ ManagedTexture* TextureManager::loadTexture(const wchar_t* path,const wchar_t* n
 	}
 
 	//check the avaliable extension names
-	if (extName == L".png" || extName == L".bmp" || extName == L".jpeg" ||
+	if (extName == L".png" || extName == L".bmp" || extName == L".jpg" ||
 		extName == L".hdr" || extName == L".tga") {
 		return loadTextureBySTB(path,name,filp_vertically,batch);
 	}

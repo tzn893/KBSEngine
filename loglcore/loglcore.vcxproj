@@ -25,7 +25,6 @@
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="graphic.cpp" />
     <ClCompile Include="Matrix.cpp" />
-    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="PhongRenderPass.cpp" />
     <ClCompile Include="PipelineStateObject.cpp" />
     <ClCompile Include="RootSignature.cpp" />

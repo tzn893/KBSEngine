@@ -1,3 +1,5 @@
+#ifndef _LIGHT_PASS_
+#define _LIGHT_PASS_
 
 #ifndef LIGHT_PASS_REGISTER
 #define LIGHT_PASS_REGISTER b2
@@ -28,3 +30,5 @@ cbuffer LightPass : register( LIGHT_PASS_REGISTER ){
     float4 ambient;
     Light lights[MAX_LIGHT_STRUCT_NUM];
 };
+
+#endif //_LIGHT_PASS_

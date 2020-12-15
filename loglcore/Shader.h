@@ -37,12 +37,11 @@ public:
 			const wchar_t* name = nullptr,const D3D_SHADER_MACRO* macros = nullptr);
 
 	Shader* getShaderByName(const wchar_t* name);
-	Shader* getShaderByPath(const wchar_t* path);
-	~ShaderManager() { shadersByName.clear(), shaders.clear(); }
+	~ShaderManager() { shadersByName.clear(); }
 private:
 
-	std::map<std::wstring, std::unique_ptr<Shader>> shaders;
-	std::map<std::wstring, Shader*> shadersByName;
+	std::map<std::wstring, std::unique_ptr<Shader>> shadersByName;
+	//std::map<std::wstring, Shader*> shadersByName;
 	static const char* shaderTargets[];
 };
 

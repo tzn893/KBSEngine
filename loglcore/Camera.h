@@ -46,6 +46,12 @@ public:
 	Game::Mat4x4 getViewMat() { return view; }
 	Game::Mat4x4 getPerspectMat() { return perspect; }
 
+	void SetTransform(Game::Mat4x4 trans) {
+		Game::Vector3 trash;
+		Game::UnpackTransfrom(trans, Position, Rotation, trash);
+		view = trans.R();
+	}
+
 private:
 	void updateView() {
 		view = Game::PackTransfrom(this->Position, this->Rotation, Game::Vector3(1., 1., 1.));

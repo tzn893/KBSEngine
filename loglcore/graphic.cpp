@@ -696,8 +696,6 @@ void Graphic::BindDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE handle,size_t slo
 	if (state != BEGIN_COMMAND_RECORDING) {
 		return;
 	}
-
-	if (slot >= 16) return;
 	mDrawCmdList->SetGraphicsRootDescriptorTable(slot, handle);
 }
 
@@ -784,4 +782,114 @@ bool Graphic::createRenderPasses() {
 	
 	RenderPass* rpList[] = { spriteRenderPass.get(),phongRenderPass.get() };
 	return RegisterRenderPasses(rpList, _countof(rpList));
+}
+
+void Graphic::ResourceTransition(ID3D12Resource* resource,D3D12_RESOURCE_STATES initState,D3D12_RESOURCE_STATES afterState) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+
+	mDrawCmdList->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			resource,
+			initState,
+			afterState
+		)
+	);
+}
+
+void Graphic::ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+
+	mDrawCmdList->CopyResource(Dest, Source);
+}
+
+void Graphic::ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source,
+	D3D12_RESOURCE_STATES initDestState, 
+	D3D12_RESOURCE_STATES initSourceState, 
+	D3D12_RESOURCE_STATES destAfterState,
+	D3D12_RESOURCE_STATES sourceAfterState) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+
+	if (initDestState != D3D12_RESOURCE_STATE_COPY_DEST) {
+		mDrawCmdList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				Dest,
+				initDestState,
+				D3D12_RESOURCE_STATE_COPY_DEST
+			)
+		);
+	}
+
+	if (initSourceState != D3D12_RESOURCE_STATE_COPY_SOURCE) {
+		mDrawCmdList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				Source,
+				initSourceState,
+				D3D12_RESOURCE_STATE_COPY_SOURCE
+			)
+		);
+	}
+
+	mDrawCmdList->CopyResource(Dest, Source);
+
+	if (destAfterState != D3D12_RESOURCE_STATE_COPY_DEST) {
+		mDrawCmdList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				Dest, 
+				D3D12_RESOURCE_STATE_COPY_DEST,
+				destAfterState
+			)
+		);
+	}
+
+	if (sourceAfterState != D3D12_RESOURCE_STATE_COPY_DEST) {
+		mDrawCmdList->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+				Dest,
+				D3D12_RESOURCE_STATE_COPY_DEST,
+				sourceAfterState
+			)
+		);
+	}
+}
+
+
+void Graphic::BindCurrentBackBufferAsRenderTarget(bool clear, float* clearValue){
+	if (state != BEGIN_COMMAND_RECORDING) return;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtv(mBackBufferRTVHeap->GetCPUDescriptorHandleForHeapStart());
+	rtv.Offset(mCurrBackBuffer, mDescriptorHandleSizeRTV);
+	D3D12_CPU_DESCRIPTOR_HANDLE dsv = mBackBufferDSVhHeap->GetCPUDescriptorHandleForHeapStart();
+
+
+	mDrawCmdList->OMSetRenderTargets(1, &rtv, true, &dsv);
+	if (clear) {
+		mDrawCmdList->ClearDepthStencilView(dsv,
+			D3D12_CLEAR_FLAG_STENCIL | D3D12_CLEAR_FLAG_DEPTH,
+			1.f, 0, 0, nullptr);
+		if (clearValue == nullptr) {
+			clearValue = mRTVClearColor;
+		}
+		mDrawCmdList->ClearRenderTargetView(
+			rtv, clearValue, 0, nullptr
+		);
+
+	}
+}
+
+
+void Graphic::BindRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE* rtvHandle,D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle,size_t rtvNum, 
+	bool clear,float* clearValue) {
+	if (state != BEGIN_COMMAND_RECORDING) return;
+
+	mDrawCmdList->OMSetRenderTargets(rtvNum, rtvHandle, true, &dsvHandle);
+	if (clear) {
+		mDrawCmdList->ClearDepthStencilView(dsvHandle,
+			D3D12_CLEAR_FLAG_STENCIL | D3D12_CLEAR_FLAG_DEPTH,
+			1.f, 0, 0, nullptr);
+		if (clearValue == nullptr) {
+			clearValue = mRTVClearColor;
+		}
+		for (size_t i = 0; i != rtvNum;i++) {
+			mDrawCmdList->ClearRenderTargetView(rtvHandle[i], clearValue, 0, nullptr);
+		}
+	}
 }

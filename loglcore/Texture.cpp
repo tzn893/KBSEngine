@@ -162,13 +162,23 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 
 }
 
-
-static D3D12_SRV_DIMENSION GetMostPossibleDimension(TEXTURE_TYPE type) {
-	switch (type) {
-	case TEXTURE_TYPE_2D:
-		return D3D12_SRV_DIMENSION_TEXTURE2D;
+template<typename TARGET>
+static TARGET GetMostPossibleDimension(TEXTURE_TYPE type) {
+	if constexpr (std::is_same<TARGET,D3D12_SRV_DIMENSION>::value) {
+		switch (type) {
+		case TEXTURE_TYPE_2D:
+			return D3D12_SRV_DIMENSION_TEXTURE2D;
+		}
 	}
-	return D3D12_SRV_DIMENSION(0);
+	else if constexpr (std::is_same<TARGET,D3D12_RTV_DIMENSION>::value) {
+		switch (type) {
+		case TEXTURE_TYPE_2D:
+			return D3D12_RTV_DIMENSION_TEXTURE2D;
+		}
+	}
+
+
+	return TARGET(0);
 }
 
 void Texture::CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOURCE_VIEW_DESC* srv) {
@@ -179,7 +189,7 @@ void Texture::CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOUR
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = GetFormat();
-		srvDesc.ViewDimension = GetMostPossibleDimension(type);
+		srvDesc.ViewDimension = GetMostPossibleDimension<D3D12_SRV_DIMENSION>(type);
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = -1;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
@@ -189,12 +199,22 @@ void Texture::CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOUR
 	mSRV = descriptor;
 }
 
-void Texture::CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC uav) {
-	if (!flag & TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS) {
-		return;
+void Texture::CreateRenderTargetView(Descriptor descriptor,D3D12_RENDER_TARGET_VIEW_DESC* rtv) {
+	ID3D12Device* device = gGraphic.GetDevice();
+	if (!(flag & TEXTURE_FLAG_ALLOW_RENDER_TARGET)) {
+		return;//the texture doesn't allowed creating render target view
+	}
+	if (rtv != nullptr) {
+		device->CreateRenderTargetView(mRes.Get(), rtv, descriptor.cpuHandle);
+	}
+	else {
+		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+		rtvDesc.ViewDimension = GetMostPossibleDimension<D3D12_RTV_DIMENSION>(type);
+		rtvDesc.Format = GetFormat();
+		rtvDesc.Texture2D = { 0,0 };
+
+		device->CreateRenderTargetView(mRes.Get(), &rtvDesc, descriptor.cpuHandle);
 	}
 
-	ID3D12Device* device = gGraphic.GetDevice();
-	device->CreateUnorderedAccessView(mRes.Get(), nullptr, &uav, descriptor.cpuHandle);
-	mUAV = descriptor;
+	mRTV = descriptor;
 }

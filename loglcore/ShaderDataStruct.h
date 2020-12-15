@@ -63,3 +63,23 @@ struct ObjectPass{
 	Game::Mat4x4 transInvWorld;
 	Material     material;
 };
+
+
+struct MeshVertex {
+	Game::Vector3 Position;
+	Game::Vector3 Normal;
+	Game::Vector2 TexCoord;
+};
+
+struct MeshVertexNormal {
+	Game::Vector3 Position;
+	Game::Vector3 Normal;
+	Game::Vector2 TexCoord;
+	Game::Vector3 Tangent;
+};
+
+
+template<typename T>
+inline constexpr size_t getVertexStrideByFloat() {
+	return sizeof(T) / 4;
+}

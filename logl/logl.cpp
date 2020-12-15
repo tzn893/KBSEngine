@@ -18,7 +18,7 @@ HINSTANCE hInst;                                // 当前实例
 WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
 
-int height = 600, width = 800;
+int height = 960, width = 1280;
 bool Quit = false;
 // 此代码模块中包含的函数的前向声明:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -117,7 +117,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hInst = hInstance; // 将实例句柄存储在全局变量中
 
 	HWND hWnd = CreateWindowW(szWindowClass, L"Linux 作业", WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME),
-	CW_USEDEFAULT, 0, width, height, nullptr, nullptr, hInstance, nullptr);
+	0,0, width, height, nullptr, nullptr, hInstance, nullptr);
 
 	if (!hWnd)
 	{

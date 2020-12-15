@@ -10,82 +10,156 @@
 
 #include "../loglcore/SpriteRenderPass.h"
 #include "../loglcore/PhongRenderPass.h"
-
 #include "InputBuffer.h"
 #include "Timer.h"
+#include "FPSCamera.h"
 
-SpriteRenderPass* srp;
-SpriteID spriteID;
+std::unique_ptr<StaticMesh<MeshVertexNormal>> box;
+
+struct BoxConstantBuffer {
+	Game::Mat4x4 world;
+	Game::Mat4x4 transInvWorld;
+};
+
 
 SpriteData data[100];
+SpriteRenderPass* srp;
+SpriteID spid;
 
+PhongObjectID pid[3];
 PhongRenderPass* prp;
-PhongObjectID    pid;
-std::unique_ptr<DynamicMesh> pMesh;
+
+PhongMaterialTexture mat;
+
+FPSCamera fpsCamera;
 
 void upload(){
-	for (int x = 0; x != 10; x++) {
-		for (int y = 0; y != 10; y++) {
-			data[x + y * 10].Color = Game::Vector4(x / 10., y / 10., 1., .5);
-			data[x + y * 10].Scale = Game::Vector2(.1, .1);
-			data[x + y * 10].Position = Game::Vector3((x - 5)/ 11., (y - 5)/ 11., .05);
-		}
-	}
+	//auto[vertices, indices] = GeometryGenerator::Plane(5., 5., 64, 64);
+	auto vertices = GeometryGenerator::Cube(1., 1., 1.);
+
+	box = std::make_unique<StaticMesh<MeshVertexNormal>>(
+		gGraphic.GetDevice(),
+		//indices.size(), indices.data(),
+		vertices.size() / getVertexStrideByFloat<MeshVertexNormal>(), reinterpret_cast<MeshVertexNormal*>(vertices.data())
+	);
+
+
+	prp = gGraphic.GetRenderPass<PhongRenderPass>();
+	pid[0] = prp->AllocateObjectPass();
+	pid[1] = prp->AllocateObjectPass();
+	pid[2] = prp->AllocateObjectPass();
+
+	ObjectPass* objPass = prp->GetObjectPass(pid[0]);
+	objPass->material.diffuse = Game::Vector4(1.,1.,1.,1.);
+	objPass->material.FresnelR0 = Game::Vector4(.1, .1, .1);
+	objPass->material.Roughness = .8;
+
+	objPass = prp->GetObjectPass(pid[1]);
+	objPass->material.diffuse = Game::Vector4(1., .75, .75, 1.);
+	objPass->material.FresnelR0 = Game::Vector4(.1, .1, .1);
+	objPass->material.Roughness = .8;
+
+	objPass = prp->GetObjectPass(pid[2]);
+	objPass->material.diffuse = Game::Vector4(1., .75, .75, 1.);
+	objPass->material.FresnelR0 = Game::Vector4(.1, .1, .1);
+	objPass->material.Roughness = .8;
+
+	prp->BindAmbientLightData(Game::Vector3(.1, .1, .1));
+	LightData light;
+	light.fallStart = 0.;
+	light.fallEnd = 20.;
+	light.intensity = Game::Vector3(1.,1.,1.);
+	light.direction = Game::normalize(Game::Vector3(0., 0.,1.));
+	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
+	prp->BindLightData(&light);
+
+	srp = gGraphic.GetRenderPass<SpriteRenderPass>();
 }
 
 bool Application::initialize() {
 	upload();
-	srp = gGraphic.GetRenderPass<SpriteRenderPass>();
-	if (srp == nullptr) {
-		return false;
-	}
-
-	Texture* tex = gTextureManager.loadTexture(L"../asserts/awesomeface.png", L"face");
-	spriteID = srp->RegisterTexture(tex);
-
-	prp = gGraphic.GetRenderPass<PhongRenderPass>();
-	if (prp == nullptr) {
-		return false;
-	}
-
-	pid = prp->AllocateObjectPass();
-	std::vector<float> varray = GeometryGenerator::Cube(.5, .5, .5);
-	pMesh = std::make_unique<DynamicMesh>(varray.size() * sizeof(float) / sizeof(MeshVertex),reinterpret_cast<MeshVertex*>(varray.data()));
-
-	auto objPass = prp->GetObjectPass(pid);
-	objPass->world = Game::Mat4x4::I();
-	objPass->transInvWorld = Game::Mat4x4::I();
-	objPass->material.diffuse = Game::ConstColor::White;
-	objPass->material.FresnelR0 = Game::Vector3(.1, .1, .1);
-	objPass->material.Roughness = .4;
 	
-	prp->BindAmbientLightData(Game::Vector3(.5, .5, .5));
+	Texture* box = gTextureManager.loadTexture(L"../asserts/brickwall.jpg", L"brickwall");
+	box->CreateShaderResourceView(Descriptor(gDescriptorAllocator.AllocateDescriptor()));
+	Texture* boxNormal = gTextureManager.loadTexture(L"../asserts/brickwall_normal.jpg", L"brickwall_normal");
+	boxNormal->CreateShaderResourceView(Descriptor(gDescriptorAllocator.AllocateDescriptor()));
+	mat.diffuseMap = box;
+	mat.normalMap = boxNormal;
+
+	fpsCamera.attach(gGraphic.GetMainCamera());
+
+	Texture* face = gTextureManager.loadTexture(L"../asserts/awesomeface.png",L"face");
+	spid = srp->RegisterTexture(face);
 	
-	LightData lData;
-	lData.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
-	lData.direction = Game::normalize(Game::Vector3(-1.,-1.,0.));
-	lData.intensity = Game::Vector3(1., 1., 1.);
-	lData.fallEnd = 10.f;
-	prp->BindLightData(&lData);
+	data[0].Color = Game::Vector4(1.,1.,1.,.5);
+	data[0].Position = Game::Vector3(0., 0., .5);
+	data[0].rotation = 0.;
+	data[0].Scale = Game::Vector2(.3,.3);
 
 	return true;
 }
-
-float r = 0.;
+float r = 0.,b = 0.;
+Game::Vector2 pos;
 void Application::update() {
-	r += 90. * gTimer.DeltaTime();
-
-	for (int x = 0; x != 10; x++) {
-		for (int y = 0; y != 10; y++) {
-			float r1 = r * sinf(x * 17 + y * 7) * 2.;
-			data[x + y * 10].rotation = r1;
-		}
+	if (gInput.KeyHold(InputBuffer::I)) {
+		r += gTimer.DeltaTime() * 90.;
+	}
+	else if (gInput.KeyHold(InputBuffer::K)) {
+		r -= gTimer.DeltaTime() * 90.;
+	}
+	if (gInput.KeyHold(InputBuffer::J)) {
+		b -= gTimer.DeltaTime() * 90.;
+	}
+	else if (gInput.KeyHold(InputBuffer::L)) {
+		b += gTimer.DeltaTime() * 90.;
 	}
 
-	srp->DrawSprite(50, data, spriteID);
-	srp->DrawSpriteTransparent(50, data + 50, spriteID);
+	if (gInput.KeyHold(InputBuffer::D)) {
+		fpsCamera.strafe(gTimer.DeltaTime() * 2.);
+	}
+	else if (gInput.KeyHold(InputBuffer::A)) {
+		fpsCamera.strafe(-gTimer.DeltaTime() * 2.);
+	}
+	if (gInput.KeyHold(InputBuffer::W)) {
+		fpsCamera.walk(gTimer.DeltaTime() * 2.);
+	}
+	else if (gInput.KeyHold(InputBuffer::S)) {
+		fpsCamera.walk(-gTimer.DeltaTime() * 2.);
+	}
 
-	prp->DrawObject(pMesh->GetVBV(), 0, pMesh->GetVertexNum(), pid);
+	if (gInput.KeyDown(InputBuffer::MOUSE_LEFT)) {
+		pos = gInput.MousePosition();
+	}else if (gInput.KeyHold(InputBuffer::MOUSE_LEFT)) {
+		Game::Vector2 deltaPos = gInput.MousePosition() - pos;
+		float speed = 10.;
+		fpsCamera.rotateX(deltaPos.x * gTimer.DeltaTime() * speed);
+		fpsCamera.rotateY(deltaPos.y * gTimer.DeltaTime() * speed);
+		pos = gInput.MousePosition();
+	}
+	
+	ObjectPass* objPass = prp->GetObjectPass(pid[0]);
+	objPass->world = Game::PackTransfrom(Game::Vector3(-3., 0.,10.), Game::Vector3(r, b, 0.), Game::Vector3(1., 1., 1.));
+	objPass->transInvWorld = objPass->world.R();
+	objPass->world = objPass->world.T();
+
+	objPass = prp->GetObjectPass(pid[1]);
+	objPass->world = Game::PackTransfrom(Game::Vector3(3., 0., 10.), Game::Vector3(-r, -b, 0.), Game::Vector3(1., 1., 1.));
+	objPass->transInvWorld = objPass->world.R();
+	objPass->world = objPass->world.T();
+
+	objPass = prp->GetObjectPass(pid[2]);
+	objPass->world = Game::PackTransfrom(Game::Vector3(0., 0., 10.), Game::Vector3(-r, -b, 0.), Game::Vector3(1., 1., 1.));
+	objPass->transInvWorld = objPass->world.R();
+	objPass->world = objPass->world.T();
+
+
+	prp->DrawObject(box->GetVBV(), 0, box->GetVertexNum(), pid[0], &mat);
+	prp->DrawObject(box->GetVBV(), 0, box->GetVertexNum(), pid[1], &mat);
+	prp->DrawObject(box->GetVBV(), 0, box->GetVertexNum(), pid[2]);
+
+	srp->DrawSpriteTransparent(1, data, spid);
 }
 
-void Application::finalize() {}
+void Application::finalize() {
+	box.release();
+}

@@ -16,10 +16,6 @@ Shader* ShaderManager::loadShader( const wchar_t* path,const char* VS,const char
 		name = name_buffer.c_str();
 	}
 
-	if (Shader* query = getShaderByPath(path); query != nullptr) {
-		return query;
-	}
-
 	if (Shader* query = getShaderByName(name); query != nullptr) {
 		return nullptr;
 	}
@@ -53,10 +49,9 @@ Shader* ShaderManager::loadShader( const wchar_t* path,const char* VS,const char
 	
 	std::unique_ptr<Shader> shader = std::make_unique<Shader>(shaderByteCodeVS.Get(),
 		shaderByteCodePS.Get(), name, path,rootSigName,inputLayout);
-	shadersByName[name] = shader.get();
-	shaders[path] = std::move(shader);
+	shadersByName[name] = std::move(shader);
 
-	return shaders[path].get();
+	return shadersByName[name].get();
 }
 
 
@@ -65,14 +60,5 @@ Shader* ShaderManager::getShaderByName(const wchar_t* name) {
 	if (queryByName == shadersByName.end()) {
 		return nullptr;
 	}
-	return queryByName->second;
-}
-
-
-Shader* ShaderManager::getShaderByPath(const wchar_t* path) {
-	auto queryByPath = shaders.find(path);
-	if (queryByPath == shaders.end()) {
-		return nullptr;
-	}
-	return queryByPath->second.get();
+	return queryByName->second.get();
 }

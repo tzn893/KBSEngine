@@ -140,7 +140,7 @@ void SpriteRenderPass::Render(Graphic* graphic,RENDER_PASS_LAYER layer) {
 
 	for (auto item : *targetGroup) {
 		graphic->BindShaderResource(spriteInstances->GetADDR(item.startInstance),0);
-		graphic->BindDescriptorHandle(item.texture->GetShaderResourceViewGPU(), 2);
+		graphic->BindDescriptorHandle(item.sprite, 2);
 
 		graphic->DrawInstance(&mVbv, 0, 6, item.instanceNum);
 	}
@@ -158,10 +158,15 @@ void SpriteRenderPass::finalize() {
 }
 
 SpriteID SpriteRenderPass::RegisterTexture(Texture* tex, D3D12_SHADER_RESOURCE_VIEW_DESC* srv) {
-	Descriptor desc = heap->Allocate();
-	tex->CreateShaderResourceView(desc, srv);
-	registedTextures.push_back(tex);
-	
+	if (tex->GetShaderResourceViewCPU().ptr == 0) {
+		Descriptor desc = heap->Allocate();
+		tex->CreateShaderResourceView(desc, srv);
+		registedTextures.push_back({tex,desc.gpuHandle});
+	}
+	else {
+		Descriptor desc = heap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, tex->GetShaderResourceViewCPU());
+		registedTextures.push_back({tex,desc.gpuHandle});
+	}
 	return registedTextures.size() - 1;
 }
 
@@ -189,12 +194,10 @@ SpriteRenderPass::SpriteGroup SpriteRenderPass::AllocateGroupConstant(size_t num
 		return group;
 	}
 
-	Texture* tex = registedTextures[sprite];
 
 	group.startInstance = allocatedBufferSize;
 	group.instanceNum = num;
-
-	group.texture = tex;
+	group.sprite = registedTextures[sprite].gpuHandle;
 
 	SpriteInstanceConstant* constant = spriteInstances->GetBufferPtr(group.startInstance);
 	for (size_t i = 0; i != num; i++) {

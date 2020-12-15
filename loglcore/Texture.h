@@ -57,13 +57,10 @@ public:
 		return mSRV.gpuHandle;
 	}
 
-	void CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC uav);
-	D3D12_CPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewCPU() {
-		return mUAV.cpuHandle;
-	}
-	D3D12_GPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewGPU() {
-		return mUAV.gpuHandle;
-	}
+	void CreateRenderTargetView(Descriptor descriptor,D3D12_RENDER_TARGET_VIEW_DESC* rtv = nullptr);
+	D3D12_CPU_DESCRIPTOR_HANDLE GetRenderTargetViewCPU() { return mRTV.cpuHandle; }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetRenderTargetViewGPU() { return mRTV.gpuHandle; }
+
 protected:
 	TEXTURE_TYPE type;
 	TEXTURE_FLAG flag;
@@ -74,5 +71,5 @@ protected:
 	bool isValid;
 
 	Descriptor mSRV;
-	Descriptor mUAV;
+	Descriptor mRTV;
 };

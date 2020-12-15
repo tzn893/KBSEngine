@@ -55,6 +55,16 @@ public:
 	bool CreateRootSignature(std::wstring name,Game::RootSignature* rootSig);
 	bool CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* pso,const wchar_t* name = nullptr);
 
+	void ResourceTransition(ID3D12Resource* resource,D3D12_RESOURCE_STATES before,D3D12_RESOURCE_STATES after);
+	void ResourceCopy(ID3D12Resource* Dest,ID3D12Resource* Source);
+	void ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source, D3D12_RESOURCE_STATES destInitState,
+		D3D12_RESOURCE_STATES sourceInitState,D3D12_RESOURCE_STATES destAfterState,
+		D3D12_RESOURCE_STATES sourceAfterState);
+
+	void BindCurrentBackBufferAsRenderTarget(bool clear = false,float* clearValue = nullptr);
+	void BindRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle,D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle,size_t rtvNum = 1,
+		bool clear = false,float* clearValule = nullptr);
+
 	Camera* GetMainCamera() { return &mainCamera; }
 	float   GetHeightWidthRatio() { return (float)mWinWidth / (float)mWinHeight; }
 
