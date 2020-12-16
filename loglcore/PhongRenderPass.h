@@ -65,4 +65,13 @@ private:
 	std::vector<ObjectElement> objTexQueue;
 	std::unique_ptr<DescriptorHeap> mHeap;
 
+
+	struct ShadowLightPass {
+		Game::Mat4x4 lightView;
+	};
+	std::unique_ptr<Texture> mDepthRTVTex,mDepthDSVTex;
+	std::unique_ptr<ConstantBuffer<ShadowLightPass>> mDepthLightView;
+	static constexpr size_t mainLightIndex = 0;
+	std::wstring shadowPsoName = L"shadowPsoName";
+	std::wstring shadowRootSigName = L"shadowRootSig";
 };

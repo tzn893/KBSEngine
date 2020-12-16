@@ -29,7 +29,7 @@ bool SpriteRenderPass::Initialize(UploadBatch* batch) {
 	Pso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 	
 
-	if (!gGraphic.CreatePipelineStateObject(spriteShader, &Pso,L"SpriteOpaque")) {
+	if (!gGraphic.CreatePipelineStateObjectRP(spriteShader, &Pso,L"SpriteOpaque")) {
 		return false;
 	}
 	
@@ -57,7 +57,7 @@ bool SpriteRenderPass::Initialize(UploadBatch* batch) {
 	dsDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	TPso.SetDepthStencilState(dsDesc);
 
-	if (!gGraphic.CreatePipelineStateObject(spriteShader,&TPso,L"SpriteTransparent")) {
+	if (!gGraphic.CreatePipelineStateObjectRP(spriteShader,&TPso,L"SpriteTransparent")) {
 		return false;
 	}
 

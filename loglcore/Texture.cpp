@@ -7,6 +7,8 @@ static size_t  getFormatElementSize(TEXTURE_FORMAT format) {
 		//return 3;
 	case TEXTURE_FORMAT_RGBA:
 		return 4;
+	case TEXTURE_FORMAT_FLOAT:
+		return 1;
 	}
 	return 0;
 }
@@ -17,6 +19,10 @@ static DXGI_FORMAT getDXGIFormatFromTextureFormat(TEXTURE_FORMAT format) {
 		//return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case TEXTURE_FORMAT_RGBA:
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case TEXTURE_FORMAT_FLOAT:
+		return DXGI_FORMAT_R32_FLOAT;
+	case TEXTURE_FORMAT_DEPTH_STENCIL:
+		return DXGI_FORMAT_D24_UNORM_S8_UINT;
 	}
 	return DXGI_FORMAT(0);
 }
@@ -42,6 +48,8 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 		this->flag = flag;
 
 		this->format = getDXGIFormatFromTextureFormat(format);
+		this->type = TEXTURE_TYPE_2D;
+
 		D3D12_RESOURCE_DESC rDesc;
 		rDesc.Alignment = 0;
 		rDesc.DepthOrArraySize = 1;
@@ -176,6 +184,12 @@ static TARGET GetMostPossibleDimension(TEXTURE_TYPE type) {
 			return D3D12_RTV_DIMENSION_TEXTURE2D;
 		}
 	}
+	else if constexpr (std::is_same<TARGET,D3D12_DSV_DIMENSION>::value) {
+		switch (type) {
+		case TEXTURE_TYPE_2D:
+			return D3D12_DSV_DIMENSION_TEXTURE2D;
+		}
+	}
 
 
 	return TARGET(0);
@@ -211,10 +225,35 @@ void Texture::CreateRenderTargetView(Descriptor descriptor,D3D12_RENDER_TARGET_V
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 		rtvDesc.ViewDimension = GetMostPossibleDimension<D3D12_RTV_DIMENSION>(type);
 		rtvDesc.Format = GetFormat();
-		rtvDesc.Texture2D = { 0,0 };
-
+		switch (type) {
+		case TEXTURE_TYPE_2D:
+			rtvDesc.Texture2D = { 0,0 };
+		}
 		device->CreateRenderTargetView(mRes.Get(), &rtvDesc, descriptor.cpuHandle);
 	}
 
 	mRTV = descriptor;
+}
+
+void Texture::CreateDepthStencilView(Descriptor descriptor,D3D12_DEPTH_STENCIL_VIEW_DESC* dsv) {
+	ID3D12Device* device = gGraphic.GetDevice();
+	if (!(flag & TEXTURE_FLAG_ALLOW_DEPTH_STENCIL)) {
+		return;
+	}
+	if (dsv != nullptr) {
+		device->CreateDepthStencilView(mRes.Get(), dsv, descriptor.cpuHandle);
+	}
+	else {
+		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+		dsvDesc.ViewDimension = GetMostPossibleDimension<D3D12_DSV_DIMENSION>(type);
+		dsvDesc.Format = GetFormat();
+		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+		switch (type) {
+		case TEXTURE_TYPE_2D:
+			dsvDesc.Texture2D.MipSlice = 0;
+		}
+		device->CreateDepthStencilView(mRes.Get(), &dsvDesc, descriptor.cpuHandle);
+	}
+
+	mDSV = descriptor;
 }

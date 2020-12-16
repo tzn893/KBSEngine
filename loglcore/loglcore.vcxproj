@@ -42,6 +42,7 @@
     <ClInclude Include="CopyBatch.h" />
     <ClInclude Include="d3d12x.h" />
     <ClInclude Include="d3dcommon.h" />
+    <ClInclude Include="DeferredRenderPass.h" />
     <ClInclude Include="DescriptorAllocator.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="graphic.h" />

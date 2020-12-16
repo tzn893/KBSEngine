@@ -706,7 +706,7 @@ void Graphic::BindDescriptorHeap(ID3D12DescriptorHeap* const* heap,size_t heap_n
 	mDrawCmdList->SetDescriptorHeaps(heap_num, heap);
 }
 
-bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO,const wchar_t* name) {
+bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO,const wchar_t* name,bool rp) {
 	ID3D12PipelineState* mPSO;
 	auto iter = mRootSignatures.find(shader->rootSignatureName);
 	if (iter == mRootSignatures.end()) {
@@ -719,12 +719,15 @@ bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO,con
 	else {
 		PSO->SetSampleDesc(1, 0);
 	}
-	PSO->SetSampleMask(UINT_MAX);
 	PSO->SetVertexShader(shader->shaderByteCodeVS->GetBufferPointer(), shader->shaderByteSizeVS);
 	PSO->SetPixelShader(shader->shaderByteCodePS->GetBufferPointer(), shader->shaderByteSizePS);
 	PSO->SetInputElementDesc(shader->inputLayout);
-	PSO->SetRenderTargetFormat(mBackBufferFormat);
-	PSO->SetDepthStencilViewFomat(mBackBufferDepthFormat);
+
+	if (rp) {
+		PSO->SetSampleMask(UINT_MAX);
+		PSO->SetRenderTargetFormat(mBackBufferFormat);
+		PSO->SetDepthStencilViewFomat(mBackBufferDepthFormat);
+	}
 
 	if (!PSO->Create(mDevice.Get())) {
 		return false;
@@ -874,7 +877,6 @@ void Graphic::BindCurrentBackBufferAsRenderTarget(bool clear, float* clearValue)
 
 	}
 }
-
 
 void Graphic::BindRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE* rtvHandle,D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle,size_t rtvNum, 
 	bool clear,float* clearValue) {

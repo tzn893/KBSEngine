@@ -8,9 +8,7 @@ struct VertexIn{
     float3 Position : POSITION;
     float3 Normal   : NORMAL;
     float2 Uv       : TEXCOORD0;
-#ifdef ENABLE_DIFFUSE_MAP
     float3 Tangent  : TANGENT;
-#endif
 };
 
 struct VertexOut{
@@ -20,7 +18,7 @@ struct VertexOut{
     float3 WorldPos  : POSITION;
 #ifdef ENABLE_DIFFUSE_MAP
     float3 Tangent   : TANGENT;
-    //float3 BiTangent : TEXCOORD1;
+    float3 BiTangent : TEXCOORD1;
 #endif
 };
 
@@ -40,8 +38,8 @@ VertexOut VS(VertexIn vin,uint id : SV_VERTEXID){
     vout.Uv = vin.Uv;
 
 #ifdef ENABLE_DIFFUSE_MAP
-    vout.Tangent = mul(transInvWorld,vin.Tangent);
-    //vout.BiTangent = cross(vout.Tangent,vout.WorldNorm);
+    vout.Tangent = mul(transInvWorld,float4(vin.Tangent,0.)).xyz;
+    vout.BiTangent = cross(vout.Tangent,vout.WorldNorm);
 #endif
 
     return vout; 
@@ -51,22 +49,16 @@ float3 SampleNormalMap(Texture2D normalMap,SamplerState samp,float2 uv,float3 no
     float3 localNorm = normalMap.Sample(samp,uv).rgb;
     //unpack data
     localNorm = normalize(localNorm * 2. - 1.);
-    return normalize(float3(
-                dot(localNorm,tangent),
-                dot(localNorm,bitan),
-                dot(localNorm,normal)
-            )
-        );
+    return normalize(
+        localNorm.x * tangent + localNorm.y * bitan + localNorm.z * normal
+    );
 }
 
 float4 PS(VertexOut vin) :SV_TARGET{
     float3 normal = normalize(vin.WorldNorm);
 #ifdef ENABLE_DIFFUSE_MAP
-    //the tangent may be interpolated linearly,which means that TBN may not be orthogonal any more
     float3 tangent = normalize(vin.Tangent);
-    tangent = normalize(tangent - dot(tangent,normal));
-    //float3 bitangent = normalize(vin.BiTangent);
-    float3 bitangent = cross(tangent,normal);
+    float3 bitangent = normalize(vin.BiTangent);
     normal = SampleNormalMap(normalMap,defaultSampler,vin.Uv,normal,tangent,bitangent);
 #endif // ENABLE_DIFFUSE_MAP
 
@@ -88,5 +80,6 @@ float4 PS(VertexOut vin) :SV_TARGET{
             result += ComputeDirectionalLight(lights[i],pmat,toEye,worldPos,normal);
         }
     }
+
     return float4(result,1.);
 }

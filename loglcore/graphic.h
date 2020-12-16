@@ -53,7 +53,13 @@ public:
 	void DrawInstance(D3D12_VERTEX_BUFFER_VIEW* vbv,D3D12_INDEX_BUFFER_VIEW* ibv,size_t start,size_t num,size_t instanceNum,D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	bool CreateRootSignature(std::wstring name,Game::RootSignature* rootSig);
-	bool CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* pso,const wchar_t* name = nullptr);
+
+	bool CreatePipelineStateObjectRP(Shader* shader, Game::GraphicPSORP* pso, const wchar_t* name = nullptr) {
+		return CreatePipelineStateObject(shader, pso, name, true);
+	}
+	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name = nullptr) {
+		return CreatePipelineStateObject(shader, pso, name, false);
+	}
 
 	void ResourceTransition(ID3D12Resource* resource,D3D12_RESOURCE_STATES before,D3D12_RESOURCE_STATES after);
 	void ResourceCopy(ID3D12Resource* Dest,ID3D12Resource* Source);
@@ -67,6 +73,9 @@ public:
 
 	Camera* GetMainCamera() { return &mainCamera; }
 	float   GetHeightWidthRatio() { return (float)mWinWidth / (float)mWinHeight; }
+
+	size_t  GetScreenHeight() { return mWinHeight; }
+	size_t  GetScreenWidth()  { return mWinWidth; }
 
 	template<typename RPType>
 	RPType* GetRenderPass() {
@@ -83,6 +92,8 @@ public:
 
 	bool    RegisterRenderPasses(RenderPass** RP,size_t num = 1);
 private:
+
+	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name, bool rp);
 
 	enum GRAPHIC_STATES {
 		BEGIN_COMMAND_RECORDING,

@@ -150,5 +150,8 @@
     <ClInclude Include="ShaderDataStruct.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="DeferredRenderPass.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -164,16 +164,16 @@ std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Plane(fl
 	std::vector<float> vdata(vertexNum * vertexStride);
 	float* varray = vdata.data();
 	
-	for (size_t x = 0; x <= gridu; x++) {
-		for (size_t y = 0; y <= gridv; y++) {
+	for (size_t y = 0; y <= gridv; y++) {
+		for (size_t x = 0; x <= gridu; x++) {
 
 			Game::Vector3 normal   = Game::Vector3(0., 1., 0.);
 			Game::Vector3 tangent  = Game::Vector3(1., 0., 0.);
 			Game::Vector2 Uv       = Game::Vector2(
 				static_cast<float>(x) / static_cast<float>(gridu),
-				static_cast<float>(y) / static_cast<float>(gridu)
+				static_cast<float>(y) / static_cast<float>(gridv)
 			);
-			Game::Vector3 position = Game::Vector3((Uv.x - .5) * width, 0., (Uv.y - .5) * height);
+			Game::Vector3 position = Game::Vector3((Uv.x - .5) * width, 0., (.5 - Uv.y) * height);
 			
 			SetVectors(varray, position, normal, tangent, Uv, flag);
 			varray += vertexStride;

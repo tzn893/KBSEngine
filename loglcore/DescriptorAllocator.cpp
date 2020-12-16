@@ -36,6 +36,8 @@ Descriptor DescriptorHeap::Allocate(size_t num, D3D12_DESCRIPTOR_HEAP_TYPE type)
 		desc.NumDescriptors = defaultDSVRTVSize;
 		desc.Type = type;
 
+		size[mType] = defaultDSVRTVSize;
+
 		ID3D12Device* device = gGraphic.GetDevice();
 		HRESULT hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mHeaps[mType]));
 		if (FAILED(hr)) {
