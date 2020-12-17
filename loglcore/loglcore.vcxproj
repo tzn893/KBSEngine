@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="CopyBatch.cpp" />
+    <ClCompile Include="DebugRenderPass.cpp" />
     <ClCompile Include="DescriptorAllocator.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="graphic.cpp" />
@@ -42,6 +43,7 @@
     <ClInclude Include="CopyBatch.h" />
     <ClInclude Include="d3d12x.h" />
     <ClInclude Include="d3dcommon.h" />
+    <ClInclude Include="DebugRenderPass.h" />
     <ClInclude Include="DeferredRenderPass.h" />
     <ClInclude Include="DescriptorAllocator.h" />
     <ClInclude Include="GeometryGenerator.h" />

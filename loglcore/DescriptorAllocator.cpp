@@ -11,15 +11,14 @@ DescriptorHeap::DescriptorHeap(size_t sucSize) {
 	ID3D12Device* device = gGraphic.GetDevice();
 	device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mHeaps[M_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]));
 
-	size[M_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] = sucSize,offsets[M_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] = 0;
-	mHeaps[M_DESCRIPTOR_HEAP_TYPE_DSV] = nullptr, size[M_DESCRIPTOR_HEAP_TYPE_DSV] = 0, offsets[M_DESCRIPTOR_HEAP_TYPE_DSV] = 0;
-	mHeaps[M_DESCRIPTOR_HEAP_TYPE_RTV] = nullptr, size[M_DESCRIPTOR_HEAP_TYPE_RTV] = 0, offsets[M_DESCRIPTOR_HEAP_TYPE_RTV] = 0;
+	size[M_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] = sucSize,uploadedOffsets[M_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] = 0, allocatedOffsets[M_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] = 0;
+	mHeaps[M_DESCRIPTOR_HEAP_TYPE_DSV] = nullptr, size[M_DESCRIPTOR_HEAP_TYPE_DSV] = 0, uploadedOffsets[M_DESCRIPTOR_HEAP_TYPE_DSV] = 0, allocatedOffsets[M_DESCRIPTOR_HEAP_TYPE_DSV] = 0;
+	mHeaps[M_DESCRIPTOR_HEAP_TYPE_RTV] = nullptr, size[M_DESCRIPTOR_HEAP_TYPE_RTV] = 0, uploadedOffsets[M_DESCRIPTOR_HEAP_TYPE_RTV] = 0, allocatedOffsets[M_DESCRIPTOR_HEAP_TYPE_RTV] = 0;
 
 	handleSize[M_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	handleSize[M_DESCRIPTOR_HEAP_TYPE_DSV] = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	handleSize[M_DESCRIPTOR_HEAP_TYPE_RTV] = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 }
-
 
 Descriptor DescriptorHeap::Allocate(size_t num, D3D12_DESCRIPTOR_HEAP_TYPE type) {
 	ID3D12DescriptorHeap* targetHeap;
@@ -45,16 +44,16 @@ Descriptor DescriptorHeap::Allocate(size_t num, D3D12_DESCRIPTOR_HEAP_TYPE type)
 		}
 	}
 
-	if (num + offsets[mType] > size[mType]) {
+	if (num + allocatedOffsets[mType] + uploadedOffsets[mType] > size[mType]) {
 		return Descriptor();
 	}
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(mHeaps[mType]->GetCPUDescriptorHandleForHeapStart());
-	cpuHandle.Offset(offsets[mType], handleSize[mType]);
+	cpuHandle.Offset(allocatedOffsets[mType], handleSize[mType]);
 	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(mHeaps[mType]->GetGPUDescriptorHandleForHeapStart());
-	gpuHandle.Offset(offsets[mType], handleSize[mType]);
+	gpuHandle.Offset(allocatedOffsets[mType], handleSize[mType]);
 
-	offsets[mType] += num;
+	allocatedOffsets[mType] += num;
 
 	return Descriptor(cpuHandle, gpuHandle, num);
 }
@@ -73,25 +72,31 @@ ID3D12DescriptorHeap* DescriptorHeap::GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) {
 
 Descriptor DescriptorHeap::UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE heap, D3D12_CPU_DESCRIPTOR_HANDLE handle,size_t num) {
 	M_DESCRIPTOR_HEAP_TYPE mHeapType = mapDescriptorHeapType(heap);
-	if (offsets[mHeapType] + num > size[mHeapType]) {
+	if (uploadedOffsets[mHeapType] + allocatedOffsets[mHeapType] + num > size[mHeapType]) {
 		return Descriptor();
 	}
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle(mHeaps[mHeapType]->GetCPUDescriptorHandleForHeapStart());
-	cpuHandle.Offset(offsets[mHeapType], handleSize[mHeapType]);
+	cpuHandle.Offset(size[mHeapType] - uploadedOffsets[mHeapType] - num, handleSize[mHeapType]);
 	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle(mHeaps[mHeapType]->GetGPUDescriptorHandleForHeapStart());
-	gpuHandle.Offset(offsets[mHeapType], handleSize[mHeapType]);
+	gpuHandle.Offset(size[mHeapType] - uploadedOffsets[mHeapType] - num, handleSize[mHeapType]);
 
-	offsets[mHeapType] += num;
+	uploadedOffsets[mHeapType] += num;
 	
 	gGraphic.GetDevice()->CopyDescriptorsSimple(num, cpuHandle, handle, heap);
 	return Descriptor(cpuHandle, gpuHandle, num);
 }
 
-void DescriptorHeap::Clear(D3D12_DESCRIPTOR_HEAP_TYPE type) {
+void DescriptorHeap::ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE type) {
 	M_DESCRIPTOR_HEAP_TYPE mHeapType = mapDescriptorHeapType(type);
 
-	offsets[mHeapType] = 0;
+	uploadedOffsets[mHeapType] = 0;
+}
+
+void DescriptorHeap::ClearAllocatedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE type) {
+	M_DESCRIPTOR_HEAP_TYPE mHeapType = mapDescriptorHeapType(type);
+
+	allocatedOffsets[mHeapType] = 0;
 }
 
 DescriptorAllocator::DescriptorAllocator() {

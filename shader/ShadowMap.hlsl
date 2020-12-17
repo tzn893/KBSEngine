@@ -18,10 +18,11 @@ struct VertexOut{
 VertexOut VS(VertexIn vin){
     VertexOut vout;
     vout.ViewPos = mul(lightMat,mul(world,float4(vin.Position,1.f)));
+    
     return vout;
 }
 
-float PS(VertexOut vout) :SV_TARGET{
-    float result = vout.ViewPos.z;
-    return result;
+float4 PS(VertexOut vout) :SV_TARGET{
+    float3 result = vout.ViewPos.z;
+    return float4(result,1.);
 }

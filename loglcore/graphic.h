@@ -17,6 +17,7 @@
 #include "SpriteRenderPass.h"
 #include "PhongRenderPass.h"
 #include "ShaderDataStruct.h"
+#include "DebugRenderPass.h"
 
 constexpr int Graphic_mBackBufferNum = 3;
 
@@ -69,7 +70,7 @@ public:
 
 	void BindCurrentBackBufferAsRenderTarget(bool clear = false,float* clearValue = nullptr);
 	void BindRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle,D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle,size_t rtvNum = 1,
-		bool clear = false,float* clearValule = nullptr);
+		bool clear = false,float* clearValule = nullptr,D3D12_VIEWPORT* viewPort = nullptr, D3D12_RECT* rect = nullptr);
 
 	Camera* GetMainCamera() { return &mainCamera; }
 	float   GetHeightWidthRatio() { return (float)mWinWidth / (float)mWinHeight; }
@@ -85,12 +86,23 @@ public:
 		else if constexpr(std::is_same<RPType,PhongRenderPass>::value){
 			return phongRenderPass.get();
 		}
+		else if constexpr (std::is_same<RPType,DebugRenderPass>::value) {
+			return debugRenderPass.get();
+		}
 		else {
 			return nullptr;
 		}
 	}
 
 	bool    RegisterRenderPasses(RenderPass** RP,size_t num = 1);
+
+	void    SetSissorRect(D3D12_RECT* sissorRect,size_t num = 1);
+	void	SetViewPort(D3D12_VIEWPORT* vp,size_t num = 1);
+
+	void	RestoreOriginalViewPortAndRect();
+
+	D3D12_RECT GetDefaultSissorRect() { return sissorRect; }
+	D3D12_VIEWPORT GetDefaultViewPort() { return viewPort; }
 private:
 
 	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name, bool rp);
@@ -158,6 +170,7 @@ private:
 	std::map<size_t, std::vector<RenderPass*>> RPQueue;
 	std::unique_ptr<SpriteRenderPass> spriteRenderPass;
 	std::unique_ptr<PhongRenderPass>  phongRenderPass;
+	std::unique_ptr<DebugRenderPass>  debugRenderPass;
 };
 
 inline Graphic gGraphic;

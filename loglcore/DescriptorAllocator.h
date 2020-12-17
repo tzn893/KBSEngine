@@ -24,7 +24,8 @@ public:
 	Descriptor Allocate(size_t num = 1,D3D12_DESCRIPTOR_HEAP_TYPE type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	ID3D12DescriptorHeap* GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	Descriptor UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE heap, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, size_t num = 1);
-	void Clear(D3D12_DESCRIPTOR_HEAP_TYPE heap);
+	void ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE heap);
+	void ClearAllocatedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE heap);
 private:
 	enum M_DESCRIPTOR_HEAP_TYPE {
 		M_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV = 0,
@@ -45,7 +46,8 @@ private:
 	}
 
 	ComPtr<ID3D12DescriptorHeap> mHeaps[3];
-	size_t offsets[3];
+	size_t uploadedOffsets[3];
+	size_t allocatedOffsets[3];
 	size_t size[3];
 	size_t handleSize[3];
 

@@ -34,7 +34,7 @@ PhongMaterialTexture mat;
 FPSCamera fpsCamera;
 
 void upload(){
-	auto vertices = GeometryGenerator::Cube(1., 1., 1.);
+	auto vertices = GeometryGenerator::Cube(.5, .5, .5);
 
 	box = std::make_unique<StaticMesh<MeshVertexNormal>>(
 		gGraphic.GetDevice(),
@@ -78,7 +78,7 @@ void upload(){
 	light.fallStart = 0.;
 	light.fallEnd = 20.;
 	light.intensity = Game::Vector3(1.,1.,1.);
-	light.direction = Game::normalize(Game::Vector3(0., -1.,1.));
+	light.direction = Game::normalize(Game::Vector3(0., 0.,1.));
 	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
 	prp->BindLightData(&light);
 
@@ -107,7 +107,7 @@ bool Application::initialize() {
 
 	return true;
 }
-float r = 0.,b = 0.;
+float r = 0.,b = 0.,g = 0.;
 Game::Vector2 pos;
 void Application::update() {
 	if (gInput.KeyHold(InputBuffer::I)) {
@@ -145,20 +145,33 @@ void Application::update() {
 		fpsCamera.rotateY(deltaPos.y * gTimer.DeltaTime() * speed);
 		pos = gInput.MousePosition();
 	}
+
+	if (gInput.KeyHold(InputBuffer::Q)) {
+		g += 4e-3;
+	}
+	else if (gInput.KeyHold(InputBuffer::E)) {
+		g -= 4e-3;
+	}
+
+	LightData light;
+	light.intensity = Game::Vector3(1., 1., 1.);
+	light.direction = Game::normalize(Game::Vector3(0., sinf(g), cosf(g)));
+	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
+	prp->BindLightData(&light);
 	
 	ObjectPass* objPass = prp->GetObjectPass(pid[0]);
-	objPass->world = Game::PackTransfrom(Game::Vector3(-3., 0.,10.), Game::Vector3(r, b, 0.), Game::Vector3(1., 1., 1.));
+	objPass->world = Game::PackTransfrom(Game::Vector3(3., 0.,10.), Game::Vector3(r, b, 0.), Game::Vector3(1., 1., 1.));
 	objPass->transInvWorld = objPass->world.R();
 	objPass->world = objPass->world.T();
 
 	objPass = prp->GetObjectPass(pid[1]);
-	objPass->world = Game::PackTransfrom(Game::Vector3(3., 0., 10.), Game::Vector3(r, b, 0.), Game::Vector3(1., 1., 1.));
+	objPass->world = Game::PackTransfrom(Game::Vector3(-3., -1.5, 10.), Game::Vector3(r, b, 0.), Game::Vector3(1., 1., 1.));
 	objPass->transInvWorld = objPass->world.R();
 	objPass->world = objPass->world.T();
 
 	prp->DrawObject(box->GetVBV(), 0, box->GetVertexNum(), pid[0], &mat);
-	prp->DrawObject(box->GetVBV(), 0, box->GetVertexNum(), pid[1]);
-	prp->DrawObject(plane->GetVBV(), plane->GetIBV(), 0, plane->GetIndexNum(), pid[2], &mat);
+	prp->DrawObject(box->GetVBV(), 0, box->GetVertexNum(), pid[1], &mat);
+	prp->DrawObject(plane->GetVBV(), plane->GetIBV(), 0, plane->GetIndexNum(), pid[2],&mat);
 
 	srp->DrawSpriteTransparent(1, data, spid);
 }

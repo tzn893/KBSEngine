@@ -140,6 +140,11 @@ namespace Game {
 	Mat4x4 MatrixScale(Vector3 Scaling);
 	inline Mat4x4 MatrixScale(float x, float y, float z) { return MatrixScale(Game::Vector3(x, y, z)); };
 
+	Mat4x4 MatrixOrtho(float left,float right,float bottom,float top,float nearZ,float farZ);
+	inline Mat4x4 MatrixOrtho(Vector2 horizontal, Vector2 vertical, float nearZ, float farZ) {
+		return MatrixOrtho(horizontal.x, horizontal.y, vertical.x, vertical.y, nearZ, farZ);
+	}
+
 	Mat4x4 mul(const Mat4x4& lhs,const Mat4x4& rhs);
 	Mat3x3 mul(const Mat3x3& lhs,const Mat3x3& rhs);
 	Mat2x2 mul(const Mat2x2& lhs,const Mat2x2& rhs);

@@ -42,7 +42,7 @@ static D3D12_RESOURCE_FLAGS getResourceFlagFromTextureFlag(TEXTURE_FLAG flag) {
 }
 
 Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
-	TEXTURE_FLAG flag , D3D12_RESOURCE_STATES initState) {
+	TEXTURE_FLAG flag , D3D12_RESOURCE_STATES initState,D3D12_CLEAR_VALUE* clearValue) {
 		this->width = width;
 		this->height = height;
 		this->flag = flag;
@@ -68,7 +68,7 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,
 			&rDesc, initState,
-			nullptr, IID_PPV_ARGS(&mRes)
+			clearValue, IID_PPV_ARGS(&mRes)
 		);
 		if (FAILED(hr)) {
 			isValid = false;

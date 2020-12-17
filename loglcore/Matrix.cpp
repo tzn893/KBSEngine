@@ -482,14 +482,19 @@ namespace Game {
 	}
 
 	Mat4x4 MatrixLookAt(Vector3 pos, Vector3 target, Vector3 up) {
-		Vector3 x = normalize(target - pos);
-		Vector3 y = normalize(cross(x, up));
-		Vector3 z = cross(y, x);
+		Vector3 z = normalize(target - pos);
+		Vector3 x = normalize(cross(up, z));
+		Vector3 y = cross(z, x);
 
 		float buffer[16] = {0};
-		memcpy(buffer, x.raw, sizeof(float) * 3);
-		memcpy(buffer + 4, y.raw, sizeof(float) * 3);
-		memcpy(buffer + 8, z.raw, sizeof(float) * 3);
+		buffer[0] = x.x, buffer[1] = x.y, buffer[2] = x.z;
+		buffer[4] = y.x, buffer[5] = y.y, buffer[6] = y.z;
+		buffer[8] = z.x, buffer[9] = z.y, buffer[10] = z.z;
+
+
+		buffer[3] = -dot(pos,x);
+		buffer[7] = -dot(pos,y);
+		buffer[11] = -dot(pos,z);
 
 		buffer[15] = 1.;
 
@@ -670,5 +675,15 @@ namespace Game {
 		memcpy(a, mat.a, sizeof(float) * 3);
 		memcpy(a + 3, mat.a + 4, sizeof(float) * 3);
 		memcpy(a + 6, mat.a + 8, sizeof(float) * 3);
+	}
+
+	Mat4x4 MatrixOrtho(float left, float right, float bottom, float top, float nearZ, float farZ) {
+		float buffer[16] = {
+			2.f / (right - left),0.					 ,0.				  ,(left + right) / (left - right),
+			0.					,2.f / (top - bottom),0.				  ,(top + bottom) / (bottom - top),
+			0.					,0.					 ,1.f / (farZ - nearZ),nearZ  / (nearZ - farZ),
+			0.					,0.					 ,0.				  ,1.
+		};
+		return Mat4x4(buffer);
 	}
 }

@@ -17,6 +17,8 @@
 #define LIGHT_TYPE_DIRECTIONAL 1
 #endif
 
+#define MAIN_LIGHT_INDEX 0
+
 struct Light{
     float3 intensity;
     float  fallStart;

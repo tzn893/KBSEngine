@@ -276,6 +276,18 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height){
 
 	mWinHeight = height, mWinWidth = width;
 	winHandle = winHnd;
+
+	viewPort.Width = width;
+	viewPort.Height = height;
+	viewPort.TopLeftX = 0;
+	viewPort.TopLeftY = 0;
+	viewPort.MinDepth = 0;
+	viewPort.MaxDepth = 1.0f;
+
+	sissorRect.bottom = height;
+	sissorRect.top = 0;
+	sissorRect.left = 0;
+	sissorRect.right = width;
 	
 	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&mDxgiFactory));
 	if (FAILED(hr)) {
@@ -337,18 +349,6 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height){
 	cameraPassData->GetBufferPtr()->viewMat = mainCamera.getViewMat().T();
 	cameraPassData->GetBufferPtr()->perspectMat = mainCamera.getPerspectMat().T();
 
-	viewPort.Width = width;
-	viewPort.Height = height;
-	viewPort.TopLeftX = 0;
-	viewPort.TopLeftY = 0;
-	viewPort.MinDepth = 0;
-	viewPort.MaxDepth = 1.0f;
-
-	sissorRect.bottom = height;
-	sissorRect.top = 0;
-	sissorRect.left = 0;
-	sissorRect.right = width;
-
 	state = READY;
 
 	return true;
@@ -361,7 +361,6 @@ static size_t ScoreAdapter(IDXGIAdapter* adapter) {
 	if (std::wstring(adaDesc.Description) == L"Microsoft Basic Render Driver") {
 		return 0;
 	}
-	//memory is justice
 	return adaDesc.DedicatedSystemMemory + adaDesc.SharedSystemMemory + adaDesc.DedicatedVideoMemory;
 }
 
@@ -620,6 +619,18 @@ void Graphic::DrawInstance(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_BUFFER_VIE
 }
 
 void Graphic::onResize(size_t width, size_t height) {
+	viewPort.Width = width;
+	viewPort.Height = height;
+	viewPort.TopLeftX = 0;
+	viewPort.TopLeftY = 0;
+	viewPort.MinDepth = 0;
+	viewPort.MaxDepth = 1.0f;
+
+	sissorRect.bottom = height;
+	sissorRect.top = 0;
+	sissorRect.left = 0;
+	sissorRect.right = width;
+
 	FlushCommandQueue();
 
 	for (int i = 0; i != Graphic_mBackBufferNum; i++) {
@@ -678,18 +689,6 @@ void Graphic::onResize(size_t width, size_t height) {
 
 	mDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), nullptr,
 		mBackBufferDSVhHeap->GetCPUDescriptorHandleForHeapStart());
-
-	viewPort.Width = width;
-	viewPort.Height = height;
-	viewPort.TopLeftX = 0;
-	viewPort.TopLeftY = 0;
-	viewPort.MinDepth = 0;
-	viewPort.MaxDepth = 1.0f;
-
-	sissorRect.bottom = height;
-	sissorRect.top = 0;
-	sissorRect.left = 0;
-	sissorRect.right = width;
 }
 
 void Graphic::BindDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE handle,size_t slot) {
@@ -722,9 +721,8 @@ bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO,con
 	PSO->SetVertexShader(shader->shaderByteCodeVS->GetBufferPointer(), shader->shaderByteSizeVS);
 	PSO->SetPixelShader(shader->shaderByteCodePS->GetBufferPointer(), shader->shaderByteSizePS);
 	PSO->SetInputElementDesc(shader->inputLayout);
-
+	PSO->SetSampleMask(UINT_MAX);
 	if (rp) {
-		PSO->SetSampleMask(UINT_MAX);
 		PSO->SetRenderTargetFormat(mBackBufferFormat);
 		PSO->SetDepthStencilViewFomat(mBackBufferDepthFormat);
 	}
@@ -782,8 +780,9 @@ bool Graphic::createRenderPasses() {
 
 	spriteRenderPass = std::make_unique<SpriteRenderPass>();
 	phongRenderPass = std::make_unique<PhongRenderPass>();
+	debugRenderPass = std::make_unique<DebugRenderPass>();
 	
-	RenderPass* rpList[] = { spriteRenderPass.get(),phongRenderPass.get() };
+	RenderPass* rpList[] = { spriteRenderPass.get(),phongRenderPass.get(),debugRenderPass.get()};
 	return RegisterRenderPasses(rpList, _countof(rpList));
 }
 
@@ -874,12 +873,13 @@ void Graphic::BindCurrentBackBufferAsRenderTarget(bool clear, float* clearValue)
 		mDrawCmdList->ClearRenderTargetView(
 			rtv, clearValue, 0, nullptr
 		);
-
 	}
+	mDrawCmdList->RSSetScissorRects(1, &sissorRect);
+	mDrawCmdList->RSSetViewports(1, &viewPort);
 }
 
 void Graphic::BindRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE* rtvHandle,D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle,size_t rtvNum, 
-	bool clear,float* clearValue) {
+	bool clear,float* clearValue, D3D12_VIEWPORT* viewPort, D3D12_RECT* rect) {
 	if (state != BEGIN_COMMAND_RECORDING) return;
 
 	mDrawCmdList->OMSetRenderTargets(rtvNum, rtvHandle, true, &dsvHandle);
@@ -894,4 +894,33 @@ void Graphic::BindRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE* rtvHandle,D3D12_CPU_
 			mDrawCmdList->ClearRenderTargetView(rtvHandle[i], clearValue, 0, nullptr);
 		}
 	}
+
+	if (viewPort != nullptr) {
+		mDrawCmdList->RSSetViewports(rtvNum, viewPort);
+	}
+	if (rect != nullptr) {
+		mDrawCmdList->RSSetScissorRects(rtvNum, rect);
+	}
+}
+
+void Graphic::SetSissorRect(D3D12_RECT* rect,size_t num) {
+	if (state != BEGIN_COMMAND_RECORDING) {
+		return;
+	}
+	mDrawCmdList->RSSetScissorRects(num, rect);
+}
+
+void Graphic::SetViewPort(D3D12_VIEWPORT* viewPort,size_t num) {
+	if (state != BEGIN_COMMAND_RECORDING) {
+		return;
+	}
+	mDrawCmdList->RSSetViewports(num, viewPort);
+}
+
+void Graphic::RestoreOriginalViewPortAndRect() {
+	if (state != BEGIN_COMMAND_RECORDING) {
+		return;
+	}
+	mDrawCmdList->RSSetViewports(1, &viewPort);
+	mDrawCmdList->RSSetScissorRects(1, &sissorRect);
 }
