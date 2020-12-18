@@ -79,7 +79,7 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 }
 
 Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
-	void* data, TEXTURE_FLAG flag,
+	void** data, TEXTURE_FLAG flag,
 	D3D12_RESOURCE_STATES initState,
 	UploadBatch* batch) {
 	this->width = width;
@@ -107,15 +107,22 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	if (data != nullptr) {
 		size_t elementSize = getFormatElementSize(format);
 
-		D3D12_SUBRESOURCE_DATA subData;
-		subData.pData = data;
-		subData.RowPitch = width * elementSize;
-		subData.SlicePitch = height * subData.RowPitch;
+		UploadTextureResource resource;
+		resource.original_buffer = *data;
+
+			D3D12_SUBRESOURCE_DATA subData;
+			subData.pData = *data;
+			subData.RowPitch = width * elementSize;
+			subData.SlicePitch = height * subData.RowPitch;
+			*data = nullptr;
+
+		resource.subres.push_back(subData);
+		
 		if(batch != nullptr)
-			mRes = batch->UploadTexture(&subData,1, rDesc, initState);
+			mRes = batch->UploadTexture(resource,rDesc, initState);
 		else {
 			UploadBatch mbatch = UploadBatch::Begin();
-			mRes = mbatch.UploadTexture(&subData,1, rDesc, initState);
+			mRes = mbatch.UploadTexture(resource,rDesc, initState);
 			mbatch.End();
 		}
 		if (mRes == nullptr) {
@@ -129,6 +136,7 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 
 Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	TEXTURE_TYPE type,
+	void** data,
 	D3D12_SUBRESOURCE_DATA* sub_res,
 	size_t sub_res_num,
 	D3D12_RESOURCE_STATES initState,
@@ -152,14 +160,20 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	rDesc.SampleDesc.Count = 1;
 	rDesc.SampleDesc.Quality = 0;
 
-	
+	UploadTextureResource resource;
+	resource.subres.insert(resource.subres.begin(),
+		sub_res, sub_res + sub_res_num);
+	resource.original_buffer = *data;
+
+	*data = nullptr;
+
 	size_t elementSize = getFormatElementSize(format);
 
 	if (batch != nullptr)
-		mRes = batch->UploadTexture(sub_res,sub_res_num, rDesc, initState);
+		mRes = batch->UploadTexture(resource, rDesc, initState);
 	else {
 		UploadBatch mbatch = UploadBatch::Begin();
-		mRes = mbatch.UploadTexture(sub_res,sub_res_num, rDesc, initState);
+		mRes = mbatch.UploadTexture(resource, rDesc, initState);
 		mbatch.End();
 	}
 	if (mRes == nullptr) {

@@ -10,6 +10,9 @@
 
 #include "../loglcore/SpriteRenderPass.h"
 #include "../loglcore/PhongRenderPass.h"
+
+#include "../loglcore/ModelManager.h"
+
 #include "InputBuffer.h"
 #include "Timer.h"
 #include "FPSCamera.h"
@@ -59,16 +62,19 @@ void upload(){
 	objPass->material.diffuse = Game::Vector4(1.,1.,1.,1.);
 	objPass->material.FresnelR0 = Game::Vector4(.1, .1, .1);
 	objPass->material.Roughness = .8;
+	objPass->material.SetMaterialTransform(Game::Vector2(0., 0.), Game::Vector2(.5, .5));
 
 	objPass = prp->GetObjectPass(pid[1]);
 	objPass->material.diffuse = Game::Vector4(1., .75, .75, 1.);
 	objPass->material.FresnelR0 = Game::Vector4(.1, .1, .1);
 	objPass->material.Roughness = .8;
+	objPass->material.SetMaterialTransform(Game::Vector2(0., 0.), Game::Vector2(.5, .5));
 
 	objPass = prp->GetObjectPass(pid[2]);
 	objPass->material.diffuse = Game::Vector4(1., .75, .75, 1.);
 	objPass->material.FresnelR0 = Game::Vector4(.1, .1, .1);
 	objPass->material.Roughness = .8;
+	objPass->material.SetMaterialTransform(Game::Vector2(0., 0.), Game::Vector2(5., 5.));
 	objPass->world = Game::PackTransfrom(Game::Vector3(0., -2., 10.), Game::Vector3(0., 0., 0.), Game::Vector3(1., 1., 1.));
 	objPass->transInvWorld = objPass->world.R();
 	objPass->world = objPass->world.T();
@@ -83,22 +89,25 @@ void upload(){
 	prp->BindLightData(&light);
 
 	srp = gGraphic.GetRenderPass<SpriteRenderPass>();
+
+	Model* model = gModelManager.loadModel("../asserts/suit/nanosuit.obj", "suit");
 }
 
 bool Application::initialize() {
 	upload();
-	
-	Texture* box = gTextureManager.loadTexture(L"../asserts/brickwall.jpg", L"brickwall");
-	box->CreateShaderResourceView(Descriptor(gDescriptorAllocator.AllocateDescriptor()));
-	Texture* boxNormal = gTextureManager.loadTexture(L"../asserts/brickwall_normal.jpg", L"brickwall_normal");
-	boxNormal->CreateShaderResourceView(Descriptor(gDescriptorAllocator.AllocateDescriptor()));
+
+	UploadBatch up = UploadBatch::Begin();
+	Texture* box = gTextureManager.loadTexture(L"../asserts/brickwall.jpg", L"brickwall",true,&up);
+	box->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	Texture* boxNormal = gTextureManager.loadTexture(L"../asserts/brickwall_normal.jpg", L"brickwall_normal",true, &up);
+	boxNormal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	up.End();
+
 	mat.diffuseMap = box;
 	mat.normalMap = boxNormal;
 
 	fpsCamera.attach(gGraphic.GetMainCamera());
 
-	Texture* face = gTextureManager.loadTexture(L"../asserts/awesomeface.png",L"face");
-	spid = srp->RegisterTexture(face);
 	
 	data[0].Color = Game::Vector4(1.,1.,1.,.5);
 	data[0].Position = Game::Vector3(0., 0., .5);

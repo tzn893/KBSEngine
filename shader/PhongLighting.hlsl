@@ -4,6 +4,7 @@
 #include "CameraPass.hlsli"
 #include "PhongModel.hlsli"
 
+#include "MathHelper.hlsli"
 
 #ifndef SHADOW_MAP_TEX_WIDTH
 #define SHADOW_MAP_TEX_WIDTH 1e-3
@@ -55,6 +56,7 @@ VertexOut VS(VertexIn vin){
 
     vout.lightPos = mul(shadowMat,float4(vout.WorldPos,1.));
 
+    vout.Uv = mul((float3x3)mat.matTransform,float3(vin.Uv,1.f)).xy;
 #ifdef ENABLE_DIFFUSE_MAP
     vout.Tangent = mul(transInvWorld,float4(vin.Tangent,0.)).xyz;
     vout.BiTangent = cross(vout.Tangent,vout.WorldNorm);
@@ -84,18 +86,21 @@ float SampleShadowMap(Texture2D shadowMap,SamplerState samp,float4 lightPos){
     
     float shadowFactor = 0.;
     //Do PCF
+    float3x3 gauss = GaussKernel3x3();
+    
     for(int x = -1;x <= 1;x++){
         for(int y = -1;y <= 1;y++){
             float2 pcfUv = float2(x,y) * float2(SHADOW_MAP_TEX_WIDTH,SHADOW_MAP_TEX_HEIGHT) + shadowUv;
             float shadowDepth = shadowMap.Sample(samp,pcfUv).r + shadowBias;
-            shadowFactor += shadowDepth < currentDepth ? 0. : 1.;
+            shadowFactor += shadowDepth <= currentDepth ? 0. : gauss[x + 1][y + 1];
         }
     }
 
-    return shadowFactor / 9.;
+    return shadowFactor;
 }
 
 float4 PS(VertexOut vin) :SV_TARGET{
+    vin.Uv = frac(vin.Uv);
     float3 normal = normalize(vin.WorldNorm);
 #ifdef ENABLE_DIFFUSE_MAP
     float3 tangent = normalize(vin.Tangent);

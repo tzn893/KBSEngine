@@ -72,7 +72,7 @@ ManagedTexture* TextureManager::loadTextureBySTB(const wchar_t* path, const wcha
 	TEXTURE_FORMAT format = TEXTURE_FORMAT_RGBA;
 
 	std::unique_ptr<ManagedTexture> mtexture = std::make_unique<ManagedTexture>(name,path,iwidth,iheight,
-		format,idata,D3D12_RESOURCE_STATE_COMMON,batch);
+		format,&idata,D3D12_RESOURCE_STATE_COMMON,batch);
 	if (!mtexture->IsValid()) {
 		fclose(target_file);
 		free(idata);
@@ -83,7 +83,6 @@ ManagedTexture* TextureManager::loadTextureBySTB(const wchar_t* path, const wcha
 	texturesByName[name] = mtexture.get();
 	texturesByPath[path] = std::move(mtexture);
 
-	free(idata);
 	fclose(target_file);
 	return rv;
 }

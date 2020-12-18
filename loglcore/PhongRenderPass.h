@@ -69,7 +69,7 @@ private:
 		Game::Mat4x4 lightView;
 	};
 	Game::Mat4x4 orthoMat;
-	size_t depthWidth = 1024, depthHeight = 1024;
+	size_t depthWidth = 4096, depthHeight = 4096;
 	D3D12_RECT mDepthRect;
 	D3D12_VIEWPORT mDepthView;
 	std::unique_ptr<Texture> mDepthRTVTex,mDepthDSVTex;

@@ -29,12 +29,13 @@ public:
 		D3D12_CLEAR_VALUE* clearValue = nullptr);
 
 	Texture(size_t width,size_t height,TEXTURE_FORMAT format,
-		void* data,TEXTURE_FLAG flag  = TEXTURE_FLAG_NONE,
+		void** data,TEXTURE_FLAG flag  = TEXTURE_FLAG_NONE,
 		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
 		UploadBatch* batch = nullptr);
 
 	Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 		TEXTURE_TYPE type, 
+		void** original_buffer,
 		D3D12_SUBRESOURCE_DATA* sub_res,
 		size_t sub_res_num,
 		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,

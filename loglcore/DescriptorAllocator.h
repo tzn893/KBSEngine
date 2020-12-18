@@ -58,7 +58,7 @@ class DescriptorAllocator {
 public:
 	DescriptorAllocator();
 	~DescriptorAllocator() { currHeap = nullptr; usedHeaps.clear(); }
-	D3D12_CPU_DESCRIPTOR_HANDLE AllocateDescriptor(size_t num = 1);
+	Descriptor AllocateDescriptor(size_t num = 1);
 private:
 	ComPtr<ID3D12DescriptorHeap> CreateHeap();
 

@@ -85,14 +85,16 @@ void UploadBatch::End(bool wait) {
 	for (auto& buffer : uploadBuffers) {
 		if (buffer.type == UPLOAD_BUFFER_TYPE_CONSTANT)
 			mCmdList->CopyResource(buffer.buffer.Get(), buffer.uploadBuffer.Get());
-		else if (buffer.type == UPLOAD_BUFFER_TYPE_TEXTURE)
+		else if (buffer.type == UPLOAD_BUFFER_TYPE_TEXTURE) {
 			UpdateSubresources(
 				mCmdList.Get(),
 				buffer.buffer.Get(),
 				buffer.uploadBuffer.Get(),
-				0, 0, buffer.subResources.size(),
-				buffer.subResources.data()
+				0, 0, buffer.resource.subres.size(),
+				buffer.resource.subres.data()
 			);
+			free(buffer.resource.original_buffer);
+		}
 	}
 
 	mCmdList->ResourceBarrier(barriersAfter.size(), barriersAfter.data());
@@ -163,7 +165,7 @@ ID3D12Resource* UploadBatch::UploadBuffer(size_t size,void* buffer,D3D12_RESOURC
 	return uploadBuffers[uploadBuffers.size() - 1].buffer.Get();
 }
 
-ID3D12Resource* UploadBatch::UploadTexture(D3D12_SUBRESOURCE_DATA* subdata, size_t subdata_num,
+ID3D12Resource* UploadBatch::UploadTexture(UploadTextureResource& resource,
 	D3D12_RESOURCE_DESC desc, D3D12_RESOURCE_STATES initState) {
 
 	UploadBufferData data;
@@ -181,7 +183,7 @@ ID3D12Resource* UploadBatch::UploadTexture(D3D12_SUBRESOURCE_DATA* subdata, size
 		return nullptr;
 	}
 
-	size_t uploadBufferSize = GetRequiredIntermediateSize(data.buffer.Get(), 0, subdata_num);
+	size_t uploadBufferSize = GetRequiredIntermediateSize(data.buffer.Get(), 0, resource.subres.size());
 	hr = mDevice->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 		D3D12_HEAP_FLAG_NONE,
@@ -194,7 +196,7 @@ ID3D12Resource* UploadBatch::UploadTexture(D3D12_SUBRESOURCE_DATA* subdata, size
 		return nullptr;
 	}
 
-	data.subResources.insert(data.subResources.begin(), subdata, subdata + subdata_num);
+	data.resource = std::move(resource);
 
 	barriersBefore.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
 		data.buffer.Get(),D3D12_RESOURCE_STATE_COMMON,

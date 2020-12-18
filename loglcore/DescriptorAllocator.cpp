@@ -118,7 +118,7 @@ ComPtr<ID3D12DescriptorHeap> DescriptorAllocator::CreateHeap() {
 	return rv;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::AllocateDescriptor(size_t num) {
+Descriptor DescriptorAllocator::AllocateDescriptor(size_t num) {
 	if (handleSize == 0) {
 		handleSize = gGraphic.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		currHeap = CreateHeap();
@@ -133,5 +133,5 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::AllocateDescriptor(size_t num) 
 	rv.Offset(handleSize, allocatedSize);
 	allocatedSize += num;
 
-	return rv;
+	return Descriptor(rv);
 }

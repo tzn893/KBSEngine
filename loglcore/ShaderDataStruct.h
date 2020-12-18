@@ -56,6 +56,17 @@ struct Material {
 	Game::Vector4 diffuse;
 	Game::Vector3 FresnelR0;
 	float  Roughness;
+	Game::Mat4x4 matTransform;
+
+	void SetMaterialTransform(Game::Vector2 offset,Game::Vector2 Scale) {
+		float buffer[] = {
+			Scale[0] ,0.	   ,0.,0.,
+			0.		 ,Scale[1] ,0.,0.,
+			offset[0],offset[1],1.,0.,
+			0.		 ,0.	   ,0.,1.
+		};
+		matTransform = Game::Mat4x4(buffer);
+	}
 };
 
 struct ObjectPass{

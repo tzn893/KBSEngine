@@ -9,6 +9,7 @@ struct Material{
     float4 diffuse;
     float3 FresnelR0;
     float  Roughness;
+    float4x4 matTransform;
 };
 
 cbuffer ObjectPass : register(OBJECT_PASS_REGISTER){

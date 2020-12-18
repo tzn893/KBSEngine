@@ -20,6 +20,9 @@
     <Filter Include="ThridParty\stb_image">
       <UniqueIdentifier>{07d6ff23-cbf9-40c6-b5f1-b5a37df6de46}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThridParty\tinyobj">
+      <UniqueIdentifier>{5d4a7b68-e502-4b30-b466-abbe173ee9f1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Color.cpp">
@@ -68,6 +71,12 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="DebugRenderPass.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="tinyobjloader.cpp">
+      <Filter>ThridParty\tinyobj</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelManager.cpp">
       <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
@@ -158,6 +167,9 @@
     </ClInclude>
     <ClInclude Include="DebugRenderPass.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="tinyobjloader.h">
+      <Filter>ThridParty\tinyobj</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

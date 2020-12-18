@@ -7,7 +7,7 @@ class ManagedTexture : public Texture {
 public:
 	ManagedTexture(const wchar_t* name,const wchar_t* path, 
 		size_t width, size_t height, TEXTURE_FORMAT format,
-		void* data,D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
+		void** data,D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
 		UploadBatch* batch = nullptr) :Texture(width, height, format,
 			data, TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,initState, batch), name(name), pathName(path)
 	{}
@@ -15,10 +15,11 @@ public:
 	ManagedTexture(const wchar_t* name, const wchar_t* path,
 		size_t width, size_t height, TEXTURE_FORMAT format,
 		TEXTURE_TYPE type,
+		void** data,
 		D3D12_SUBRESOURCE_DATA* sub_res,
 		size_t sub_res_num,
 		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON
-		, UploadBatch* batch = nullptr):Texture(width,height,format,type,sub_res,
+		, UploadBatch* batch = nullptr):Texture(width,height,format,type,data,sub_res,
 			sub_res_num,initState,TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS, batch),name(name),pathName(path)
 	{}
 
