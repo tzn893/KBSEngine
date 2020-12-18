@@ -3,6 +3,8 @@
 #include "ShaderDataStruct.h"
 #include "Texture.h"
 
+#include <functional>
+
 enum SUBMESH_MATERIAL_TYPE {
 	SUBMESH_MATERIAL_TYPE_DIFFUSE = 0,
 	SUBMESH_MATERIAL_TYPE_SPECULAR = 1,
@@ -54,6 +56,7 @@ public:
 		}
 		return nullptr;
 	}
+	
 	void PushBackSubMesh(SubMesh* subMesh) {
 		subMeshs.push_back(std::move(std::unique_ptr<SubMesh>(subMesh)));
 	}
@@ -69,6 +72,16 @@ public:
 	
 	const char* GetName() { return name.c_str(); }
 
+	using SubMeshEnumerator = std::function<void(SubMesh* targetMesh,Model* model,size_t index)>;
+
+	void ForEachSubMesh(const SubMeshEnumerator& callback) {
+		size_t index = 0;
+		for (auto& item : subMeshs) {
+			callback(item.get(), this, index++);
+		}
+	}
+	size_t GetSubMeshNum() { return subMeshs.size(); }
+	size_t GetSubMaterialNum() { return subMaterials.size(); }
 private:
 
 	std::vector<std::unique_ptr<SubMesh>> subMeshs;

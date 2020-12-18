@@ -13,6 +13,8 @@
 
 #include "../loglcore/ModelManager.h"
 
+#include "../loglcore/RenderObject.h"
+
 #include "InputBuffer.h"
 #include "Timer.h"
 #include "FPSCamera.h"
@@ -31,6 +33,8 @@ SpriteID spid;
 
 PhongObjectID pid[3];
 PhongRenderPass* prp;
+
+std::unique_ptr<RenderObject> ro;
 
 PhongMaterialTexture mat;
 
@@ -91,6 +95,8 @@ void upload(){
 	srp = gGraphic.GetRenderPass<SpriteRenderPass>();
 
 	Model* model = gModelManager.loadModel("../asserts/suit/nanosuit.obj", "suit");
+
+	ro = std::make_unique<RenderObject>(model,Game::Vector3(0.,-1.8,5.),Game::Vector3(0.,0.,0.),Game::Vector3(.1,.1,.1));
 }
 
 bool Application::initialize() {
@@ -101,6 +107,8 @@ bool Application::initialize() {
 	box->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 	Texture* boxNormal = gTextureManager.loadTexture(L"../asserts/brickwall_normal.jpg", L"brickwall_normal",true, &up);
 	boxNormal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	Texture* face = gTextureManager.loadTexture(L"../asserts/awesomeface.png", L"face", true, &up);
+	spid = srp->RegisterTexture(face);
 	up.End();
 
 	mat.diffuseMap = box;
@@ -183,6 +191,8 @@ void Application::update() {
 	prp->DrawObject(plane->GetVBV(), plane->GetIBV(), 0, plane->GetIndexNum(), pid[2],&mat);
 
 	srp->DrawSpriteTransparent(1, data, spid);
+
+	ro->Render(prp);
 }
 
 void Application::finalize() {

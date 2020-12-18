@@ -29,6 +29,7 @@
     <ClCompile Include="ModelManager.cpp" />
     <ClCompile Include="PhongRenderPass.cpp" />
     <ClCompile Include="PipelineStateObject.cpp" />
+    <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="SpriteRenderPass.cpp" />
@@ -59,6 +60,7 @@
     <ClInclude Include="PhongRenderPass.h" />
     <ClInclude Include="PipelineStateObject.h" />
     <ClInclude Include="Reflect_Registry.h" />
+    <ClInclude Include="RenderObject.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="RootSignature.h" />
     <ClInclude Include="Shader.h" />

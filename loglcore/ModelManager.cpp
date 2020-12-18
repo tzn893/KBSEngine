@@ -136,7 +136,7 @@ Model* ModelManager::loadInOBJFormat(const char* pathName,const char* name,Uploa
 		}
 		sbMaterial.diffuse = Game::Vector3(material.diffuse);
 		sbMaterial.specular = Game::Vector3(material.specular);
-		sbMaterial.roughness = 1. - material.shininess;
+		sbMaterial.roughness = 1. - material.shininess / 70.;
 
 		sbMaterial.textures[SUBMESH_MATERIAL_TYPE_BUMP] = bumpMap;
 		sbMaterial.textures[SUBMESH_MATERIAL_TYPE_DIFFUSE] = diffuseMap;

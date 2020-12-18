@@ -79,6 +79,9 @@
     <ClCompile Include="ModelManager.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="RenderObject.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -170,6 +173,9 @@
     </ClInclude>
     <ClInclude Include="tinyobjloader.h">
       <Filter>ThridParty\tinyobj</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderObject.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
