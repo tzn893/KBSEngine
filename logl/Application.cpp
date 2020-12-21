@@ -225,8 +225,8 @@ bool Application::initialize() {
 	waverp->GetLightPass()->ambient = Game::Vector4(.6, .6, .6, 1.);
 	wave.SetPosition(Game::Vector3(0., -1., 10.));
 	
-	//float color[] = {1.,1.,1.,1.};
-//	gGraphic.SetDefaultClearColor(color);
+	float color[] = {1.,1.,1.,1.};
+	gGraphic.SetDefaultClearColor(color);
 
 	return true;
 }

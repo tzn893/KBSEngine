@@ -133,7 +133,7 @@ public:
 	D3D12_RECT GetDefaultSissorRect() { return sissorRect; }
 	D3D12_VIEWPORT GetDefaultViewPort() { return viewPort; }
 
-	//void	SetDefaultClearColor(float* newColor) { memcpy(mRTVClearColor,newColor,sizeof(float) * 4); }
+	void	SetDefaultClearColor(float* newColor) { memcpy(mRTVClearColor,newColor,sizeof(float) * 4); }
 private:
 	void FindRPAndErase(RenderPass* rp);
 	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name, bool rp);

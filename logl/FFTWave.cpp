@@ -73,7 +73,8 @@ void   FFTWaveRenderPass::SetWorldTransform(Game::Vector3 position, Game::Vector
 }
 
 bool FFTWave::Initialize(float width,float height) {
-	auto[vertices, indices] = GeometryGenerator::Square(width, height,GeometryGenerator::GEOMETRY_FLAG_DISABLE_TANGENT);
+	auto[vertices, indices] = GeometryGenerator::Plane(width, height,
+		64,64,GeometryGenerator::GEOMETRY_FLAG_DISABLE_TANGENT);
 
 	mMesh = std::make_unique<DynamicMesh<MeshVertex>>(
 			gGraphic.GetDevice(),
