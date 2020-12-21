@@ -80,7 +80,8 @@ void UploadBatch::End(bool wait) {
 	mCmdAlloc->Reset();
 	mCmdList->Reset(mCmdAlloc.Get(), nullptr);
 
-	mCmdList->ResourceBarrier(barriersBefore.size(), barriersBefore.data());
+	if(!barriersBefore.empty())
+		mCmdList->ResourceBarrier(barriersBefore.size(), barriersBefore.data());
 
 	for (auto& buffer : uploadBuffers) {
 		if (buffer.type == UPLOAD_BUFFER_TYPE_CONSTANT)
@@ -97,7 +98,8 @@ void UploadBatch::End(bool wait) {
 		}
 	}
 
-	mCmdList->ResourceBarrier(barriersAfter.size(), barriersAfter.data());
+	if(!barriersBefore.empty())
+		mCmdList->ResourceBarrier(barriersAfter.size(), barriersAfter.data());
 
 	mCmdList->Close();
 

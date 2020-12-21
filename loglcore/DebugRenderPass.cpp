@@ -93,6 +93,7 @@ void   DebugRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 void   DebugRenderPass::finalize() {
 	mHeap.release();
 	mesh.release();
+	
 }
 
 void   DebugRenderPass::DirectDraw(Texture* texture, ID3D12DescriptorHeap* heap) {

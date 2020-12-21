@@ -34,7 +34,13 @@ Shader* ShaderManager::loadShader( const wchar_t* path,const char* VS,const char
 		std::wstring message = L"fail to compile vertex shader in shader name :";
 		message = message + name + L",path :" + path + L",reason:\n";
 		OUTPUT_DEBUG_STRINGW(message.c_str());
-		OUTPUT_DEBUG_STRINGA((const char*)errorMessage->GetBufferPointer());
+		if (HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr) {
+			OUTPUT_DEBUG_STRING("the shader program is not founded\n")
+		}
+		else if (errorMessage->GetBufferPointer() != nullptr) {
+			OUTPUT_DEBUG_STRINGA((const char*)errorMessage->GetBufferPointer());
+		}
+		return false;
 	}
 
 	hr = D3DCompileFromFile(path, macros, D3D_COMPILE_STANDARD_FILE_INCLUDE,
@@ -44,7 +50,13 @@ Shader* ShaderManager::loadShader( const wchar_t* path,const char* VS,const char
 		std::wstring message = L"fail to compile vertex shader in shader name :";
 		message = message + name + L",path :" + path + L",reason:\n";
 		OUTPUT_DEBUG_STRINGW(message.c_str());
-		OUTPUT_DEBUG_STRINGA((const char*)errorMessage->GetBufferPointer());
+		if (HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr) {
+			OUTPUT_DEBUG_STRING("the shader program is not founded\n")
+		}
+		else if (errorMessage->GetBufferPointer() != nullptr) {
+			OUTPUT_DEBUG_STRINGA((const char*)errorMessage->GetBufferPointer());
+		}
+		return false;
 	}
 	
 	std::unique_ptr<Shader> shader = std::make_unique<Shader>(shaderByteCodeVS.Get(),

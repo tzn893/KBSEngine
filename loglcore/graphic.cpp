@@ -779,10 +779,10 @@ bool Graphic::createRenderPasses() {
 	UploadBatch mbacth;
 
 	spriteRenderPass = std::make_unique<SpriteRenderPass>();
-	phongRenderPass = std::make_unique<PhongRenderPass>();
+	//phongRenderPass = std::make_unique<PhongRenderPass>();
 	debugRenderPass = std::make_unique<DebugRenderPass>();
 	
-	RenderPass* rpList[] = { spriteRenderPass.get(),phongRenderPass.get(),debugRenderPass.get()};
+	RenderPass* rpList[] = { spriteRenderPass.get(),debugRenderPass.get()};
 	return RegisterRenderPasses(rpList, _countof(rpList));
 }
 
@@ -923,4 +923,23 @@ void Graphic::RestoreOriginalViewPortAndRect() {
 	}
 	mDrawCmdList->RSSetViewports(1, &viewPort);
 	mDrawCmdList->RSSetScissorRects(1, &sissorRect);
+}
+
+void Graphic::FindRPAndErase(RenderPass* rp) {
+	for (auto iter = RPQueue.begin(); iter != RPQueue.end(); iter++) {
+		bool finded = false;
+		for (auto mrp = iter->second.begin(); mrp != iter->second.end();mrp++) {
+			if (*mrp == rp) {
+				iter->second.erase(mrp);
+				finded = true;
+				break;
+			}
+		}
+		if (iter->second.empty()) {
+			RPQueue.erase(iter);
+		}
+		if (finded) {
+			break;
+		}
+	}
 }

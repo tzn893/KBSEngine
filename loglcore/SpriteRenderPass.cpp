@@ -145,6 +145,7 @@ void SpriteRenderPass::Render(Graphic* graphic,RENDER_PASS_LAYER layer) {
 		graphic->DrawInstance(&mVbv, 0, 6, item.instanceNum);
 	}
 	targetGroup->clear();
+	heap->ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void SpriteRenderPass::PostProcess(ID3D12Resource* renderTarget) {
@@ -154,10 +155,10 @@ void SpriteRenderPass::PostProcess(ID3D12Resource* renderTarget) {
 void SpriteRenderPass::finalize() {
 	spriteInstances.release();
 	spriteViewConstant.release();
-	registedTextures.clear();
+	//registedTextures.clear();
 }
 
-SpriteID SpriteRenderPass::RegisterTexture(Texture* tex, D3D12_SHADER_RESOURCE_VIEW_DESC* srv) {
+/*SpriteID SpriteRenderPass::RegisterTexture(Texture* tex, D3D12_SHADER_RESOURCE_VIEW_DESC* srv) {
 	if (tex->GetShaderResourceViewCPU().ptr == 0) {
 		Descriptor desc = heap->Allocate();
 		tex->CreateShaderResourceView(desc, srv);
@@ -168,36 +169,35 @@ SpriteID SpriteRenderPass::RegisterTexture(Texture* tex, D3D12_SHADER_RESOURCE_V
 		registedTextures.push_back({tex,desc.gpuHandle});
 	}
 	return registedTextures.size() - 1;
-}
+}*/
 
-void SpriteRenderPass::DrawSprite(size_t num, SpriteData* data, SpriteID sprite) {
+void SpriteRenderPass::DrawSprite(size_t num, SpriteData* data, Texture* sprite) {
 	SpriteGroup group = AllocateGroupConstant(num, data, sprite,true);
 	if (group.instanceNum == 0) return;
 	renderGroupOpaque.push_back(group);
 }
 
-void SpriteRenderPass::DrawSpriteTransparent(size_t num, SpriteData* data, SpriteID sprite) {
+void SpriteRenderPass::DrawSpriteTransparent(size_t num, SpriteData* data, Texture* sprite) {
 	SpriteGroup group = AllocateGroupConstant(num, data, sprite, false);
 	if (group.instanceNum == 0) return;
 	renderGroupTransparent.push_back(group);
 }
 
-SpriteRenderPass::SpriteGroup SpriteRenderPass::AllocateGroupConstant(size_t num, SpriteData* data, SpriteID sprite,bool adjustAlpha) {
+SpriteRenderPass::SpriteGroup SpriteRenderPass::AllocateGroupConstant(size_t num, SpriteData* data, Texture* sprite,bool adjustAlpha) {
 	SpriteGroup group;
 	if (num + allocatedBufferSize > instanceBufferSize) { 
 		group.instanceNum = 0;
 		return group; 
 	}
 
-	if (sprite >= registedTextures.size()) {
+	/*if (sprite >= registedTextures.size()) {
 		group.instanceNum = 0;
 		return group;
-	}
-
+	}*/
 
 	group.startInstance = allocatedBufferSize;
 	group.instanceNum = num;
-	group.sprite = registedTextures[sprite].gpuHandle;
+	group.sprite = heap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,sprite->GetShaderResourceViewCPU()).gpuHandle;//registedTextures[sprite].gpuHandle;
 
 	SpriteInstanceConstant* constant = spriteInstances->GetBufferPtr(group.startInstance);
 	for (size_t i = 0; i != num; i++) {

@@ -283,6 +283,12 @@ void PhongRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 void PhongRenderPass::finalize() {
 	lightPass.release();
 	objectPass.release();
+	avaliableObjectBuffers.clear();
+	objQueue.clear(), objTexQueue.clear();
+	mHeap.release();
+	mDepthDSVTex.release();
+	mDepthRTVTex.release();
+	mDepthLightView.release();
 }
 
 void PhongRenderPass::BindLightData(LightData* data,size_t offset, size_t num ) {

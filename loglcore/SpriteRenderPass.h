@@ -16,7 +16,7 @@ struct SpriteData {
 	Game::Vector4 Color;
 };
 
-typedef size_t SpriteID;
+//typedef size_t SpriteID;
 
 class SpriteRenderPass : public RenderPass {
 public:
@@ -28,10 +28,10 @@ public:
 	virtual void   PostProcess(ID3D12Resource* renderTarget) override;
 	
 
-	SpriteID RegisterTexture(Texture* tex,D3D12_SHADER_RESOURCE_VIEW_DESC* srv = nullptr);
+	//SpriteID RegisterTexture(Texture* tex,D3D12_SHADER_RESOURCE_VIEW_DESC* srv = nullptr);
 	//all the sprites's color's alpha value will be ignored on this pipeline
-	void     DrawSprite(size_t num,SpriteData* data,SpriteID sprite);
-	void     DrawSpriteTransparent(size_t num, SpriteData* data, SpriteID sprite);
+	void     DrawSprite(size_t num,SpriteData* data,Texture* sprite);
+	void     DrawSpriteTransparent(size_t num, SpriteData* data,Texture* sprite);
 
 	inline void SetViewCenter(float y, float x = -1.) {
 		if (x < 0) {
@@ -55,7 +55,7 @@ private:
 		size_t   instanceNum;
 	};
 
-	SpriteGroup AllocateGroupConstant(size_t num, SpriteData* data, SpriteID sprite,bool adjustAlpha);
+	SpriteGroup AllocateGroupConstant(size_t num, SpriteData* data,Texture* sprite,bool adjustAlpha);
 
 	struct SpriteInstanceConstant {
 		Game::Vector4 color;
@@ -66,10 +66,10 @@ private:
 		Game::Mat4x4 view;
 	};
 
-	struct RegisteredTexture {
+	/*struct RegisteredTexture {
 		Texture* tex;
 		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
-	};
+	};*/
 
 	size_t instanceBufferSize, allocatedBufferSize;
 	std::unique_ptr<ConstantBuffer<SpriteInstanceConstant>> spriteInstances;
@@ -79,7 +79,7 @@ private:
 	Game::Vector2 viewScale;
 
 	std::unique_ptr<DescriptorHeap>  heap;
-	std::vector<RegisteredTexture> registedTextures;
+	//std::vector<RegisteredTexture> registedTextures;
 
 	std::vector<SpriteGroup> renderGroupOpaque;
 	std::vector<SpriteGroup> renderGroupTransparent;

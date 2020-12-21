@@ -84,6 +84,11 @@ public:
 			return spriteRenderPass.get();
 		}
 		else if constexpr(std::is_same<RPType,PhongRenderPass>::value){
+			if (phongRenderPass.get() == nullptr) {
+				phongRenderPass = std::make_unique<PhongRenderPass>();
+				RenderPass* rps[] = { phongRenderPass.get() };
+				RegisterRenderPasses(rps);
+			}
 			return phongRenderPass.get();
 		}
 		else if constexpr (std::is_same<RPType,DebugRenderPass>::value) {
@@ -91,6 +96,30 @@ public:
 		}
 		else {
 			return nullptr;
+		}
+	}
+
+	template<typename RPType>
+	void DisableRenderPass() {
+		if constexpr (std::is_same<RPType,SpriteRenderPass>::value) {
+			FindRPAndErase(spriteRenderPass.get());
+			spriteRenderPass->finalize();
+			spriteRenderPass.release();
+		}
+		else if constexpr (std::is_same<RPType,PhongRenderPass>::value) {
+			if (phongRenderPass.get() == nullptr)
+				return;
+			FindRPAndErase(phongRenderPass.get());
+			phongRenderPass->finalize();
+			phongRenderPass.release();
+		}
+		else if constexpr (std::is_same<RPType,DebugRenderPass>::value) {
+			FindRPAndErase(debugRenderPass.get());
+			debugRenderPass->finalize();
+			debugRenderPass.release();
+		}
+		else {
+			return;//otherwise we do nothing
 		}
 	}
 
@@ -103,8 +132,10 @@ public:
 
 	D3D12_RECT GetDefaultSissorRect() { return sissorRect; }
 	D3D12_VIEWPORT GetDefaultViewPort() { return viewPort; }
-private:
 
+	//void	SetDefaultClearColor(float* newColor) { memcpy(mRTVClearColor,newColor,sizeof(float) * 4); }
+private:
+	void FindRPAndErase(RenderPass* rp);
 	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name, bool rp);
 
 	enum GRAPHIC_STATES {

@@ -38,7 +38,7 @@ public:
 			isValid = true;
 		}
 	}
-	DynamicMesh(ID3D12Device* device,size_t indexNum, uint16_t* indices, size_t vertexNum, T* vertexs, UploadBatch* batch) {
+	DynamicMesh(ID3D12Device* device,size_t indexNum, uint16_t* indices, size_t vertexNum, T* vertexs,UploadBatch* batch = nullptr) {
 		HRESULT hr = device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
@@ -54,7 +54,7 @@ public:
 			isValid = false;
 		}
 		else {
-			useIndex = false;
+			useIndex = true;
 			if (batch == nullptr) {
 				UploadBatch mbatch = UploadBatch::Begin();
 				indexBuffer = mbatch.UploadBuffer(sizeof(uint16_t) * indexNum, indices);
@@ -82,7 +82,7 @@ public:
 			vbv.StrideInBytes = sizeof(T);
 
 			ibv.BufferLocation = indexBuffer->GetGPUVirtualAddress();
-			ibv.SizeInBytes = indexNum * sizeof(uint16_t*);
+			ibv.SizeInBytes = indexNum * sizeof(uint16_t);
 			ibv.Format = DXGI_FORMAT_R16_UINT;
 
 			isValid = true;
