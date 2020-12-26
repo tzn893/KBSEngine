@@ -69,6 +69,10 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilViewCPU() { return mDSV.cpuHandle; }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDepthStencilViewGPU() { return mDSV.gpuHandle; }
 
+	void CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC* srv = nullptr);
+	D3D12_CPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewCPU() { return mUAV.cpuHandle; }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetUnorederedAccessViewGPU() { return mUAV.gpuHandle; }
+
 protected:
 	TEXTURE_TYPE type;
 	TEXTURE_FLAG flag;
@@ -81,4 +85,5 @@ protected:
 	Descriptor mSRV;
 	Descriptor mRTV;
 	Descriptor mDSV;
+	Descriptor mUAV;
 };

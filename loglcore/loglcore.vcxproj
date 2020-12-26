@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Color.cpp" />
+    <ClCompile Include="ComputeCommand.cpp" />
     <ClCompile Include="CopyBatch.cpp" />
     <ClCompile Include="DebugRenderPass.cpp" />
     <ClCompile Include="DescriptorAllocator.cpp" />
@@ -42,6 +43,8 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Color.h" />
+    <ClInclude Include="Complex.h" />
+    <ClInclude Include="ComputeCommand.h" />
     <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="CopyBatch.h" />
     <ClInclude Include="d3d12x.h" />
@@ -51,6 +54,7 @@
     <ClInclude Include="DescriptorAllocator.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="graphic.h" />
+    <ClInclude Include="LightManager.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="MathFunctions.h" />
     <ClInclude Include="Matrix.h" />

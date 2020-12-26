@@ -1,5 +1,7 @@
 #pragma once
 #include <utility>
+#include <algorithm>
+#include <stdint.h>
 
 class NetBuffer {
 public:
@@ -7,6 +9,7 @@ public:
 		if (sizeByByte == 0) {
 			size = 0;
 			buffer = nullptr;
+			capacity = 0;
 		}
 		else {
 			capacity = sizeByByte;
@@ -54,13 +57,15 @@ public:
 			buffer = nullptr;
 		}
 	}
-	
+
 	template<typename T>
-	T* Get(size_t offset_by_byte) { 
-		if(offset_by_byte + sizeof(T) <= size)
+	T* Get(size_t offset_by_byte) {
+		if (offset_by_byte + sizeof(T) <= size)
 			return reinterpret_cast<T*>(buffer + offset_by_byte);
 		return nullptr;
 	}
+	void* GetPtr() { return buffer; }
+
 	size_t GetSize() { return size; }
 private:
 	char* buffer;

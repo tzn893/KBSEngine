@@ -204,6 +204,12 @@ static TARGET GetMostPossibleDimension(TEXTURE_TYPE type) {
 			return D3D12_DSV_DIMENSION_TEXTURE2D;
 		}
 	}
+	else if constexpr (std::is_same<TARGET,D3D12_UAV_DIMENSION>::value) {
+		switch (type) {
+		case TEXTURE_TYPE_2D:
+			return D3D12_UAV_DIMENSION_TEXTURE2D;
+		}
+	}
 
 
 	return TARGET(0);
@@ -270,4 +276,25 @@ void Texture::CreateDepthStencilView(Descriptor descriptor,D3D12_DEPTH_STENCIL_V
 	}
 
 	mDSV = descriptor;
+}
+
+void Texture::CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC* uav) {
+	ID3D12Device* device = gGraphic.GetDevice();
+	if (!(flag & TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS)) {
+		return;
+	}
+	if (uav != nullptr) {
+		device->CreateUnorderedAccessView(mRes.Get(), nullptr, uav, descriptor.cpuHandle);
+	}
+	else {
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc{};
+		uavDesc.ViewDimension = GetMostPossibleDimension<D3D12_UAV_DIMENSION>(type);
+		uavDesc.Format = GetFormat();
+		switch (type) {
+		case TEXTURE_TYPE_2D:
+			uavDesc.Texture2D = { 0,0 };
+		}
+		device->CreateUnorderedAccessView(mRes.Get(), nullptr,&uavDesc, descriptor.cpuHandle);
+	}
+	mUAV = descriptor;
 }

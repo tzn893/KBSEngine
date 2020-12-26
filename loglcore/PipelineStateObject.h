@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RootSignature.h"
+#include <vector>
 
 namespace Game {
 	class GraphicPSO {
@@ -97,5 +98,40 @@ namespace Game {
 
 
 		ID3D12PipelineState* GetPSO() = delete;
+	};
+
+	class ComputePSO {
+	public:
+
+		void SetComputePipelineStateFlag(D3D12_PIPELINE_STATE_FLAGS flag) { cPso.Flags = flag; }
+		void SetComputePipelineStateNodeMask(UINT mask) { cPso.NodeMask = mask; }
+		void SetComputePipelineStateRootSignature(RootSignature* rootSig) {
+			if (rootSig != nullptr && rootSig->GetRootSignature() != nullptr)
+				cPso.pRootSignature = rootSig->GetRootSignature();
+		}
+		void SetComputePipelineStateRootSignature(ID3D12RootSignature* rootSig) {
+			cPso.pRootSignature = rootSig;
+		}
+		void SetComputePipelineStateComputeShader(void* CSCode, size_t CSSize) {
+			cPso.CS = { CSCode,CSSize };
+		}
+
+		bool Create(ID3D12Device* device) {
+			HRESULT hr = device->CreateComputePipelineState(&cPso, IID_PPV_ARGS(&mPso));
+			if (FAILED(hr)) {
+				return false;
+			}
+			created = true;
+			return true;
+		}
+
+		ID3D12PipelineState* GetPSO() {
+			return mPso.Get();
+		}
+
+	private:
+		D3D12_COMPUTE_PIPELINE_STATE_DESC cPso;
+		bool created = false;
+		ComPtr<ID3D12PipelineState> mPso;
 	};
 }

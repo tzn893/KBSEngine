@@ -122,5 +122,6 @@ bool WebClinet::Send(ProtocolPost* post) {
 		}
 	}
 	if (state == PROTOCOL_PARSER_STATE_FAIL) return false;
+	post->protocolCommands.clear();
 	return true;
 }

@@ -19,9 +19,13 @@
 #include "ShaderDataStruct.h"
 #include "DebugRenderPass.h"
 
+#include "ComputeCommand.h"
+
+
 constexpr int Graphic_mBackBufferNum = 3;
 
 class Graphic {
+	friend class ComputeCommand;
 public:
 	bool initialize(HWND winHnd,size_t width,size_t height);
 	
@@ -61,6 +65,7 @@ public:
 	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name = nullptr) {
 		return CreatePipelineStateObject(shader, pso, name, false);
 	}
+	bool CreateComputePipelineStateObject(ComputeShader* shader,Game::ComputePSO* pso,const wchar_t* name = nullptr);
 
 	void ResourceTransition(ID3D12Resource* resource,D3D12_RESOURCE_STATES before,D3D12_RESOURCE_STATES after);
 	void ResourceCopy(ID3D12Resource* Dest,ID3D12Resource* Source);
@@ -134,6 +139,17 @@ public:
 	D3D12_VIEWPORT GetDefaultViewPort() { return viewPort; }
 
 	void	SetDefaultClearColor(float* newColor) { memcpy(mRTVClearColor,newColor,sizeof(float) * 4); }
+
+	template<typename CommandType>
+	CommandType	BeginCommand() {
+		if constexpr (std::is_same<CommandType,ComputeCommand>::is_same) {
+			return ComputeCommand(this);
+		}
+		else {
+			//dummy;
+		}
+	}
+
 private:
 	void FindRPAndErase(RenderPass* rp);
 	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name, bool rp);

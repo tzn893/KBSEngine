@@ -209,7 +209,7 @@ FFTWave wave;
 bool Application::initialize() {
 	fpsCamera.attach(gGraphic.GetMainCamera());
 	
-	if (!wave.Initialize(10., 10.)) {
+	if (!wave.Initialize(12., 10.)) {
 		return false;
 	}
 

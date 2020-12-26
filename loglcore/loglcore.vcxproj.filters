@@ -82,6 +82,9 @@
     <ClCompile Include="RenderObject.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="ComputeCommand.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -175,6 +178,15 @@
       <Filter>ThridParty\tinyobj</Filter>
     </ClInclude>
     <ClInclude Include="RenderObject.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Complex.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="LightManager.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="ComputeCommand.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

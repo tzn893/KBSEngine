@@ -739,6 +739,27 @@ bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO,con
 	return true;
 }
 
+bool Graphic::CreateComputePipelineStateObject(ComputeShader* shader,Game::ComputePSO* PSO,const wchar_t* name) {
+	if (name == nullptr) name = shader->name.c_str();
+	if (mPsos.find(name) != mPsos.end()) {
+		return false;
+	}
+	auto rootSig = mRootSignatures.find(shader->rootSignatureName);
+	if (rootSig == mRootSignatures.end()) {
+		return false;
+	}
+	PSO->SetComputePipelineStateRootSignature(rootSig->second.Get());
+	PSO->SetComputePipelineStateComputeShader(shader->shaderByteCodeCS->GetBufferPointer(),
+		shader->shaderByteSizeCS);
+	
+	if (!PSO->Create(mDevice.Get())) {
+		return false;
+	}
+
+	mPsos[name] = PSO->GetPSO();
+	return true;
+}
+
 bool Graphic::CreateRootSignature(std::wstring name, Game::RootSignature* rootSig) {
 	if (mRootSignatures.find(name) != mRootSignatures.end()) {
 		return false;

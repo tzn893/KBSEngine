@@ -1,5 +1,6 @@
 #pragma once
-#include <d3d12.h>
+//#include <d3d12.h>
+#include "d3dcommon.h"
 #include <vector>
 #include <wrl.h>
 
@@ -86,9 +87,6 @@ namespace Game {
 
 	class RootSignature {
 		friend class DynamicDescriptorHeap;
-		
-		template<typename T>
-		using ComPtr = Microsoft::WRL::ComPtr<T>;
 	public:
 		RootSignature(){	
 			ResetRoot();

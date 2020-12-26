@@ -1,4 +1,5 @@
 #include "Protocol.h"
+#include <string.h>
 
 constexpr uint32_t magic_number = 0x11451419;
 /*
@@ -29,8 +30,6 @@ PROTOCOL_PARSER_STATE ProtocolParser::Buffer2CommandList(ProtocolPost* post, Net
 		buffer_ptr += cmd.command.size() + 1;
 		post->protocolCommands[i] = std::move(cmd);
 	}
-	
-	post->protocolCommands.clear();
 
 	if (buffer_ptr)
 		return PROTOCOL_PARSER_STATE_FINISH;
@@ -38,10 +37,10 @@ PROTOCOL_PARSER_STATE ProtocolParser::Buffer2CommandList(ProtocolPost* post, Net
 		return PROTOCOL_PARSER_STATE_CONTINUE;
 }
 
-PROTOCOL_PARSER_STATE ProtocolParser::CommandList2Buffer(NetBuffer* buffer,ProtocolPost* post,size_t& protocolOffset) {
+PROTOCOL_PARSER_STATE ProtocolParser::CommandList2Buffer(NetBuffer* buffer, ProtocolPost* post, size_t& protocolOffset) {
 	size_t bufferSize = 9;
 	size_t newOffset = 0;
-	for (size_t i = protocolOffset; i < post->protocolCommands.size();i++) {
+	for (size_t i = protocolOffset; i < post->protocolCommands.size(); i++) {
 		size_t chunck_size = 8 + post->protocolCommands[i].command.size() + 1;
 		if (bufferSize + chunck_size <= buffer->GetSize()) {
 			*buffer->Get<uint32_t>(bufferSize) = magic_number;
@@ -54,7 +53,7 @@ PROTOCOL_PARSER_STATE ProtocolParser::CommandList2Buffer(NetBuffer* buffer,Proto
 			break;
 		}
 		bufferSize += chunck_size;
-		newOffset ++;
+		newOffset++;
 	}
 	*buffer->Get<PROTOCOL_HEAD>(0) = post->head;
 	*buffer->Get<uint32_t>(4) = newOffset;

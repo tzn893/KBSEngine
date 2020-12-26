@@ -106,8 +106,16 @@ public:
 		return true;
 	}
 
+	T*   GetVertex(size_t index) {
+		if (index > vertexBufferSize) return nullptr;
+		return vertexUploadBufferPtr + index;
+	}
+
 	size_t GetVertexNum() { return vertexBufferSize; }
 	size_t GetIndexNum() { return indexSize; }
+
+	ID3D12Resource* GetVertexResource() { return vertexUploadBuffer.Get(); }
+	ID3D12Resource* GetIndexResource() { return indexBuffer.Get(); }
 
 	~DynamicMesh() {
 		vertexUploadBuffer->Unmap(0, nullptr);
@@ -220,6 +228,9 @@ public:
 
 	bool IsIndexBufferUsed() { return useIndex; }
 	bool IsValid() { return isValid; }
+
+	ID3D12Resource* GetVertexResource() { return vertexBuffer.Get(); }
+	ID3D12Resource* GetIndexResource() { return indexBuffer.Get(); }
 
 	~StaticMesh() {
 		vertexBuffer = nullptr;

@@ -11,7 +11,7 @@ enum PROTOCOL_COMMAND_TYPE {
 	PROTOCOL_COMMAND_TYPE_HELLO
 };
 
-struct ProtocolCommand{
+struct ProtocolCommand {
 	PROTOCOL_COMMAND_TYPE type;
 	std::string command;
 };
@@ -29,7 +29,7 @@ enum PROTOCOL_PARSER_STATE {
 
 class ProtocolParser {
 public:
-	static PROTOCOL_PARSER_STATE Buffer2CommandList(ProtocolPost* post,NetBuffer* buffer);
-	static PROTOCOL_PARSER_STATE CommandList2Buffer(NetBuffer* buffer,ProtocolPost* post,size_t& offset);
+	static PROTOCOL_PARSER_STATE Buffer2CommandList(ProtocolPost* post, NetBuffer* buffer);
+	static PROTOCOL_PARSER_STATE CommandList2Buffer(NetBuffer* buffer, ProtocolPost* post, size_t& offset);
 };
 

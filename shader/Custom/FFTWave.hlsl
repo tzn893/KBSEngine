@@ -29,5 +29,5 @@ VertexOut VS(VertexIn vin,uint vid : SV_VERTEXID){
 }
 
 float4 PS(VertexOut vin) : SV_TARGET{
-    return float4(0.,0.,1.,1.);
+    return float4(0.,0.,1.,1.) * dot(normalize(vin.WorldNor),float3(0.,1.,0.));
 }

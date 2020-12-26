@@ -6,6 +6,9 @@
 #include "../loglcore/Shader.h"
 #include "../loglcore/ConstantBuffer.h"
 
+
+#include "../loglcore/Complex.h"
+
 class FFTWave;
 
 class FFTWaveRenderPass : public RenderPass {
@@ -47,7 +50,21 @@ public:
 	void SetScale(Game::Vector3 scale) { this->scale = scale; transformUpdated = true;}
 
 	FFTWaveRenderPass* GetRenderPass() { return mRenderPass.get(); }
+
+	void SetWaveHeight(float height) { this->height = height; }
+	void SetWaveWind(Game::Vector2 wind){
+		windDir = Game::normalize(wind);
+		windSpeed = Game::length(wind);
+	}
+	void SetWaveLength(float length) {
+		this->length = length;
+	}
 private:
+
+	float phillips(uint32_t gridm,uint32_t gridn);
+	Complex h0(uint32_t gridm,uint32_t gridn);
+	Complex ht(uint32_t gridm,uint32_t gridn,float time);
+
 	static constexpr size_t rowNum = 64;
 	std::unique_ptr<DynamicMesh<MeshVertex>> mMesh;
 	std::unique_ptr<FFTWaveRenderPass> mRenderPass;
@@ -58,4 +75,15 @@ private:
 	Game::Vector3 rotation;
 	Game::Vector3 scale;
 	bool transformUpdated = false;
+
+	Game::Vector2 windDir;
+	float windSpeed;
+	float height;
+	float length;
+
+	//Game::Vector2 RandomMap[rowNum][rowNum];
+	Complex Hmap[rowNum][rowNum];
+	Complex HConjmap[rowNum][rowNum];
+
+	
 };
