@@ -18,10 +18,15 @@ struct VertexOut{
     float3 WorldNor  : NORMAL;
 };
 
-VertexOut VS(VertexIn vin,uint vid : SV_VERTEXID){
+Texture2D<float2> heightMap : register(t0);
+SamplerState defaultSampler : register(s0);
+
+VertexOut VS(VertexIn vin){
 	VertexOut vout;
-    
-    vout.WorldPos = mul(world,float4(vin.Position,1.)).xyz;
+
+    float2 heightSample = heightMap.SampleLevel(defaultSampler,vin.Uv,0).xy;
+
+    vout.WorldPos = mul(world,float4(vin.Position,1.) + float4(0.,heightSample.x,0.,0.)).xyz;
     vout.ScreenPos = mul(perspect,mul(view,float4(vout.WorldPos,1.)));
     vout.WorldNor = mul(transInvWorld,float4(vin.Normal,0.)).xyz;
 

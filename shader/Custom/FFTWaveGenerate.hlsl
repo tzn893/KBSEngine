@@ -1,7 +1,7 @@
 cbuffer Constant : register(b0){
     float time;
     float3 trash1;
-    float length;
+    float L;
     float3 trash2;
 }
 
@@ -9,7 +9,7 @@ cbuffer Constant : register(b0){
 #define GRID_ROW_NUM 64
 #endif
 
-const float g = 9.81;
+static const float g = 9.81;
 
 #define HEIGHT_MAP 0
 #define GRANDIENT_X 1
@@ -32,7 +32,7 @@ float2 complexExp(float im){
 
 float2 HTile(uint2 pos,float t){
     float2 h0 = HMap[pos],h0conj = HConjMap[pos];
-    float2 k = ((float2)pos * 2. - GRID_ROW_NUM) / length;
+    float2 k = ((float2)pos * 2. - GRID_ROW_NUM) / L;
     float  w0 = sqrt(length(k) * g) * time;
     return complexMul(h0,complexExp(w0)) + complexMul(h0conj,complexExp(-w0));
 }
@@ -43,7 +43,7 @@ float2 HTile(uint2 pos,float t){
 void GenerateHFrequence(uint3 dispatchID : SV_DISPATCHTHREADID){
     uint2 pos = dispatchID.xy;
 
-    float2 k = ((float2)pos * 2. - GRID_ROW_NUM) / length;
+    float2 k = ((float2)pos * 2. - GRID_ROW_NUM) / L;
 
     float2 ht = HTile(pos,time);
     Maps[HEIGHT_MAP][pos] = ht;

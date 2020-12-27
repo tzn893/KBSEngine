@@ -1,11 +1,11 @@
 int bitInverse64(int index){
     int rv = 0;
-    rv |= (index & 0b1) << 5;
-    rv |= (index & 0b10) << 3;
-    rv |= (index & 0b100) << 1;
-    rv |= (index & 0b1000) >> 1;
-    rv |= (index & 0b10000) >> 3;
-    rv |= (index & 0b100000) >> 5;
+    rv |= (index & 1) << 5;
+    rv |= (index & 2) << 3;
+    rv |= (index & 4) << 1;
+    rv |= (index & 8) >> 1;
+    rv |= (index & 16) >> 3;
+    rv |= (index & 32) >> 5;
     return rv;
 }
 
@@ -19,12 +19,14 @@ int bitInverse64(int index){
 //u0,u1,u2
 RWTexture2D<float2> targetTextures[3] : register(u0);
 
-cbuffer FFTState{
-    float length;
-    float3 trash;
+cbuffer FFTState : register(b0){
+    float time;
+    float3 trash1;
+    float L;
+    float3 trash2;
 };
 
-const float PI = 3.14159265;
+static const float PI = 3.14159265;
 
 float2 W(int N,int K){
     float w = (float)K * PI * 2 / (float)N;
@@ -45,13 +47,13 @@ void PerformFFTOnDir64(uint2 hori,uint2 start,uint mapI){
         buffer[output][bitInverse64(i)] = targetTextures[mapI][start + hori * i];
     }
 
-    for(int netWidth = 2;netWidth < 64;netWidth = netWidth << 1){
+    for(int netWidth = 2;netWidth < 64;netWidth = netWidth * 2){
         int tmp = input;
         input = output;
         output = tmp;
         for(int groupStart = 0;groupStart < 64;groupStart += netWidth){
             int halfWidth = netWidth / 2;
-            for(int index = 0;index < groupStart / 2;index++){
+            for(int index = 0;index < halfWidth / 2;index++){
                 float2 WT =  complexMul(W(netWidth,index),buffer[input][index + groupStart + halfWidth]);
                 buffer[output][index + groupStart] = buffer[input][index + groupStart] + WT;
                 buffer[output][index + groupStart + halfWidth] = buffer[input][index + groupStart] - WT;
@@ -59,8 +61,8 @@ void PerformFFTOnDir64(uint2 hori,uint2 start,uint mapI){
         }
     }
 
-    UNROLL(64) for(int i = 0;i != 64;i++){
-         targetTextures[mapI][start + hori * i] = buffer[output][i];
+    UNROLL(64) for(int j = 0;j != 64;j++){
+         targetTextures[mapI][start + hori * j] = buffer[output][j];
     }
 }
 
@@ -79,11 +81,11 @@ void PerformFFT64(uint3 threadID : SV_DISPATCHTHREADID){
     //synconize all the threads in this group
     GroupMemoryBarrierWithGroupSync();
     
-    int2 start = ky * hori;
+    start = ky * hori;
     PerformFFTOnDir64(vert,start,mapI);
 
     UNROLL(64) for(int i = 0;i != 64;i++){
         float sign = (float)((ky + i) & 1 ) * 2. - 1.;
-        targetTexture[mapI][int2(i,ky)] *= sign;
+        targetTextures[mapI][int2(i,ky)] *= sign;
     }
 }

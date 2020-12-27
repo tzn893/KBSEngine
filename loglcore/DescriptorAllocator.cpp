@@ -135,3 +135,18 @@ Descriptor DescriptorAllocator::AllocateDescriptor(size_t num) {
 
 	return Descriptor(rv);
 }
+
+Descriptor Descriptor::Offset(D3D12_DESCRIPTOR_HEAP_TYPE type,size_t offset) {
+	size_t dscStride = gGraphic.GetDescriptorHandleSize(type);
+	if (offset >= num || dscStride == 0) {
+		return Descriptor();
+	}
+	
+	Descriptor newHandle = *this;
+	newHandle.num -= offset;
+	newHandle.cpuHandle.ptr += dscStride * offset;
+	if (gpuHandle.ptr != 0) {
+		newHandle.gpuHandle.ptr += dscStride * offset;
+	}
+	return newHandle;
+}

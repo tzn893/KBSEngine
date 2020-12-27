@@ -2,13 +2,16 @@
 #include "../loglcore/graphic.h"
 #include "../loglcore/GeometryGenerator.h"
 #include "RandomGenerator.h"
-#include <ppl.h>
+#include "../loglcore/ComputeCommand.h"
+
 
 bool   FFTWaveRenderPass::Initialize(UploadBatch* batch) {
-	Game::RootSignature rootSig(3,0);
+	Game::RootSignature rootSig(4,1);
 	rootSig[0].initAsConstantBuffer(0, 0);
 	rootSig[1].initAsConstantBuffer(1, 0);
 	rootSig[2].initAsConstantBuffer(2, 0);
+	rootSig[3].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSig.InitializeSampler(0, CD3DX12_STATIC_SAMPLER_DESC(0));
 
 	if (!gGraphic.CreateRootSignature(L"fftwave",&rootSig)) {
 		OUTPUT_DEBUG_STRING("fail to create root signature for fft wave\n");
@@ -47,6 +50,70 @@ bool   FFTWaveRenderPass::Initialize(UploadBatch* batch) {
 	ID3D12Device* mDevice = gGraphic.GetDevice();
 	lightPass = std::make_unique<ConstantBuffer<LightPass>>(mDevice);
 	objectPass = std::make_unique<ConstantBuffer<FFTWaveObjectPass>>(mDevice);
+	mGenConstant = std::make_unique<ConstantBuffer<FFTWaveGenerateConstant>>(mDevice);
+	mGenConstant->GetBufferPtr()->length = 1.f;
+
+	mHeap = std::make_unique<DescriptorHeap>(8);
+	Descriptor dsc = mHeap->Allocate(3);
+	wave->HeightMap->CreateUnorderedAccessView(dsc.Offset(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 0));
+	wave->GradientX->CreateUnorderedAccessView(dsc.Offset(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1));
+	wave->GradientZ->CreateUnorderedAccessView(dsc.Offset(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2));
+
+	wave->HeightMap->CreateShaderResourceView(mHeap->Allocate());
+	wave->GradientX->CreateShaderResourceView(mHeap->Allocate());
+	wave->GradientZ->CreateShaderResourceView(mHeap->Allocate());
+
+	wave->HConjmapTex->CreateUnorderedAccessView(mHeap->Allocate());
+	wave->HmapTex->CreateUnorderedAccessView(mHeap->Allocate());
+
+	mGenConstant = std::make_unique<ConstantBuffer<FFTWaveGenerateConstant>>(mDevice);
+	Game::RootSignature waveGenRootSig(4,0);
+	waveGenRootSig[0].initAsDescriptorTable(0, 0, 3, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
+	waveGenRootSig[1].initAsDescriptorTable(3, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
+	waveGenRootSig[2].initAsDescriptorTable(4, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
+	waveGenRootSig[3].initAsConstantBuffer(0, 0);
+
+	if (!gGraphic.CreateRootSignature(L"fftwave_gen",&waveGenRootSig)) {
+		OUTPUT_DEBUG_STRING("fail to create root signature for fft wave\n");
+		return false;
+	}
+
+	ComputeShader* CS = gShaderManager.loadComputeShader(L"../shader/Custom/FFTWaveGenerate.hlsl",
+		"GenerateHFrequence", L"fftwave_gen", L"fftwave_gen");
+
+	Game::ComputePSO waveGenPso;
+	waveGenPso.SetComputePipelineStateFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
+	waveGenPso.SetComputePipelineStateNodeMask(0);
+	if (!gGraphic.CreateComputePipelineStateObject(CS,&waveGenPso,L"fftwave_gen")) {
+		OUTPUT_DEBUG_STRING("fail to create pso for fft wave\n");
+		return false;
+	}
+
+	Game::RootSignature waveFFTRootSig(2,0);
+	waveFFTRootSig[0].initAsConstantBuffer(0, 0);
+	waveFFTRootSig[1].initAsDescriptorTable(0, 0, 3, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
+
+	if (!gGraphic.CreateRootSignature(L"fftwave_fft",&waveFFTRootSig)) {
+		OUTPUT_DEBUG_STRING("fail to create root signature for fft wave\n");
+		return false;
+	}
+
+	ComputeShader* fftCS = gShaderManager.loadComputeShader(L"../shader/Custom/FFT64CS.hlsl",
+		"PerformFFT64", L"fftwave_fft", L"fftwave_fft");
+	if (fftCS == nullptr) {
+		OUTPUT_DEBUG_STRING("fail to create shader for fft wave\n");
+		return false;
+	}
+
+	Game::ComputePSO waveFFTPso;
+	waveFFTPso.SetComputePipelineStateFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
+	waveFFTPso.SetComputePipelineStateNodeMask(0);
+	
+	if (!gGraphic.CreateComputePipelineStateObject(fftCS,&waveFFTPso,L"fftwave_fft")) {
+		OUTPUT_DEBUG_STRING("fail to create pipeline state object for fft wave\n");
+		return false;
+	}
+	mGenConstant->GetBufferPtr()->length = 1.;
 
 	return true;
 }
@@ -54,13 +121,50 @@ void   FFTWaveRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 	if (wave == nullptr) return;
 	if (layer != RENDER_PASS_LAYER_OPAQUE) return;
 
+	ComputeCommand cc = ComputeCommand::Begin();
+
+	cc.ResourceTrasition(wave->HeightMap->GetResource(),D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	cc.ResourceTrasition(wave->GradientX->GetResource(), D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	cc.ResourceTrasition(wave->GradientZ->GetResource(), D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+	cc.SetCPSOAndRootSignature(L"fftwave_gen",L"fftwave_gen");
+	cc.BindConstantBuffer(3, mGenConstant->GetADDR());
+	ID3D12DescriptorHeap* heaps[] = { mHeap->GetHeap()};
+	cc.BindDescriptorHeap(heaps, _countof(heaps));
+	cc.BindDescriptorHandle(0, wave->HeightMap->GetUnorderedAccessViewGPU());
+	cc.BindDescriptorHandle(1, wave->HmapTex->GetUnorderedAccessViewGPU());
+	cc.BindDescriptorHandle(2, wave->HConjmapTex->GetUnorderedAccessViewGPU());
+
+	cc.Dispatch(4, 4, 1);
+
+	cc.SetCPSOAndRootSignature(L"fftwave_fft", L"fftwave_fft");
+	cc.BindConstantBuffer(0, mGenConstant->GetADDR());
+	cc.BindDescriptorHandle(1, wave->HeightMap->GetUnorderedAccessViewGPU());
+
+	cc.Dispatch(1, 1, 1);
+
+	cc.ResourceTrasition(wave->HeightMap->GetResource(), 
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,D3D12_RESOURCE_STATE_COMMON);
+	cc.ResourceTrasition(wave->GradientX->GetResource(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,D3D12_RESOURCE_STATE_COMMON);
+	cc.ResourceTrasition(wave->GradientZ->GetResource(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,D3D12_RESOURCE_STATE_COMMON);
+
+	cc.End();
+
+
 	graphic->BindPSOAndRootSignature(L"fftwave",L"fftwave");
 	graphic->BindConstantBuffer(objectPass->GetADDR(),0);
 	graphic->BindMainCameraPass(1);
 	graphic->BindConstantBuffer(lightPass->GetADDR(), 2);
+	graphic->BindDescriptorHandle(wave->HeightMap->GetShaderResourceViewGPU(), 3);
 
 	graphic->Draw(wave->mMesh->GetVBV(),
 		wave->mMesh->GetIBV(), 0, wave->mMesh->GetIndexNum());
+
 }
 
 void   FFTWaveRenderPass::finalize() {
@@ -75,7 +179,7 @@ void   FFTWaveRenderPass::SetWorldTransform(Game::Vector3 position, Game::Vector
 
 bool FFTWave::Initialize(float width,float height) {
 	auto[vertices, indices] = GeometryGenerator::Plane(width, height,
-		64,64,GeometryGenerator::GEOMETRY_FLAG_DISABLE_TANGENT);
+		128,128,GeometryGenerator::GEOMETRY_FLAG_DISABLE_TANGENT);
 
 	mMesh = std::make_unique<DynamicMesh<MeshVertex>>(
 			gGraphic.GetDevice(),
@@ -83,12 +187,7 @@ bool FFTWave::Initialize(float width,float height) {
 			vertices.size() / getVertexStrideByFloat<MeshVertex>(),
 		    reinterpret_cast<MeshVertex*>(vertices.data())
 		);
-	mRenderPass = std::make_unique<FFTWaveRenderPass>();
-	mRenderPass->Attach(this);
-	RenderPass* rps[] = {mRenderPass.get()};
-	if (!gGraphic.RegisterRenderPasses(rps, _countof(rps))) {
-		return false;
-	}
+	
 	currentTime = 0.f;
 
 	position = Game::Vector3(0., 0., 0.);
@@ -100,19 +199,48 @@ bool FFTWave::Initialize(float width,float height) {
 	SetWaveHeight(.3);
 	SetWaveLength(1.);
 
-	for (int x = 0; x != rowNum; x++) {
+	/*for (int x = 0; x != rowNum; x++) {
 		for (int y = 0; y != rowNum; y++) {
 			Hmap[y][x] = h0(x, y);
 			HConjmap[y][x] = h0(-x, -y).conj();
 		}
-	}
+	}*/
+	Complex* Hmap = new Complex[rowNum * rowNum];
+	Complex* HConjmap = new Complex[rowNum * rowNum];
 
+	for (int y = 0; y != rowNum; y++) {
+		for (int x = 0; x != rowNum; x++) {
+			Hmap[y * rowNum + x] = h0(x, y);
+			HConjmap[y * rowNum + x] = h0(-x, -y).conj();
+			Complex a = h0(x, y);
+		}
+	}
+	void* hmapd = Hmap;
+	void* hconjmapd = HConjmap;
+
+	UploadBatch batch = UploadBatch::Begin();
+	HmapTex = std::make_unique<Texture>(rowNum, rowNum, TEXTURE_FORMAT_FLOAT2,
+		&hmapd, TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,D3D12_RESOURCE_STATE_UNORDERED_ACCESS,&batch);
+	HConjmapTex = std::make_unique<Texture>(rowNum,rowNum,TEXTURE_FORMAT_FLOAT2,
+		&hconjmapd,TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,D3D12_RESOURCE_STATE_UNORDERED_ACCESS,&batch);
+	batch.End();
+
+	HeightMap = std::make_unique<Texture>(rowNum, rowNum, TEXTURE_FORMAT_FLOAT2, TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS);
+	GradientX = std::make_unique<Texture>(rowNum, rowNum, TEXTURE_FORMAT_FLOAT2, TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS);
+	GradientZ = std::make_unique<Texture>(rowNum, rowNum, TEXTURE_FORMAT_FLOAT2, TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS);
+
+	mRenderPass = std::make_unique<FFTWaveRenderPass>();
+	mRenderPass->Attach(this);
+	RenderPass* rps[] = { mRenderPass.get() };
+	if (!gGraphic.RegisterRenderPasses(rps, _countof(rps))) {
+		return false;
+	};
 
 	return true;
 }
 
 static constexpr float g = 9.8;
-
+/*
 #pragma region FFT
 Complex W(size_t N, size_t K) {
 	return Complex::exp(0., static_cast<float>(K) / static_cast<float>(N) * 2 * PI);
@@ -183,6 +311,7 @@ void PerformFFTOn64(ComplexAccessor& target, ComplexAccessor& result) {
 	}
 }
 #pragma endregion
+*/
 
 float FFTWave::phillips(uint32_t gridn,uint32_t gridm) {
 	Game::Vector2 k = Game::Vector2((static_cast<float>(gridn) * 2. - rowNum)/ length,
@@ -204,6 +333,7 @@ Complex FFTWave::h0(uint32_t gridn,uint32_t gridm) {
 	return r * sqrt(phillips(gridn, gridm) / 2.);
 }
 
+/*
 Complex FFTWave::ht(uint32_t gridn,uint32_t gridm,float time) {
 	Complex H0 = Hmap[gridm][gridn], H0Conj = HConjmap[gridm][gridn];
 	
@@ -213,6 +343,7 @@ Complex FFTWave::ht(uint32_t gridn,uint32_t gridm,float time) {
 
 	return H0 * Complex::exp(0, fw0) + H0Conj * Complex::exp(0, -fw0);
 }
+*/
 
 
 void FFTWave::Update(float deltaTime) {
@@ -221,7 +352,7 @@ void FFTWave::Update(float deltaTime) {
 		transformUpdated = false;
 	}
 
-	std::vector<std::vector<Complex>> frequence(64,std::vector<Complex>(64));
+	/*std::vector<std::vector<Complex>> frequence(64,std::vector<Complex>(64));
 	std::vector<std::vector<Complex>> grandient_x(64, std::vector<Complex>(64));
 	std::vector<std::vector<Complex>> grandient_z(64, std::vector<Complex>(64));
 
@@ -269,8 +400,7 @@ void FFTWave::Update(float deltaTime) {
 				 - grandient_x[y][x].Re() * sign ,1. ,- grandient_z[y][x].Re()* sign
 			));
 		}
-	}
-
-
+	}*/
 	currentTime += deltaTime * .05;
+	mRenderPass->UpdateTime(currentTime);
 }

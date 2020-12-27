@@ -5,6 +5,8 @@ static size_t  getFormatElementSize(TEXTURE_FORMAT format) {
 	switch (format) {
 	//case TEXTURE_FORMAT_RGB:
 		//return 3;
+	case TEXTURE_FORMAT_FLOAT2:
+		return 2;
 	case TEXTURE_FORMAT_RGBA:
 		return 4;
 	case TEXTURE_FORMAT_FLOAT:
@@ -17,6 +19,8 @@ static DXGI_FORMAT getDXGIFormatFromTextureFormat(TEXTURE_FORMAT format) {
 	switch (format) {
 	//case TEXTURE_FORMAT_RGB:
 		//return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case TEXTURE_FORMAT_FLOAT2:
+		return DXGI_FORMAT_R32G32_FLOAT;
 	case TEXTURE_FORMAT_RGBA:
 		return DXGI_FORMAT_R8G8B8A8_UNORM;
 	case TEXTURE_FORMAT_FLOAT:

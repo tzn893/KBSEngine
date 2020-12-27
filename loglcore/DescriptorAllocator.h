@@ -14,6 +14,8 @@ struct Descriptor {
 		cpuHandle(cpuHandle), num(num) {
 		gpuHandle.ptr = 0;
 	}
+
+	Descriptor Offset(D3D12_DESCRIPTOR_HEAP_TYPE type,size_t offset = 1);
 	bool isValid() { return num != 0;}
 };
 

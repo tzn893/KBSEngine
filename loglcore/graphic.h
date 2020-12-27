@@ -19,7 +19,7 @@
 #include "ShaderDataStruct.h"
 #include "DebugRenderPass.h"
 
-#include "ComputeCommand.h"
+//#include "ComputeCommand.h"
 
 
 constexpr int Graphic_mBackBufferNum = 3;
@@ -54,102 +54,113 @@ public:
 	void Draw(D3D12_VERTEX_BUFFER_VIEW* vbv,size_t start,size_t num,D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	void Draw(D3D12_VERTEX_BUFFER_VIEW* vbv,D3D12_INDEX_BUFFER_VIEW* ibv,size_t start,size_t num,D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	
-	void DrawInstance(D3D12_VERTEX_BUFFER_VIEW* vbv,size_t start,size_t num,size_t instanceNum,D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	void DrawInstance(D3D12_VERTEX_BUFFER_VIEW* vbv,D3D12_INDEX_BUFFER_VIEW* ibv,size_t start,size_t num,size_t instanceNum,D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+void DrawInstance(D3D12_VERTEX_BUFFER_VIEW* vbv, size_t start, size_t num, size_t instanceNum, D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+void DrawInstance(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_BUFFER_VIEW* ibv, size_t start, size_t num, size_t instanceNum, D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	bool CreateRootSignature(std::wstring name,Game::RootSignature* rootSig);
+bool CreateRootSignature(std::wstring name, Game::RootSignature* rootSig);
 
-	bool CreatePipelineStateObjectRP(Shader* shader, Game::GraphicPSORP* pso, const wchar_t* name = nullptr) {
-		return CreatePipelineStateObject(shader, pso, name, true);
+bool CreatePipelineStateObjectRP(Shader* shader, Game::GraphicPSORP* pso, const wchar_t* name = nullptr) {
+	return CreatePipelineStateObject(shader, pso, name, true);
+}
+bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name = nullptr) {
+	return CreatePipelineStateObject(shader, pso, name, false);
+}
+bool CreateComputePipelineStateObject(ComputeShader* shader, Game::ComputePSO* pso, const wchar_t* name = nullptr);
+
+void ResourceTransition(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
+void ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source);
+void ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source, D3D12_RESOURCE_STATES destInitState,
+	D3D12_RESOURCE_STATES sourceInitState, D3D12_RESOURCE_STATES destAfterState,
+	D3D12_RESOURCE_STATES sourceAfterState);
+
+void BindCurrentBackBufferAsRenderTarget(bool clear = false, float* clearValue = nullptr);
+void BindRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, size_t rtvNum = 1,
+	bool clear = false, float* clearValule = nullptr, D3D12_VIEWPORT* viewPort = nullptr, D3D12_RECT* rect = nullptr);
+
+Camera* GetMainCamera() { return &mainCamera; }
+float   GetHeightWidthRatio() { return (float)mWinWidth / (float)mWinHeight; }
+
+size_t  GetScreenHeight() { return mWinHeight; }
+size_t  GetScreenWidth() { return mWinWidth; }
+
+template<typename RPType>
+RPType* GetRenderPass() {
+	if constexpr (std::is_same<RPType, SpriteRenderPass>::value) {
+		return spriteRenderPass.get();
 	}
-	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name = nullptr) {
-		return CreatePipelineStateObject(shader, pso, name, false);
+	else if constexpr (std::is_same<RPType, PhongRenderPass>::value) {
+		if (phongRenderPass.get() == nullptr) {
+			phongRenderPass = std::make_unique<PhongRenderPass>();
+			RenderPass* rps[] = { phongRenderPass.get() };
+			RegisterRenderPasses(rps);
+		}
+		return phongRenderPass.get();
 	}
-	bool CreateComputePipelineStateObject(ComputeShader* shader,Game::ComputePSO* pso,const wchar_t* name = nullptr);
-
-	void ResourceTransition(ID3D12Resource* resource,D3D12_RESOURCE_STATES before,D3D12_RESOURCE_STATES after);
-	void ResourceCopy(ID3D12Resource* Dest,ID3D12Resource* Source);
-	void ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source, D3D12_RESOURCE_STATES destInitState,
-		D3D12_RESOURCE_STATES sourceInitState,D3D12_RESOURCE_STATES destAfterState,
-		D3D12_RESOURCE_STATES sourceAfterState);
-
-	void BindCurrentBackBufferAsRenderTarget(bool clear = false,float* clearValue = nullptr);
-	void BindRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle,D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle,size_t rtvNum = 1,
-		bool clear = false,float* clearValule = nullptr,D3D12_VIEWPORT* viewPort = nullptr, D3D12_RECT* rect = nullptr);
-
-	Camera* GetMainCamera() { return &mainCamera; }
-	float   GetHeightWidthRatio() { return (float)mWinWidth / (float)mWinHeight; }
-
-	size_t  GetScreenHeight() { return mWinHeight; }
-	size_t  GetScreenWidth()  { return mWinWidth; }
-
-	template<typename RPType>
-	RPType* GetRenderPass() {
-		if constexpr (std::is_same<RPType, SpriteRenderPass>::value) {
-			return spriteRenderPass.get();
-		}
-		else if constexpr(std::is_same<RPType,PhongRenderPass>::value){
-			if (phongRenderPass.get() == nullptr) {
-				phongRenderPass = std::make_unique<PhongRenderPass>();
-				RenderPass* rps[] = { phongRenderPass.get() };
-				RegisterRenderPasses(rps);
-			}
-			return phongRenderPass.get();
-		}
-		else if constexpr (std::is_same<RPType,DebugRenderPass>::value) {
-			return debugRenderPass.get();
-		}
-		else {
-			return nullptr;
-		}
+	else if constexpr (std::is_same<RPType, DebugRenderPass>::value) {
+		return debugRenderPass.get();
 	}
-
-	template<typename RPType>
-	void DisableRenderPass() {
-		if constexpr (std::is_same<RPType,SpriteRenderPass>::value) {
-			FindRPAndErase(spriteRenderPass.get());
-			spriteRenderPass->finalize();
-			spriteRenderPass.release();
-		}
-		else if constexpr (std::is_same<RPType,PhongRenderPass>::value) {
-			if (phongRenderPass.get() == nullptr)
-				return;
-			FindRPAndErase(phongRenderPass.get());
-			phongRenderPass->finalize();
-			phongRenderPass.release();
-		}
-		else if constexpr (std::is_same<RPType,DebugRenderPass>::value) {
-			FindRPAndErase(debugRenderPass.get());
-			debugRenderPass->finalize();
-			debugRenderPass.release();
-		}
-		else {
-			return;//otherwise we do nothing
-		}
+	else {
+		return nullptr;
 	}
+}
 
-	bool    RegisterRenderPasses(RenderPass** RP,size_t num = 1);
-
-	void    SetSissorRect(D3D12_RECT* sissorRect,size_t num = 1);
-	void	SetViewPort(D3D12_VIEWPORT* vp,size_t num = 1);
-
-	void	RestoreOriginalViewPortAndRect();
-
-	D3D12_RECT GetDefaultSissorRect() { return sissorRect; }
-	D3D12_VIEWPORT GetDefaultViewPort() { return viewPort; }
-
-	void	SetDefaultClearColor(float* newColor) { memcpy(mRTVClearColor,newColor,sizeof(float) * 4); }
-
-	template<typename CommandType>
-	CommandType	BeginCommand() {
-		if constexpr (std::is_same<CommandType,ComputeCommand>::is_same) {
-			return ComputeCommand(this);
-		}
-		else {
-			//dummy;
-		}
+template<typename RPType>
+void DisableRenderPass() {
+	if constexpr (std::is_same<RPType, SpriteRenderPass>::value) {
+		FindRPAndErase(spriteRenderPass.get());
+		spriteRenderPass->finalize();
+		spriteRenderPass.release();
 	}
+	else if constexpr (std::is_same<RPType, PhongRenderPass>::value) {
+		if (phongRenderPass.get() == nullptr)
+			return;
+		FindRPAndErase(phongRenderPass.get());
+		phongRenderPass->finalize();
+		phongRenderPass.release();
+	}
+	else if constexpr (std::is_same<RPType, DebugRenderPass>::value) {
+		FindRPAndErase(debugRenderPass.get());
+		debugRenderPass->finalize();
+		debugRenderPass.release();
+	}
+	else {
+		return;//otherwise we do nothing
+	}
+}
 
+bool    RegisterRenderPasses(RenderPass** RP, size_t num = 1);
+
+void    SetSissorRect(D3D12_RECT* sissorRect, size_t num = 1);
+void	SetViewPort(D3D12_VIEWPORT* vp, size_t num = 1);
+
+void	RestoreOriginalViewPortAndRect();
+
+D3D12_RECT GetDefaultSissorRect() { return sissorRect; }
+D3D12_VIEWPORT GetDefaultViewPort() { return viewPort; }
+
+void	SetDefaultClearColor(float* newColor) { memcpy(mRTVClearColor, newColor, sizeof(float) * 4); }
+
+/*template<typename CommandType>
+CommandType	BeginCommand() {
+	if constexpr (std::is_same<CommandType, ComputeCommand>::value) {
+		return ComputeCommand(this);
+	}
+	else {
+		//dummy;
+	}
+}*/
+
+inline size_t GetDescriptorHandleSize(D3D12_DESCRIPTOR_HEAP_TYPE type) {
+	if (type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) {
+		return mDescriptorHandleSizeCBVSRVUAV;
+	}
+	else if(type == D3D12_DESCRIPTOR_HEAP_TYPE_DSV) {
+		return mDescriptorHandleSizeDSV;
+	}
+	else if(type == D3D12_DESCRIPTOR_HEAP_TYPE_RTV) {
+		return mDescriptorHandleSizeRTV;
+	}
+}
 private:
 	void FindRPAndErase(RenderPass* rp);
 	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name, bool rp);
@@ -177,6 +188,8 @@ private:
 	size_t mDescriptorHandleSizeRTV;
 	ComPtr<ID3D12DescriptorHeap> mBackBufferDSVhHeap;
 	size_t mDescriptorHandleSizeDSV;
+
+	size_t mDescriptorHandleSizeCBVSRVUAV;
 
 	size_t mCurrBackBuffer;
 	ComPtr<ID3D12Resource> mBackBuffers[Graphic_mBackBufferNum];

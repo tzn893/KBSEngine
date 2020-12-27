@@ -315,6 +315,8 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height){
 		return false;
 	}
 
+	mDescriptorHandleSizeCBVSRVUAV = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
 	if (!createShaderAndRootSignatures()) {
 		OUTPUT_DEBUG_STRING("ERROR : fail to create shaders and root signatures\n");
 		return false;

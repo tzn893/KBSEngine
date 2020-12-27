@@ -8,6 +8,7 @@
 
 
 #include "../loglcore/Complex.h"
+#include "../loglcore/Texture.h"
 
 class FFTWave;
 
@@ -27,6 +28,10 @@ public:
 
 	void SetWorldTransform(Game::Vector3 position,Game::Vector3 rotation,Game::Vector3 scale);
 	LightPass* GetLightPass() { return lightPass->GetBufferPtr(); }
+
+	void UpdateTime(float time) {
+		mGenConstant->GetBufferPtr()->time = time;
+	}
 private:
 	FFTWave* wave;
 	Shader* fftWaveShader;
@@ -37,6 +42,15 @@ private:
 	};
 	std::unique_ptr<ConstantBuffer<FFTWaveObjectPass>> objectPass;
 	std::unique_ptr<ConstantBuffer<LightPass>> lightPass;
+
+	struct FFTWaveGenerateConstant {
+		float time;
+		Game::Vector3 trash1;
+		float length;
+		Game::Vector3 trash2;
+	};
+	std::unique_ptr<ConstantBuffer<FFTWaveGenerateConstant>> mGenConstant;
+	std::unique_ptr<DescriptorHeap> mHeap;
 };
 
 class FFTWave {
@@ -82,8 +96,9 @@ private:
 	float length;
 
 	//Game::Vector2 RandomMap[rowNum][rowNum];
-	Complex Hmap[rowNum][rowNum];
-	Complex HConjmap[rowNum][rowNum];
+	//Complex Hmap[rowNum][rowNum];
+	//Complex HConjmap[rowNum][rowNum];
 
-	
+	std::unique_ptr<Texture> HmapTex, HConjmapTex;
+	std::unique_ptr<Texture> HeightMap, GradientX, GradientZ;
 };

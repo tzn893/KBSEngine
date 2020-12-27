@@ -5,6 +5,7 @@
 
 enum TEXTURE_FORMAT {
 	//TEXTURE_FORMAT_RGB,
+	TEXTURE_FORMAT_FLOAT2,
 	TEXTURE_FORMAT_RGBA,
 	TEXTURE_FORMAT_FLOAT,
 	TEXTURE_FORMAT_DEPTH_STENCIL
@@ -69,9 +70,9 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilViewCPU() { return mDSV.cpuHandle; }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDepthStencilViewGPU() { return mDSV.gpuHandle; }
 
-	void CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC* srv = nullptr);
+	void CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC* uav = nullptr);
 	D3D12_CPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewCPU() { return mUAV.cpuHandle; }
-	D3D12_GPU_DESCRIPTOR_HANDLE GetUnorederedAccessViewGPU() { return mUAV.gpuHandle; }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewGPU() { return mUAV.gpuHandle; }
 
 protected:
 	TEXTURE_TYPE type;
