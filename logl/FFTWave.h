@@ -9,6 +9,7 @@
 
 #include "../loglcore/Complex.h"
 #include "../loglcore/Texture.h"
+#include "../loglcore/ComputeCommand.h"
 
 class FFTWave;
 
@@ -30,11 +31,33 @@ public:
 	LightPass* GetLightPass() { return lightPass->GetBufferPtr(); }
 
 	void UpdateTime(float time) {
-		mGenConstant->GetBufferPtr()->time = time;
+		currentTime = time;
+	}
+
+	void SetWaveLength(float len) {
+		OceanLength = len;
 	}
 private:
+	void UpdateWaveConstant();
+	void ComputeFFT(std::unique_ptr<Texture>& tex,size_t index,ComputeCommand& cc);
+
 	FFTWave* wave;
 	Shader* fftWaveShader;
+
+	struct WaveConstant {
+		Game::Vector4 WindAndSeed;		//风和随机种子 xy为风, zw为两个随机种子
+
+		int N;					//fft纹理大小
+		float OceanLength;		//海洋长度
+		float A;				//phillips谱参数，影响波浪高度
+		float Time;				//时间
+		int Ns;					//Ns = pow(2,m-1); m为第几阶段
+		float Lambda;			//偏移影响
+		float HeightScale;		//高度影响
+		float BubblesScale;	    //泡沫强度
+		float BubblesThreshold; //泡沫阈值
+		int   Ended;
+	};
 
 	struct FFTWaveObjectPass {
 		Game::Mat4x4 world;
@@ -42,15 +65,27 @@ private:
 	};
 	std::unique_ptr<ConstantBuffer<FFTWaveObjectPass>> objectPass;
 	std::unique_ptr<ConstantBuffer<LightPass>> lightPass;
+	std::unique_ptr<ConstantBuffer<WaveConstant>> waveConstant;
 
-	struct FFTWaveGenerateConstant {
-		float time;
-		Game::Vector3 trash1;
-		float length;
-		Game::Vector3 trash2;
-	};
-	std::unique_ptr<ConstantBuffer<FFTWaveGenerateConstant>> mGenConstant;
 	std::unique_ptr<DescriptorHeap> mHeap;
+
+	std::unique_ptr<Texture> mRandomMap;
+	std::unique_ptr<Texture> mHeightMap, mGradientX, mGradientZ;
+	std::unique_ptr<Texture> mSpareTexture;
+
+	int NPow = 9;
+	int N;
+	float windScale = 70.;
+	Game::Vector2 windDir = Game::Vector2(0.,1.);
+	Game::Vector2 randSeed;
+	float currentTime;
+	float Lambda  = 1.;			
+	float HeightScale = 1.5;		
+	float BubblesScale = 28.;	 
+	float BubblesThreshold = 1.;
+	float OceanLength = 512.;
+	float A = 256.;
+	
 };
 
 class FFTWave {
@@ -64,22 +99,8 @@ public:
 	void SetScale(Game::Vector3 scale) { this->scale = scale; transformUpdated = true;}
 
 	FFTWaveRenderPass* GetRenderPass() { return mRenderPass.get(); }
-
-	void SetWaveHeight(float height) { this->height = height; }
-	void SetWaveWind(Game::Vector2 wind){
-		windDir = Game::normalize(wind);
-		windSpeed = Game::length(wind);
-	}
-	void SetWaveLength(float length) {
-		this->length = length;
-	}
 private:
-
-	float phillips(uint32_t gridm,uint32_t gridn);
-	Complex h0(uint32_t gridm,uint32_t gridn);
-	Complex ht(uint32_t gridm,uint32_t gridn,float time);
-
-	static constexpr size_t rowNum = 64;
+	//static constexpr size_t rowNum = 64;
 	std::unique_ptr<DynamicMesh<MeshVertex>> mMesh;
 	std::unique_ptr<FFTWaveRenderPass> mRenderPass;
 
@@ -89,16 +110,4 @@ private:
 	Game::Vector3 rotation;
 	Game::Vector3 scale;
 	bool transformUpdated = false;
-
-	Game::Vector2 windDir;
-	float windSpeed;
-	float height;
-	float length;
-
-	//Game::Vector2 RandomMap[rowNum][rowNum];
-	//Complex Hmap[rowNum][rowNum];
-	//Complex HConjmap[rowNum][rowNum];
-
-	std::unique_ptr<Texture> HmapTex, HConjmapTex;
-	std::unique_ptr<Texture> HeightMap, GradientX, GradientZ;
 };

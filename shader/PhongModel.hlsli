@@ -1,8 +1,28 @@
 #ifndef _PHONG_MODEL_
 #define _PHONG_MODEL_
 
-#include "LightPass.hlsli"
-#include "ObjectPass.hlsli"
+//#include "LightPass.hlsli"
+//#include "ObjectPass.hlsli"
+
+#ifndef _OBJECT_PASS_
+struct Material{
+    float4 diffuse;
+    float3 FresnelR0;
+    float  Roughness;
+    float4x4 matTransform;
+};
+#endif //_OBJECT_PASS_
+
+#ifndef _LIGHT_PASS_
+struct Light{
+    float3 intensity;
+    float  fallStart;
+    float3 vec;
+    float  fallEnd;
+    int    lightType;
+    float3 padding;
+};
+#endif //_LIGHT_PASS_
 
 float CalcAttenuation(float d, float falloffStart, float falloffEnd)
 {

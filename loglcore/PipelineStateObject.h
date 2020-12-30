@@ -116,6 +116,13 @@ namespace Game {
 			cPso.CS = { CSCode,CSSize };
 		}
 
+		static ComputePSO Default() {
+			ComputePSO dpso;
+			dpso.SetComputePipelineStateFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
+			dpso.SetComputePipelineStateNodeMask(0);
+			return dpso;
+		}
+
 		bool Create(ID3D12Device* device) {
 			HRESULT hr = device->CreateComputePipelineState(&cPso, IID_PPV_ARGS(&mPso));
 			if (FAILED(hr)) {

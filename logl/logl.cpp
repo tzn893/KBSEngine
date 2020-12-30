@@ -17,9 +17,10 @@
 HINSTANCE hInst;                                // 当前实例
 WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
+HWND  winHnd;
 
-int height = 600, width = 800;
-//int height = 960, width = 1280;
+//int height = 600, width = 800;
+int height = 960, width = 1280;
 bool Quit = false;
 // 此代码模块中包含的函数的前向声明:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -61,6 +62,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
 		}else{
 			gTimer.tick();
+
+			std::wstring fpsStr = L"fps : " + std::to_wstring(1. / gTimer.DeltaTime());
+			SetWindowText(winHnd,fpsStr.c_str());
 
 			gGraphic.begin();
 			gApp.update();
@@ -117,8 +121,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	hInst = hInstance; // 将实例句柄存储在全局变量中
 
-	HWND hWnd = CreateWindowW(szWindowClass, L"Linux 作业", WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME),
+	auto ws = WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME);
+
+	HWND hWnd = CreateWindowW(szWindowClass, L"Linux 作业",ws,//WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME),
 	0,0, width, height, nullptr, nullptr, hInstance, nullptr);
+	winHnd = hWnd;
+
+	RECT R = {0,0,width,height};
+	AdjustWindowRect(&R, ws, false);
 
 	if (!hWnd)
 	{

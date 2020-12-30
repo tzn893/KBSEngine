@@ -197,8 +197,8 @@ void Application::update() {
 
 void Application::finalize() {
 	box.release();
-}*/
-
+}
+*/
 
 #include "FFTWave.h"
 
@@ -209,7 +209,7 @@ FFTWave wave;
 bool Application::initialize() {
 	fpsCamera.attach(gGraphic.GetMainCamera());
 	
-	if (!wave.Initialize(12., 10.)) {
+	if (!wave.Initialize(96., 80.)) {
 		return false;
 	}
 
@@ -250,7 +250,7 @@ void Application::update() {
 	}
 	else if (gInput.KeyHold(InputBuffer::MOUSE_LEFT)) {
 		Game::Vector2 deltaPos = gInput.MousePosition() - pos;
-		float speed = 10.;
+		float speed = 5.;
 		fpsCamera.rotateX(deltaPos.x * gTimer.DeltaTime() * speed);
 		fpsCamera.rotateY(deltaPos.y * gTimer.DeltaTime() * speed);
 		pos = gInput.MousePosition();
