@@ -26,6 +26,7 @@
     <ClCompile Include="DescriptorAllocator.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="graphic.cpp" />
+    <ClCompile Include="LightManager.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="ModelManager.cpp" />
     <ClCompile Include="PhongRenderPass.cpp" />

@@ -19,13 +19,14 @@ class PhongRenderPass : public RenderPass {
 public:
 	virtual size_t GetPriority() override { return 5; }
 
+	virtual void   PreProcess() override;
 	virtual bool   Initialize(UploadBatch* batch = nullptr) override;
 	virtual void   Render(Graphic* graphic, RENDER_PASS_LAYER layer) override ;
 
 	virtual void   finalize() override;
 
-	void		   BindLightData(LightData* data,size_t offset = 0,size_t num = 1);
-	void		   BindAmbientLightData(Game::Vector3 color);
+	//void		   BindLightData(LightData* data,size_t offset = 0,size_t num = 1);
+	//void		   BindAmbientLightData(Game::Vector3 color);
 	
 	PhongObjectID  AllocateObjectPass();
 	void		   DeallocateObjectPass(PhongObjectID& objId);
@@ -43,7 +44,7 @@ private:
 	std::wstring texPsoName = L"PhongTex";
 	std::wstring texRootSigName = L"PhongTex";
 
-	std::unique_ptr<ConstantBuffer<LightPass>> lightPass;
+	//std::unique_ptr<ConstantBuffer<LightPass>> lightPass;
 	std::unique_ptr<ConstantBuffer<ObjectPass>> objectPass;
 	size_t objBufferSize = 256;
 	std::vector<PhongObjectID>  avaliableObjectBuffers;
@@ -64,7 +65,7 @@ private:
 	std::vector<ObjectElement> objQueue;
 	std::vector<ObjectElement> objTexQueue;
 	std::unique_ptr<DescriptorHeap> mHeap;
-
+	/*
 	struct ShadowLightPass {
 		Game::Mat4x4 lightView;
 	};
@@ -78,6 +79,6 @@ private:
 	std::wstring shadowPsoName = L"shadowPsoName";
 	std::wstring shadowRootSigName = L"shadowRootSig";
 	float shadowDistance = 20.;
-
-	void UpdateShadowLightView();
+	
+	void UpdateShadowLightView();*/
 };

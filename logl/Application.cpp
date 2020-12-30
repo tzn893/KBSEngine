@@ -14,11 +14,12 @@
 #include "../loglcore/ModelManager.h"
 
 #include "../loglcore/RenderObject.h"
+#include "../loglcore/LightManager.h"
 
 #include "InputBuffer.h"
 #include "Timer.h"
 #include "FPSCamera.h"
-/*
+
 std::unique_ptr<StaticMesh<MeshVertexNormal>> box;
 std::unique_ptr<StaticMesh<MeshVertexNormal>> plane;
 
@@ -84,14 +85,14 @@ void upload(){
 	objPass->transInvWorld = objPass->world.R();
 	objPass->world = objPass->world.T();
 
-	prp->BindAmbientLightData(Game::Vector3(.6, .6, .6));
+	gLightManager.SetAmbientLight(Game::Vector3(.6, .6, .6));
 	LightData light;
 	light.fallStart = 0.;
 	light.fallEnd = 20.;
 	light.intensity = Game::Vector3(1.,1.,1.);
 	light.direction = Game::normalize(Game::Vector3(0., 0.,1.));
 	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
-	prp->BindLightData(&light);
+	gLightManager.SetMainLightData(light);
 
 }
 
@@ -174,7 +175,7 @@ void Application::update() {
 	light.intensity = Game::Vector3(1., 1., 1.);
 	light.direction = Game::normalize(Game::Vector3(0., sinf(g), cosf(g)));
 	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
-	prp->BindLightData(&light);
+	gLightManager.SetMainLightData(light);
 	
 	ObjectPass* objPass = prp->GetObjectPass(pid[0]);
 	objPass->world = Game::PackTransfrom(Game::Vector3(3., 0.,10.), Game::Vector3(r, b, 0.), Game::Vector3(1., 1., 1.));
@@ -198,8 +199,8 @@ void Application::update() {
 void Application::finalize() {
 	box.release();
 }
-*/
 
+/*
 #include "FFTWave.h"
 
 FPSCamera fpsCamera;
@@ -262,3 +263,4 @@ void Application::update() {
 void Application::finalize() {
 
 }
+*/

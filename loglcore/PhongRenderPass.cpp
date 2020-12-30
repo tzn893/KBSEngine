@@ -1,12 +1,13 @@
 #include "PhongRenderPass.h"
 #include "graphic.h"
 #include "PipelineStateObject.h"
-
+#include "LightManager.h"
 
 bool PhongRenderPass::Initialize(UploadBatch* batch) {
-	
-	std::string depthTexelWidth = std::to_string(1. / (float)depthWidth);
-	std::string depthTexelHeight = std::to_string(1. / (float)depthHeight);
+	Game::Vector2 dtw = ShadowRenderPass::GetDepthTexelWidth();
+
+	std::string depthTexelWidth = std::to_string(dtw.x);
+	std::string depthTexelHeight = std::to_string(dtw.y);
 
 	Game::RootSignature rootSig(5,1);
 	rootSig[0].initAsConstantBuffer(0, 0);
@@ -105,11 +106,14 @@ bool PhongRenderPass::Initialize(UploadBatch* batch) {
 
 	ID3D12Device* mDevice = gGraphic.GetDevice();
 
-	lightPass = std::make_unique<ConstantBuffer<LightPass>>(mDevice);
+	//lightPass = std::make_unique<ConstantBuffer<LightPass>>(mDevice);
 	objectPass = std::make_unique<ConstantBuffer<ObjectPass>>(mDevice,objBufferSize);
 
 	mHeap = std::make_unique<DescriptorHeap>(128);
-
+	if (!gLightManager.EnableShadowRenderPass()) {
+		return false;
+	}
+	/*
 	//=======initialize shadow============//
 	Game::RootSignature shadowRootSig(2,0);
 	shadowRootSig[0].initAsConstantBuffer(0, 0);
@@ -185,13 +189,27 @@ bool PhongRenderPass::Initialize(UploadBatch* batch) {
 	orthoMat = Game::MatrixOrtho(-30., 30., -30., 30., -100., 100.);
 	UpdateShadowLightView();
 
+	return true;*/
 	return true;
 }
 
+void PhongRenderPass::PreProcess() {
+	ShadowRenderPass* shadowRP = gLightManager.GetShadowRenderPass();
+	for (auto& ele : objQueue) {
+		shadowRP->RenderShadowMap(ele.vbv, ele.ibv, ele.start, ele.num,
+			objectPass->GetADDR(ele.objectID));
+	}
+	for (auto& ele : objTexQueue) {
+		shadowRP->RenderShadowMap(ele.vbv, ele.ibv, ele.start, ele.num,
+			objectPass->GetADDR(ele.objectID));
+	}
+}
+
 void PhongRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
-	if (layer == RENDER_PASS_LAYER_BEFORE_ALL) {
+	/*if (layer == RENDER_PASS_LAYER_BEFORE_ALL) {
 		UpdateShadowLightView();
-		float clv[4] = { 1.,1.,1.,1. };
+		
+float clv[4] = { 1.,1.,1.,1. };
 		if (objQueue.empty() && objTexQueue.empty()) return;
 		graphic->ResourceTransition(mDepthRTVTex->GetResource(),
 			D3D12_RESOURCE_STATE_COMMON,
@@ -230,16 +248,25 @@ void PhongRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 			D3D12_RESOURCE_STATE_COMMON);
 
 		graphic->BindCurrentBackBufferAsRenderTarget();
-	}else if (layer == RENDER_PASS_LAYER_OPAQUE) {
+	}else */
+	if (layer == RENDER_PASS_LAYER_OPAQUE) {
+		ShadowRenderPass* shadowRP = gLightManager.GetShadowRenderPass();
+		D3D12_GPU_DESCRIPTOR_HANDLE shadowSRV = mHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+			shadowRP->GetShadowMap()->GetShaderResourceViewCPU()).gpuHandle;
+
 		if (!objQueue.empty()) {
+
 			graphic->BindPSOAndRootSignature(psoName.c_str(), rootSigName.c_str());
 			graphic->BindMainCameraPass(1);
-			graphic->BindConstantBuffer(lightPass->GetADDR(), 2);
-			graphic->BindConstantBuffer(mDepthLightView->GetADDR(), 3);
+			//graphic->BindConstantBuffer(lightPass->GetADDR(), 2);
+			//graphic->BindConstantBuffer(mDepthLightView->GetADDR(), 3);
+			gLightManager.BindLightPass2ConstantBuffer(2);
+			graphic->BindConstantBuffer(shadowRP->GetDepthLightView(), 3);
+
 
 			ID3D12DescriptorHeap* heaps[] = { mHeap->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) };
 			graphic->BindDescriptorHeap(heaps, _countof(heaps));
-			graphic->BindDescriptorHandle(mDepthRTVTex->GetShaderResourceViewGPU(),4);
+			graphic->BindDescriptorHandle(shadowSRV,4);
 
 			for (auto& ele : objQueue) {
 				graphic->BindConstantBuffer(objectPass->GetADDR(ele.objectID), 0);
@@ -255,12 +282,15 @@ void PhongRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 
 			graphic->BindPSOAndRootSignature(texPsoName.c_str(), texRootSigName.c_str());
 			graphic->BindMainCameraPass(1);
-			graphic->BindConstantBuffer(lightPass->GetADDR(), 2);
+			//graphic->BindConstantBuffer(lightPass->GetADDR(), 2);
+			gLightManager.BindLightPass2ConstantBuffer(2);
 			ID3D12DescriptorHeap* heaps[] = { mHeap->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) };
 			graphic->BindDescriptorHeap(heaps, _countof(heaps));
 
-			graphic->BindConstantBuffer(mDepthLightView->GetADDR(), 5);
-			graphic->BindDescriptorHandle(mDepthRTVTex->GetShaderResourceViewGPU(), 6);
+			//graphic->BindConstantBuffer(mDepthLightView->GetADDR(), 5);
+			//graphic->BindDescriptorHandle(mDepthRTVTex->GetShaderResourceViewGPU(), 6);
+			graphic->BindConstantBuffer(shadowRP->GetDepthLightView(), 5);
+			graphic->BindDescriptorHandle(shadowSRV, 6);
 			for (auto& ele : objTexQueue) {
 				graphic->BindConstantBuffer(objectPass->GetADDR(ele.objectID), 0);
 				graphic->BindDescriptorHandle(ele.diffuseMap, 3);
@@ -281,16 +311,17 @@ void PhongRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 }
 
 void PhongRenderPass::finalize() {
-	lightPass.release();
+	//lightPass.release();
 	objectPass.release();
 	avaliableObjectBuffers.clear();
 	objQueue.clear(), objTexQueue.clear();
 	mHeap.release();
+	/*
 	mDepthDSVTex.release();
 	mDepthRTVTex.release();
-	mDepthLightView.release();
+	mDepthLightView.release();*/
 }
-
+/*
 void PhongRenderPass::BindLightData(LightData* data,size_t offset, size_t num ) {
 	if (offset + num > SHADER_MAX_LIGHT_STRUCT_NUM) return;
 
@@ -306,7 +337,7 @@ void PhongRenderPass::BindLightData(LightData* data,size_t offset, size_t num ) 
 void PhongRenderPass::BindAmbientLightData(Game::Vector3 color) {
 	lightPass->GetBufferPtr()->ambient = Game::Vector4(color, 1.);
 }
-
+*/
 PhongObjectID PhongRenderPass::AllocateObjectPass() {
 	if (avaliableObjectBuffers.empty()) {
 		if (allocatedBufferNum == objBufferSize) {
@@ -336,7 +367,6 @@ void PhongRenderPass::DeallocateObjectPass(PhongObjectID& id) {
 	}
 
 	avaliableObjectBuffers.push_back(id);
-	sizeof(CameraPass);
 	id = 0;
 }
 
@@ -394,7 +424,7 @@ void PhongRenderPass::DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_BUFF
 		objQueue.push_back(oe);
 	}
 }
-
+/*
 void PhongRenderPass::UpdateShadowLightView() {
 	Camera* mainCamera = gGraphic.GetMainCamera();
 	Game::Vector3 Position = mainCamera->getPosition();
@@ -405,4 +435,4 @@ void PhongRenderPass::UpdateShadowLightView() {
 		orthoMat, 
 		Game::MatrixLookAt(lightPosition, Position, Game::Vector3(0., 1., 0.))
 	).T();
-}
+}*/

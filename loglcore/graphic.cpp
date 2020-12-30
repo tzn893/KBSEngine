@@ -1,5 +1,5 @@
 #include "graphic.h"
-
+#include "LightManager.h"
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -353,6 +353,8 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height){
 
 	state = READY;
 
+	gLightManager.Initialize();
+
 	return true;
 }
 
@@ -451,6 +453,12 @@ void Graphic::begin() {
 
 void Graphic::end() {
 	if (state != BEGIN_COMMAND_RECORDING) return;
+
+	for (auto& rps : RPQueue) {
+		for (auto& RP : rps.second) {
+			RP->PreProcess();
+		}
+	}
 
 	auto renderLayer = [&](RENDER_PASS_LAYER layer) {
 		for (auto& rps : RPQueue) {

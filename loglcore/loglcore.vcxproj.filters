@@ -85,6 +85,9 @@
     <ClCompile Include="ComputeCommand.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="LightManager.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
