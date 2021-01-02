@@ -6,6 +6,7 @@
 cbuffer FFTWaveObjectPass : register(b0){
     float4x4 world;
     float4x4 transInvWorld;
+    float4   oceanColor;
 };
 
 struct VertexIn{
@@ -18,6 +19,7 @@ struct VertexOut{
     float4 ScreenPos : SV_POSITION;
     float3 WorldPos  : POSITION;
     float3 WorldNor  : NORMAL;
+	float2 Uv		 : TEXCOORD0;
 };
 
 Texture2D<float2> heightMap : register(t0);
@@ -28,17 +30,67 @@ VertexOut VS(VertexIn vin){
 	VertexOut vout;
 
     float heightSample = heightMap.SampleLevel(defaultSampler,vin.Uv,0).x;
-    float2 normalxz = normalMap.SampleLevel(defaultSampler,vin.Uv,0).xy;
-    float3 normal = float3(normalxz.x,sqrt(1. - dot(normalxz,normalxz)),normalxz.y);
+   
     vout.WorldPos = mul(world,float4(vin.Position,1.) + float4(0.,heightSample,0.,0.)).xyz;
     vout.ScreenPos = mul(perspect,mul(view,float4(vout.WorldPos,1.)));
     //the Normal from input will always be (0.,1.,0.) we don't need to care
-    vout.WorldNor = mul(transInvWorld,float4(normal,0.)).xyz;
+    vout.WorldNor = mul(transInvWorld,float4(vin.Normal,0.)).xyz;
+	vout.Uv       = vin.Uv;
 
     return vout;
 }
 
 float4 PS(VertexOut vin) : SV_TARGET{
 
-    return float4(0.,0.,1.,1.) * dot(normalize(vin.WorldNor),normalize(float3(0.,1,0.)));
+    /*
+    vin.Uv = frac(vin.Uv);
+    float3 normal = normalize(vin.WorldNorm);
+#ifdef ENABLE_DIFFUSE_MAP
+    float3 tangent = normalize(vin.Tangent);
+    float3 bitangent = normalize(vin.BiTangent);
+    normal = SampleNormalMap(normalMap,defaultSampler,vin.Uv,normal,tangent,bitangent);
+#endif // ENABLE_DIFFUSE_MAP
+
+    float3 toEye  = normalize(cameraPos - vin.WorldPos);
+    float3 worldPos = vin.WorldPos;
+    
+    Material pmat = mat;
+#ifdef ENABLE_DIFFUSE_MAP
+    pmat.diffuse = diffuseMap.Sample(defaultSampler,vin.Uv) * mat.diffuse;
+	float3 result = ambient.xyz * pmat.diffuse.xyz;
+#else 
+    float3 result = ambient.xyz;
+#endif//ENABLE_DIFFUSE_MAP
+
+struct Material{
+    float4 diffuse;
+    float3 FresnelR0;
+    float  Roughness;
+    float4x4 matTransform;
+};
+    */
+    float2 normalxz = normalMap.SampleLevel(defaultSampler,vin.Uv,0).xy;
+    float3 normal = float3(normalxz.x,sqrt(1. - dot(normalxz,normalxz)),normalxz.y);
+    float3 toEye  = normalize(cameraPos - vin.WorldPos);
+    float3 worldPos = vin.WorldPos;
+
+    Material mat;
+    mat.diffuse = oceanColor;
+    mat.FresnelR0 = float3(.2,.2,.2);
+    mat.Roughness = .1f;
+    mat.matTransform = float4x4(1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1.);
+
+    float3 result = ambient * mat.diffuse;
+
+    for(int i = 0;i != MAX_LIGHT_STRUCT_NUM;i++){
+        float3 lightShading;
+        if(lights[i].lightType == LIGHT_TYPE_POINT){
+            lightShading = ComputePointLight(lights[i],mat,toEye,worldPos,normal);
+        }else if(lights[i].lightType == LIGHT_TYPE_DIRECTIONAL){
+            lightShading = ComputeDirectionalLight(lights[i],mat,toEye,worldPos,normal);
+        }
+        result += lightShading;
+    }
+
+    return float4(normal,1.);
 }

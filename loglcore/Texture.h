@@ -12,7 +12,8 @@ enum TEXTURE_FORMAT {
 };
 
 enum TEXTURE_TYPE {
-	TEXTURE_TYPE_2D
+	TEXTURE_TYPE_2D,
+	TEXTURE_TYPE_2DCUBE
 };
 
 enum TEXTURE_FLAG {
@@ -37,6 +38,7 @@ public:
 	Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 		TEXTURE_TYPE type, 
 		void** original_buffer,
+		size_t original_buffer_num,
 		D3D12_SUBRESOURCE_DATA* sub_res,
 		size_t sub_res_num,
 		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,

@@ -94,7 +94,8 @@ void UploadBatch::End(bool wait) {
 				0, 0, buffer.resource.subres.size(),
 				buffer.resource.subres.data()
 			);
-			free(buffer.resource.original_buffer);
+			for(auto item : buffer.resource.original_buffer)
+				free(item);
 		}
 	}
 

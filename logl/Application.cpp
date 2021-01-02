@@ -19,6 +19,7 @@
 #include "InputBuffer.h"
 #include "Timer.h"
 #include "FPSCamera.h"
+#include "FFTWave.h"
 
 std::unique_ptr<StaticMesh<MeshVertexNormal>> box;
 std::unique_ptr<StaticMesh<MeshVertexNormal>> plane;
@@ -36,11 +37,14 @@ Texture* face;
 PhongObjectID pid[3];
 PhongRenderPass* prp;
 
-std::unique_ptr<RenderObject> ro;
+std::unique_ptr<RenderObject> ro,rp;
 
 PhongMaterialTexture mat;
 FPSCamera fpsCamera;
 
+
+
+//FFTWave wave;
 
 void upload(){
 	auto vertices = GeometryGenerator::Cube(.5, .5, .5);
@@ -98,6 +102,13 @@ void upload(){
 
 bool Application::initialize() {
 	upload();
+	
+	/*if (!wave.Initialize(96., 80.)) {
+		return false;
+	}
+	wave.SetPosition(Game::Vector3(0., -2., 10.));
+	*/
+
 	srp = gGraphic.GetRenderPass<SpriteRenderPass>();
 	
 	UploadBatch up = UploadBatch::Begin();
@@ -109,6 +120,8 @@ bool Application::initialize() {
 	ro = std::make_unique<RenderObject>(model, Game::Vector3(0., -1., 5.), Game::Vector3(0., 180., 0.), Game::Vector3(.1, .1, .1));
 	face = gTextureManager.loadTexture(L"../asserts/awesomeface.png", L"face",true,&up);
 	face->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	Model* plane = gModelManager.loadModel("../asserts/spaceship/spaceship.obj", "plane",&up);
+	rp = std::make_unique<RenderObject>(plane, Game::Vector3(0.,2.,5.),Game::Vector3(0.,0.,0.),Game::Vector3(.1,.1,.1));
 	up.End();
 
 	mat.diffuseMap = box;
@@ -194,6 +207,8 @@ void Application::update() {
 	srp->DrawSpriteTransparent(1, data, face);
 	ro->SetWorldRotation(Game::Vector3(0., r, 0.));
 	ro->Render(prp);
+	rp->Render(prp);
+	//wave.Update(gTimer.DeltaTime());
 }
 
 void Application::finalize() {

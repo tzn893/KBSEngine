@@ -1,6 +1,8 @@
 #include "TextureManager.h"
-
 #include "ThridParty/stb/stb_image.h"
+#include <filesystem>
+#include <algorithm>
+using namespace std::filesystem;
 
 ManagedTexture* TextureManager::getTextureByName(const wchar_t* name) {
 	auto query = texturesByName.find(name);
@@ -17,22 +19,42 @@ ManagedTexture* TextureManager::getTextureByPath(const wchar_t* path) {
 	return query->second.get();
 }
 
+bool supportedBySTB(const path& _ext) {
+	std::wstring extName = _ext.extension().wstring();
+	return extName == L".png" || extName == L".bmp" || extName == L".jpg" ||
+		extName == L".hdr" || extName == L".tga";
+}
 
-ManagedTexture* TextureManager::loadTexture(const wchar_t* path,const wchar_t* name,bool filp_vertically,UploadBatch* batch) {
-	if (ManagedTexture* tex = getTextureByPath(path);tex != nullptr) {
+inline bool supported(const path& ext) {
+	return supportedBySTB(ext);
+}
+
+std::tuple<void*,int,int> loadRawDataBySTB(const wchar_t* filepath,bool filp_vertically) {
+	void* data = nullptr;
+	int height, width;
+	stbi_set_flip_vertically_on_load(filp_vertically);
+	FILE* target_file = nullptr;
+	if (errno_t error = _wfopen_s(&target_file, filepath, L"rb");error != 0) {
+		return std::move(std::make_tuple(nullptr, -1, -1));
+	}
+	data = stbi_load_from_file(target_file, &width, &height, nullptr, 4);
+	fclose(target_file);
+	return std::move(std::make_tuple(data,width,height));
+}
+
+ManagedTexture* TextureManager::loadTexture(const wchar_t* filepath,const wchar_t* name,bool filp_vertically,UploadBatch* batch) {
+	if (ManagedTexture* tex = getTextureByPath(filepath);tex != nullptr) {
 		return tex;
 	}
 	if (ManagedTexture* tex = getTextureByName(name);tex != nullptr) {
 		return nullptr;
 	}
 
-	std::wstring path_str(path);
-	size_t index = path_str.find_last_of(L'.');
-	if (index >= path_str.size()) {
-		//invalid path name can't find any extension
+	std::filesystem::path ps(filepath);
+	if (!exists(ps) || !ps.has_extension()) {
+		OUTPUT_DEBUG_STRINGW((L"file " + ps.wstring() + L" doesn't exists or it is not supported\n").c_str());
 		return nullptr;
 	}
-	std::wstring extName = path_str.substr(index, path_str.size() - index);
 
 	static size_t id = 0;
 	if (name == nullptr) {
@@ -45,9 +67,8 @@ ManagedTexture* TextureManager::loadTexture(const wchar_t* path,const wchar_t* n
 	}
 
 	//check the avaliable extension names
-	if (extName == L".png" || extName == L".bmp" || extName == L".jpg" ||
-		extName == L".hdr" || extName == L".tga") {
-		return loadTextureBySTB(path,name,filp_vertically,batch);
+	if (supportedBySTB(ps)) {
+		return loadTextureBySTB(filepath,name,filp_vertically,batch);
 	}
 
 	//the image extension name is not supportted
@@ -55,27 +76,15 @@ ManagedTexture* TextureManager::loadTexture(const wchar_t* path,const wchar_t* n
 }
 
 ManagedTexture* TextureManager::loadTextureBySTB(const wchar_t* path, const wchar_t* name,bool filp_vertically,UploadBatch* batch) {
-	FILE* target_file = nullptr;
-	errno_t error = _wfopen_s(&target_file,path,L"rb");
-	if (error != 0) return nullptr;
 
-	stbi_set_flip_vertically_on_load(filp_vertically);
-
-	int iwidth, iheight;
-	void* idata = stbi_load_from_file(target_file, &iwidth, &iheight, nullptr, 4);
-
-	if (idata == nullptr) {
-		fclose(target_file);
-		return nullptr;
-	}
-
+	auto[idata, iwidth, iheight] = loadRawDataBySTB(path, filp_vertically);
 	TEXTURE_FORMAT format = TEXTURE_FORMAT_RGBA;
 
 	std::unique_ptr<ManagedTexture> mtexture = std::make_unique<ManagedTexture>(name,path,iwidth,iheight,
 		format,&idata,D3D12_RESOURCE_STATE_COMMON,batch);
 	if (!mtexture->IsValid()) {
-		fclose(target_file);
-		free(idata);
+		//fclose(target_file);
+		if(idata != nullptr) free(idata);
 		return nullptr;
 	}
 
@@ -83,6 +92,120 @@ ManagedTexture* TextureManager::loadTextureBySTB(const wchar_t* path, const wcha
 	texturesByName[name] = mtexture.get();
 	texturesByPath[path] = std::move(mtexture);
 
-	fclose(target_file);
+	//fclose(target_file);
+	return rv;
+}
+
+enum _CUBE_TEXTURE_FILE_TYPE {
+	CUBE_TEXTURE_FILE_RIGHT = 0,
+	CUBE_TEXTURE_FILE_LEFT = 1,
+	CUBE_TEXTURE_FILE_DOWN = 2,
+	CUBE_TEXTURE_FILE_UP = 3,
+	CUBE_TEXTURE_FILE_FRONT = 4,
+	CUBE_TEXTURE_FILE_BACK = 5
+};
+
+std::pair<bool,std::vector<std::wstring>> findCubeTextureFileInDirectory(path& path) {
+	std::vector<std::wstring> output(6,std::wstring());
+	directory_iterator diter{path};
+	for (const directory_entry& den : diter) {
+		if (den.path().stem() == L"up" && supported(den.path())) {
+			output[CUBE_TEXTURE_FILE_UP] = den.path().wstring();
+		}
+		else if (den.path().stem() == L"down" && supported(den.path())) {
+			output[CUBE_TEXTURE_FILE_DOWN] = den.path().wstring();
+		}
+		else if(den.path().stem() == L"left" && supported(den.path())){
+			output[CUBE_TEXTURE_FILE_LEFT] = den.path().wstring();
+		}
+		else if (den.path().stem() == L"right" && supported(den.path())) {
+			output[CUBE_TEXTURE_FILE_RIGHT] = den.path().wstring();
+		}
+		else if (den.path().stem() == L"front" && supported(den.path())) {
+			output[CUBE_TEXTURE_FILE_FRONT] = den.path().wstring();
+		}
+		else if (den.path().stem() == L"back" && supported(den.path())) {
+			output[CUBE_TEXTURE_FILE_BACK] = den.path().wstring();
+		}
+	}
+
+	for (auto& item : output) {
+		if (item.empty()) return std::move(std::make_pair(false,output));
+	}
+	return std::move(std::make_pair(true,output));
+}
+
+ManagedTexture* TextureManager::loadCubeTexture(const wchar_t* filepath,
+	const wchar_t* name,bool filp_vertically,UploadBatch* batch) {
+	if (ManagedTexture* tex = getTextureByPath(filepath); tex != nullptr) {
+		return tex;
+	}
+	if (ManagedTexture* tex = getTextureByName(name); tex != nullptr) {
+		return nullptr;
+	}
+
+	static size_t id = 0;
+	if (name == nullptr) {
+		static std::wstring nameBuffer;
+		nameBuffer = L"__unnamed_managed_texture_" + std::to_wstring(id++);
+		while (getTextureByName(nameBuffer.c_str()) != nullptr) {
+			nameBuffer = L"__unnamed_managed_texture_" + std::to_wstring(id++);
+		}
+		name = nameBuffer.c_str();
+	}
+	
+	path fp{filepath};
+	if (!exists(fp) || !is_directory(status(fp))) {
+		OUTPUT_DEBUG_STRINGW((L"directory " + std::wstring(filepath) + L" doesn't exists\n").c_str());
+		return nullptr;
+	}
+	auto[valid, filepaths] = findCubeTextureFileInDirectory(fp);
+	if (!valid) {
+		OUTPUT_DEBUG_STRINGW((L"directory " + std::wstring(filepath) + L" is not valid\n").c_str());
+		return nullptr;
+	}
+
+	D3D12_SUBRESOURCE_DATA subDatas[6];
+	void* datas[6];
+	int width, height;
+	for (int i = 0; i <= CUBE_TEXTURE_FILE_BACK;i++) {
+		void* data = nullptr;
+		if (supportedBySTB(path(filepaths[i]))) {
+			//this is a little bit werid but I can't come up with better expression
+			auto[d, w, h] = loadRawDataBySTB(filepaths[i].c_str(), filp_vertically);
+			data = d, width = w, height = h;
+		}
+		if (data == nullptr) {
+			OUTPUT_DEBUG_STRINGW((L"fail to load file " + filepaths[i] + L"\n").c_str());
+			for (int j = 0; j < i; j++) {
+				free(datas[j]);
+			}
+			return nullptr;
+		}
+		subDatas[i].pData = data;
+		subDatas[i].RowPitch = width * 4;
+		subDatas[i].SlicePitch = height * subDatas[i].RowPitch;
+		datas[i] = data;
+	}
+
+	std::unique_ptr<ManagedTexture> mtexture = std::make_unique<ManagedTexture>(
+		name, filepath, width, height,
+		TEXTURE_FORMAT_RGBA,
+		TEXTURE_TYPE_2DCUBE,
+		datas, 6,
+		subDatas, 6,
+		D3D12_RESOURCE_STATE_COMMON,
+		batch
+	);
+
+	if (!mtexture->IsValid()) {
+		for (int j = 0; j != 6; j++)
+			if (datas[j] != nullptr) free(datas[j]);
+	}
+	
+	ManagedTexture* rv = mtexture.get();
+	texturesByName[name] = rv;
+	texturesByPath[filepath] = std::move(mtexture);
+
 	return rv;
 }

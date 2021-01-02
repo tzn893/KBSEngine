@@ -192,5 +192,8 @@
     <ClInclude Include="ComputeCommand.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="SkyboxRenderPass.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -26,9 +26,7 @@ public:
 	void Attach(FFTWave* wave) {
 		this->wave = wave;
 	}
-
 	void SetWorldTransform(Game::Vector3 position,Game::Vector3 rotation,Game::Vector3 scale);
-	LightPass* GetLightPass() { return lightPass->GetBufferPtr(); }
 
 	void UpdateTime(float time) {
 		currentTime = time;
@@ -36,6 +34,10 @@ public:
 
 	void SetWaveLength(float len) {
 		OceanLength = len;
+	}
+
+	void SetWaveColor(Game::Vector3 color) {
+		objectPass->GetBufferPtr()->Color = Game::Vector4(color, 1.);
 	}
 private:
 	void UpdateWaveConstant();
@@ -62,9 +64,9 @@ private:
 	struct FFTWaveObjectPass {
 		Game::Mat4x4 world;
 		Game::Mat4x4 transInvWorld;
+		Game::Vector4 Color;
 	};
 	std::unique_ptr<ConstantBuffer<FFTWaveObjectPass>> objectPass;
-	std::unique_ptr<ConstantBuffer<LightPass>> lightPass;
 	std::unique_ptr<ConstantBuffer<WaveConstant>> waveConstant;
 
 	std::unique_ptr<DescriptorHeap> mHeap;
@@ -99,6 +101,7 @@ public:
 	void SetScale(Game::Vector3 scale) { this->scale = scale; transformUpdated = true;}
 
 	FFTWaveRenderPass* GetRenderPass() { return mRenderPass.get(); }
+	void SetColor(Game::Vector3 color) { mRenderPass->SetWaveColor(color); }
 private:
 	//static constexpr size_t rowNum = 64;
 	std::unique_ptr<DynamicMesh<MeshVertex>> mMesh;

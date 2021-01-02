@@ -3,7 +3,7 @@
 #include "../loglcore/GeometryGenerator.h"
 #include "RandomGenerator.h"
 #include "../loglcore/ComputeCommand.h"
-
+#include "../loglcore/LightManager.h"
 
 bool   FFTWaveRenderPass::Initialize(UploadBatch* batch) {
 	Game::RootSignature rootSig(5,1);
@@ -49,9 +49,8 @@ bool   FFTWaveRenderPass::Initialize(UploadBatch* batch) {
 	}
 
 	ID3D12Device* mDevice = gGraphic.GetDevice();
-	lightPass = std::make_unique<ConstantBuffer<LightPass>>(mDevice);
 	objectPass = std::make_unique<ConstantBuffer<FFTWaveObjectPass>>(mDevice);
-	
+	objectPass->GetBufferPtr()->Color = Game::ConstColor::Blue;
 
 	Game::RootSignature fftRootSig(7,0);
 	fftRootSig[0].initAsConstantBuffer(0, 0);
@@ -204,7 +203,7 @@ void   FFTWaveRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 	graphic->BindPSOAndRootSignature(L"fftwave",L"fftwave");
 	graphic->BindConstantBuffer(objectPass->GetADDR(),0);
 	graphic->BindMainCameraPass(1);
-	graphic->BindConstantBuffer(lightPass->GetADDR(), 2);
+	gLightManager.BindLightPass2ConstantBuffer(2);
 	graphic->BindDescriptorHandle(mHeightMap->GetShaderResourceViewGPU(), 3);
 	//the gradient z will be used as the output of the normal map
 	graphic->BindDescriptorHandle(mGradientX->GetShaderResourceViewGPU(), 4);
@@ -283,6 +282,6 @@ void FFTWave::Update(float deltaTime) {
 	}
 
 
-	currentTime += deltaTime * 10.;
+	currentTime += deltaTime;
 	mRenderPass->UpdateTime(currentTime);
 }

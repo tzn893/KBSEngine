@@ -15,11 +15,12 @@ public:
 	ManagedTexture(const wchar_t* name, const wchar_t* path,
 		size_t width, size_t height, TEXTURE_FORMAT format,
 		TEXTURE_TYPE type,
-		void** data,
+		void** original_data,
+		size_t original_data_num,
 		D3D12_SUBRESOURCE_DATA* sub_res,
 		size_t sub_res_num,
 		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON
-		, UploadBatch* batch = nullptr):Texture(width,height,format,type,data,sub_res,
+		, UploadBatch* batch = nullptr):Texture(width,height,format,type,original_data,original_data_num,sub_res,
 			sub_res_num,initState,TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS, batch),name(name),pathName(path)
 	{}
 
@@ -30,12 +31,13 @@ private:
 	std::wstring pathName;
 };
 
-
 class TextureManager{
 public:
 	ManagedTexture* loadTexture(const wchar_t* path,const wchar_t* name = nullptr,bool filp_vertically = true,UploadBatch* batch = nullptr);
 	ManagedTexture* getTextureByName(const wchar_t* name);
 	ManagedTexture* getTextureByPath(const wchar_t* path);
+
+	ManagedTexture* loadCubeTexture(const wchar_t* path,const wchar_t* name = nullptr,bool filp_vertically = true,UploadBatch* batch = nullptr);
 private:
 	//the path is the main key
 	std::map<std::wstring, std::unique_ptr<ManagedTexture>> texturesByPath;

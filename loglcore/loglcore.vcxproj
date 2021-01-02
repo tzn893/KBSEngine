@@ -70,6 +70,7 @@
     <ClInclude Include="RootSignature.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderDataStruct.h" />
+    <ClInclude Include="SkyboxRenderPass.h" />
     <ClInclude Include="SpriteRenderPass.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />

@@ -3,13 +3,18 @@
 
 struct UploadTextureResource {
 	std::vector<D3D12_SUBRESOURCE_DATA> subres;
-	void*  original_buffer;
+	std::vector<void*>  original_buffer;
 };
 
 class UploadBatch {
 public:
 	static UploadBatch Begin();
 	void End(bool wait = true);
+
+	~UploadBatch() {
+		if (isAvailable) End(true);
+		isAvailable = false;
+	}
 
 	ID3D12Resource* UploadBuffer(size_t size,void* buffer,D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON);
 	ID3D12Resource* UploadTexture(UploadTextureResource& resource,

@@ -45,6 +45,16 @@ static D3D12_RESOURCE_FLAGS getResourceFlagFromTextureFlag(TEXTURE_FLAG flag) {
 	return result;
 }
 
+static D3D12_RESOURCE_DIMENSION getResourceDimensionFromResourceType(TEXTURE_TYPE type) {
+	switch (type) {
+	case TEXTURE_TYPE_2D:
+		return D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	case TEXTURE_TYPE_2DCUBE:
+		return D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	}
+	return D3D12_RESOURCE_DIMENSION(-1);
+}
+
 Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	TEXTURE_FLAG flag , D3D12_RESOURCE_STATES initState,D3D12_CLEAR_VALUE* clearValue) {
 		this->width = width;
@@ -112,7 +122,7 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 		size_t elementSize = getFormatElementSize(format);
 
 		UploadTextureResource resource;
-		resource.original_buffer = *data;
+		resource.original_buffer.push_back(*data);
 
 			D3D12_SUBRESOURCE_DATA subData;
 			subData.pData = *data;
@@ -140,7 +150,8 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 
 Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	TEXTURE_TYPE type,
-	void** data,
+	void** orignal_data,
+	size_t orignal_data_num,
 	D3D12_SUBRESOURCE_DATA* sub_res,
 	size_t sub_res_num,
 	D3D12_RESOURCE_STATES initState,
@@ -153,8 +164,8 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	this->format = getDXGIFormatFromTextureFormat(format);
 	D3D12_RESOURCE_DESC rDesc;
 	rDesc.Alignment = 0;
-	rDesc.DepthOrArraySize = 1;
-	rDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	rDesc.DepthOrArraySize = sub_res_num;
+	rDesc.Dimension = getResourceDimensionFromResourceType(type);
 	rDesc.Flags = getResourceFlagFromTextureFlag(flag);
 	rDesc.Format = this->format;
 	rDesc.Height = height;
@@ -167,9 +178,10 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	UploadTextureResource resource;
 	resource.subres.insert(resource.subres.begin(),
 		sub_res, sub_res + sub_res_num);
-	resource.original_buffer = *data;
-
-	*data = nullptr;
+	resource.original_buffer.insert(resource.original_buffer.begin(),
+		orignal_data,orignal_data + orignal_data_num);
+	for (int i = 0; i != orignal_data_num; i++)
+		orignal_data[i] = nullptr;
 
 	size_t elementSize = getFormatElementSize(format);
 
@@ -194,24 +206,32 @@ static TARGET GetMostPossibleDimension(TEXTURE_TYPE type) {
 		switch (type) {
 		case TEXTURE_TYPE_2D:
 			return D3D12_SRV_DIMENSION_TEXTURE2D;
+		case TEXTURE_TYPE_2DCUBE:
+			return D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
 		}
 	}
 	else if constexpr (std::is_same<TARGET,D3D12_RTV_DIMENSION>::value) {
 		switch (type) {
 		case TEXTURE_TYPE_2D:
 			return D3D12_RTV_DIMENSION_TEXTURE2D;
+		case TEXTURE_TYPE_2DCUBE:
+			return D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 		}
 	}
 	else if constexpr (std::is_same<TARGET,D3D12_DSV_DIMENSION>::value) {
 		switch (type) {
 		case TEXTURE_TYPE_2D:
 			return D3D12_DSV_DIMENSION_TEXTURE2D;
+		case TEXTURE_TYPE_2DCUBE:
+			return D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 		}
 	}
 	else if constexpr (std::is_same<TARGET,D3D12_UAV_DIMENSION>::value) {
 		switch (type) {
 		case TEXTURE_TYPE_2D:
 			return D3D12_UAV_DIMENSION_TEXTURE2D;
+		case TEXTURE_TYPE_2DCUBE:
+			return D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 		}
 	}
 
@@ -228,10 +248,20 @@ void Texture::CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOUR
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = GetFormat();
 		srvDesc.ViewDimension = GetMostPossibleDimension<D3D12_SRV_DIMENSION>(type);
-		srvDesc.Texture2D.MostDetailedMip = 0;
-		srvDesc.Texture2D.MipLevels = -1;
-		srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+		switch (type) {
+		case TEXTURE_TYPE_2D:
+			srvDesc.Texture2D.MostDetailedMip = 0;
+			srvDesc.Texture2D.MipLevels = -1;
+			srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+		case TEXTURE_TYPE_2DCUBE:
+			srvDesc.Texture2DArray.ArraySize = 6;
+			srvDesc.Texture2DArray.FirstArraySlice = 0;
+			srvDesc.Texture2DArray.PlaneSlice = 0;
+			srvDesc.Texture2DArray.MostDetailedMip = 0;
+			srvDesc.Texture2DArray.MipLevels = -1;
+			srvDesc.Texture2DArray.ResourceMinLODClamp = 0.f;
 
+		}
 		device->CreateShaderResourceView(mRes.Get(), &srvDesc, descriptor.cpuHandle);
 	}
 	mSRV = descriptor;
@@ -252,6 +282,11 @@ void Texture::CreateRenderTargetView(Descriptor descriptor,D3D12_RENDER_TARGET_V
 		switch (type) {
 		case TEXTURE_TYPE_2D:
 			rtvDesc.Texture2D = { 0,0 };
+		case TEXTURE_TYPE_2DCUBE:
+			rtvDesc.Texture2DArray.ArraySize = 6;
+			rtvDesc.Texture2DArray.FirstArraySlice = 0;
+			rtvDesc.Texture2DArray.MipSlice = 0;
+			rtvDesc.Texture2DArray.PlaneSlice = 0;
 		}
 		device->CreateRenderTargetView(mRes.Get(), &rtvDesc, descriptor.cpuHandle);
 	}
@@ -275,6 +310,10 @@ void Texture::CreateDepthStencilView(Descriptor descriptor,D3D12_DEPTH_STENCIL_V
 		switch (type) {
 		case TEXTURE_TYPE_2D:
 			dsvDesc.Texture2D.MipSlice = 0;
+		case TEXTURE_TYPE_2DCUBE:
+			dsvDesc.Texture2DArray.ArraySize = 6;
+			dsvDesc.Texture2DArray.FirstArraySlice = 0;
+			dsvDesc.Texture2DArray.MipSlice = 0;
 		}
 		device->CreateDepthStencilView(mRes.Get(), &dsvDesc, descriptor.cpuHandle);
 	}
@@ -297,6 +336,11 @@ void Texture::CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_AC
 		switch (type) {
 		case TEXTURE_TYPE_2D:
 			uavDesc.Texture2D = { 0,0 };
+		case TEXTURE_TYPE_2DCUBE:
+			uavDesc.Texture2DArray.ArraySize = 6;
+			uavDesc.Texture2DArray.FirstArraySlice = 0;
+			uavDesc.Texture2DArray.MipSlice = 0;
+			uavDesc.Texture2DArray.PlaneSlice = 0;
 		}
 		device->CreateUnorderedAccessView(mRes.Get(), nullptr,&uavDesc, descriptor.cpuHandle);
 	}
