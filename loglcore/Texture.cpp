@@ -160,6 +160,7 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	this->width = width;
 	this->height = height;
 	this->flag = flag;
+	this->type = type;
 
 	this->format = getDXGIFormatFromTextureFormat(format);
 	D3D12_RESOURCE_DESC rDesc;
@@ -207,7 +208,7 @@ static TARGET GetMostPossibleDimension(TEXTURE_TYPE type) {
 		case TEXTURE_TYPE_2D:
 			return D3D12_SRV_DIMENSION_TEXTURE2D;
 		case TEXTURE_TYPE_2DCUBE:
-			return D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+			return D3D12_SRV_DIMENSION_TEXTURECUBE;
 		}
 	}
 	else if constexpr (std::is_same<TARGET,D3D12_RTV_DIMENSION>::value) {
@@ -254,13 +255,9 @@ void Texture::CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOUR
 			srvDesc.Texture2D.MipLevels = -1;
 			srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
 		case TEXTURE_TYPE_2DCUBE:
-			srvDesc.Texture2DArray.ArraySize = 6;
-			srvDesc.Texture2DArray.FirstArraySlice = 0;
-			srvDesc.Texture2DArray.PlaneSlice = 0;
-			srvDesc.Texture2DArray.MostDetailedMip = 0;
-			srvDesc.Texture2DArray.MipLevels = -1;
-			srvDesc.Texture2DArray.ResourceMinLODClamp = 0.f;
-
+			srvDesc.TextureCube.MipLevels = -1;
+			srvDesc.TextureCube.MostDetailedMip = 0;
+			srvDesc.TextureCube.ResourceMinLODClamp = 0.f;
 		}
 		device->CreateShaderResourceView(mRes.Get(), &srvDesc, descriptor.cpuHandle);
 	}

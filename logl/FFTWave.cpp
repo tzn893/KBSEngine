@@ -50,7 +50,8 @@ bool   FFTWaveRenderPass::Initialize(UploadBatch* batch) {
 
 	ID3D12Device* mDevice = gGraphic.GetDevice();
 	objectPass = std::make_unique<ConstantBuffer<FFTWaveObjectPass>>(mDevice);
-	objectPass->GetBufferPtr()->Color = Game::ConstColor::Blue;
+	objectPass->GetBufferPtr()->DepthColor = Game::Vector4(0.3071377, 0.4703594, 0.5471698,1.);
+	objectPass->GetBufferPtr()->SwallowColor = Game::Vector4(0.04992878, 0.1436478, 0.2075472,1.);
 
 	Game::RootSignature fftRootSig(7,0);
 	fftRootSig[0].initAsConstantBuffer(0, 0);
@@ -239,10 +240,10 @@ void	FFTWaveRenderPass::UpdateWaveConstant(){
 }
 
 bool FFTWave::Initialize(float width,float height) {
-	auto[vertices, indices] = GeometryGenerator::Plane(width, height,
+	auto[vertices, indices] = GeometryGenerator::Plane(512, 512,
 		250,250,GeometryGenerator::GEOMETRY_FLAG_DISABLE_TANGENT);
 
-	mMesh = std::make_unique<DynamicMesh<MeshVertex>>(
+	mMesh = std::make_unique<StaticMesh<MeshVertex>>(
 			gGraphic.GetDevice(),
 			indices.size(),indices.data(),
 			vertices.size() / getVertexStrideByFloat<MeshVertex>(),
@@ -256,14 +257,10 @@ bool FFTWave::Initialize(float width,float height) {
 	scale = Game::Vector3(1., 1., 1.);
 	transformUpdated = true;
 
-	//SetWaveWind(Game::Vector2(1., 0.));
-	//SetWaveHeight(.3);
-	//SetWaveLength(1.);
-
 	mRenderPass = std::make_unique<FFTWaveRenderPass>();
 	mRenderPass->Attach(this);
 
-	mRenderPass->SetWaveLength(width);
+	mRenderPass->SetWaveLength(512);
 
 	RenderPass* rps[] = { mRenderPass.get() };
 	if (!gGraphic.RegisterRenderPasses(rps, _countof(rps))) {

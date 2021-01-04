@@ -183,10 +183,10 @@ void FFTHorizontal(uint3 id : SV_DISPATCHTHREADID){
     FFTOutput[id.xy] = output;
 }
 
-float3 gradient(uint2 pos){
-    return float3(length(GradientX[pos]) / (N * N) * HeightScale,
+float3 displace(uint2 pos){
+    return float3(length(GradientX[pos]) / (N * N),
     length(HeightMap[pos]) / (N * N) * HeightScale,
-    length(GradientZ[pos]) / (N * N) * HeightScale) ;
+    length(GradientZ[pos]) / (N * N)) ;
 }
 
 [numthreads(16,16,1)]
@@ -194,10 +194,10 @@ void GenerateHeightNormal(uint3 id : SV_DISPATCHTHREADID){
     uint2 pos = id.xy;
    
     //GradientX 会作为法线贴图输出 GradientY 会作为泡沐贴图输出
-    /*float3 gright = gradient(float2((pos.x + 1 + N) % N,pos.y));
-    float3 gleft  = gradient(float2((pos.x - 1 + N) % N,pos.y));
-    float3 gup    = gradient(float2(pos.x,(pos.y + 1 + N) % N));
-    float3 gdown  = gradient(float2(pos.x,(pos.y - 1 + N) % N));
+    /*float3 gright = displace(float2((pos.x + 1 + N) % N,pos.y));
+    float3 gleft  = displace(float2((pos.x - 1 + N) % N,pos.y));
+    float3 gup    = displace(float2(pos.x,(pos.y + 1 + N) % N));
+    float3 gdown  = displace(float2(pos.x,(pos.y - 1 + N) % N));
 
     float gridLen = OceanLength / (N - 1.f);
     float3 pright = float3(gright.x + gridLen,gright.yz);
@@ -205,9 +205,10 @@ void GenerateHeightNormal(uint3 id : SV_DISPATCHTHREADID){
     float3 pup = float3(gup.xy,gup.z + gridLen);
     float3 pdown = float3(gdown.xy,gdown.z - gridLen);*/
 
-    float3 gp = gradient(pos);
+    
+    float3 gp = displace(pos);
 
-    float3 normal = normalize(float3(gp.x,1.,gp.z));
+    float3 normal = normalize(float3(-gp.x,1.,-gp.z));//normalize(cross(pup - pdown,pright - pleft));
     float height = gp.y;
 
     HeightMap[pos] = height;

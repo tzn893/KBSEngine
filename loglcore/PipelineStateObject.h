@@ -66,6 +66,7 @@ namespace Game {
 	};
 
 	class GraphicPSORP : public GraphicPSO{
+	public:
 		/*
 		void SetBlendState(D3D12_BLEND_DESC desc);
 		void LazyBlendDepthRasterizeDefault();
@@ -75,6 +76,14 @@ namespace Game {
 		void SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE top);
 		void SetRasterizerState(D3D12_RASTERIZER_DESC state);
 		*/
+		static GraphicPSORP Default() {
+			Game::GraphicPSORP mPso;
+			mPso.LazyBlendDepthRasterizeDefault();
+			mPso.SetNodeMask(0);
+			mPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+			mPso.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
+			return mPso;
+		}
 	private:
 		void SetRootSignature(ID3D12RootSignature* rootSig) = delete;
 		void SetRootSignature(RootSignature* rootSig) = delete;
@@ -95,7 +104,6 @@ namespace Game {
 		void SetDomainShader(const void* bytecode, UINT size) = delete;
 
 		bool Create(ID3D12Device* device) = delete;
-
 
 		ID3D12PipelineState* GetPSO() = delete;
 	};

@@ -6,7 +6,8 @@
 cbuffer FFTWaveObjectPass : register(b0){
     float4x4 world;
     float4x4 transInvWorld;
-    float4   oceanColor;
+    float4   oceanColorSwallow;
+	float4   oceanColorDeep;
 };
 
 struct VertexIn{
@@ -71,26 +72,19 @@ struct Material{
     */
     float2 normalxz = normalMap.SampleLevel(defaultSampler,vin.Uv,0).xy;
     float3 normal = float3(normalxz.x,sqrt(1. - dot(normalxz,normalxz)),normalxz.y);
-    float3 toEye  = normalize(cameraPos - vin.WorldPos);
     float3 worldPos = vin.WorldPos;
 
-    Material mat;
-    mat.diffuse = oceanColor;
-    mat.FresnelR0 = float3(.2,.2,.2);
-    mat.Roughness = .1f;
-    mat.matTransform = float4x4(1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1.,0.,0.,0.,0.,1.);
+    float3 viewDir = normalize(cameraPos - worldPos);
+    float3 lightDir = normalize(-lights[MAIN_LIGHT_INDEX].vec);
 
-    float3 result = ambient * mat.diffuse;
+    float3 halfDir = normalize(viewDir + lightDir);
 
-    for(int i = 0;i != MAX_LIGHT_STRUCT_NUM;i++){
-        float3 lightShading;
-        if(lights[i].lightType == LIGHT_TYPE_POINT){
-            lightShading = ComputePointLight(lights[i],mat,toEye,worldPos,normal);
-        }else if(lights[i].lightType == LIGHT_TYPE_DIRECTIONAL){
-            lightShading = ComputeDirectionalLight(lights[i],mat,toEye,worldPos,normal);
-        }
-        result += lightShading;
-    }
+	float facing = saturate(dot(normal,viewDir));
 
-    return float4(normal,1.);
+	float3 diffuse = lerp(oceanColorSwallow,oceanColorDeep,facing).xyz * lights[MAIN_LIGHT_INDEX].intensity * saturate(dot(normal, lightDir) + ambient);
+	float3 specular = lights[MAIN_LIGHT_INDEX].intensity * pow(max(0, dot(normal, halfDir)), 50);
+
+	float3 result =  diffuse;
+
+    return float4(result ,1.);
 }

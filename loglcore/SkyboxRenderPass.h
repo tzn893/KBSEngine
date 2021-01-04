@@ -1,12 +1,28 @@
 #pragma once
 #include "RenderPass.h"
 #include "Texture.h"
+#include "DescriptorAllocator.h"
+#include "Mesh.h"
 
-
-class SkyboxRenderPass : RenderPass {
+class SkyboxRenderPass : public RenderPass {
 public:
-private:
-	Texture* cubeTex;
-	const wchar_t* default_skybox_path = L"../asserts/skybox";
+	virtual size_t GetPriority() { return 5; }
 
+	virtual bool   Initialize(UploadBatch* batch = nullptr) override ;
+	virtual void   Render(Graphic* graphic, RENDER_PASS_LAYER layer) override;
+
+	virtual void   finalize() override;
+
+	Texture* GetSkyBox() { return skybox; }
+	void     SetSkyBox(Texture* tex);
+private:
+	const wchar_t* default_skybox_path = L"../asserts/skybox/clear";
+
+	Texture* skybox;
+	Descriptor skyboxDesc;
+	std::unique_ptr<DescriptorHeap> mHeap;
+	std::unique_ptr<StaticMesh<Game::Vector3>> mBox;
+	
+	const wchar_t* rootSigName = L"skybox";
+	const wchar_t* psoName = L"skybox";
 };

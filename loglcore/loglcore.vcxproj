@@ -34,6 +34,7 @@
     <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="SkyboxRenderPass.cpp" />
     <ClCompile Include="SpriteRenderPass.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureManager.cpp" />

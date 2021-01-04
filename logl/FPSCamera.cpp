@@ -76,3 +76,8 @@ void FPSCamera::update() {
 	);
 	camera->SetTransform(lookAtMat);
 }
+
+void FPSCamera::setPosition(Game::Vector3 pos) {
+	this->Position = pos;
+	update();
+}

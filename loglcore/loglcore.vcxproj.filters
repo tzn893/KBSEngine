@@ -88,6 +88,9 @@
     <ClCompile Include="LightManager.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="SkyboxRenderPass.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">

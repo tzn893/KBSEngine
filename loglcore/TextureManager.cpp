@@ -109,10 +109,10 @@ std::pair<bool,std::vector<std::wstring>> findCubeTextureFileInDirectory(path& p
 	std::vector<std::wstring> output(6,std::wstring());
 	directory_iterator diter{path};
 	for (const directory_entry& den : diter) {
-		if (den.path().stem() == L"up" && supported(den.path())) {
+		if (den.path().stem() == L"top" && supported(den.path())) {
 			output[CUBE_TEXTURE_FILE_UP] = den.path().wstring();
 		}
-		else if (den.path().stem() == L"down" && supported(den.path())) {
+		else if (den.path().stem() == L"bottom" && supported(den.path())) {
 			output[CUBE_TEXTURE_FILE_DOWN] = den.path().wstring();
 		}
 		else if(den.path().stem() == L"left" && supported(den.path())){

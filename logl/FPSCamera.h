@@ -22,6 +22,8 @@ public:
 	void rotateX(float angle);
 
 	void look(Game::Vector3 Position);
+
+	void setPosition(Game::Vector3 pos);
 private:
 	void updateAxis();
 	void updateAngle();

@@ -586,9 +586,7 @@ void Graphic::BindMainCameraPass(size_t slot) {
 
 		CameraPass* data = cameraPassData->GetBufferPtr();
 
-		if (slot > 16) { return; }
-
-		mDrawCmdList->SetGraphicsRootConstantBufferView(1, cameraPassData->GetADDR());
+		mDrawCmdList->SetGraphicsRootConstantBufferView(slot, cameraPassData->GetADDR());
 	}
 }
 
@@ -715,6 +713,11 @@ void Graphic::BindDescriptorHeap(ID3D12DescriptorHeap* const* heap,size_t heap_n
 	mDrawCmdList->SetDescriptorHeaps(heap_num, heap);
 }
 
+void Graphic::BindDescriptorHeap(ID3D12DescriptorHeap* heap) {
+	ID3D12DescriptorHeap* heaps[] = {heap};
+	BindDescriptorHeap(heaps, 1);
+}
+
 bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO,const wchar_t* name,bool rp) {
 	ID3D12PipelineState* mPSO;
 	auto iter = mRootSignatures.find(shader->rootSignatureName);
@@ -812,8 +815,9 @@ bool Graphic::createRenderPasses() {
 	spriteRenderPass = std::make_unique<SpriteRenderPass>();
 	//phongRenderPass = std::make_unique<PhongRenderPass>();
 	debugRenderPass = std::make_unique<DebugRenderPass>();
+	skyboxRenderPass = std::make_unique<SkyboxRenderPass>();
 	
-	RenderPass* rpList[] = { spriteRenderPass.get(),debugRenderPass.get()};
+	RenderPass* rpList[] = { spriteRenderPass.get(),debugRenderPass.get(),skyboxRenderPass.get()};
 	return RegisterRenderPasses(rpList, _countof(rpList));
 }
 

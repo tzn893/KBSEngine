@@ -19,8 +19,8 @@ WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
 HWND  winHnd;
 
-//int height = 600, width = 800;
-int height = 960, width = 1280;
+int height = 600, width = 800;
+//int height = 960, width = 1280;
 bool Quit = false;
 // 此代码模块中包含的函数的前向声明:
 ATOM                MyRegisterClass(HINSTANCE hInstance);

@@ -2,7 +2,7 @@
 #include "Vector.h"
 using namespace GeometryGenerator;
 
-static void SetVectors(float* target,Game::Vector3 Pos,Game::Vector3 Nom,Game::Vector3 tangent,Game::Vector2 TexCoord,GEOMETRY_FLAG flag) {
+static void SetVectors(float* target,Game::Vector3 Pos,Game::Vector3 Nom,Game::Vector3 tangent,Game::Vector2 TexCoord, int flag) {
 	target[0] = Pos[0], target[1] = Pos[1], target[2] = Pos[2];
 	target += 3;
 	if (!(flag & GEOMETRY_FLAG_DISABLE_NORMAL)) {
@@ -19,7 +19,7 @@ static void SetVectors(float* target,Game::Vector3 Pos,Game::Vector3 Nom,Game::V
 	}
 }
 
-static size_t GetVertexStride(GEOMETRY_FLAG flag) {
+static size_t GetVertexStride(int flag) {
 	size_t result = 3;
 	if(!(flag & GEOMETRY_FLAG_DISABLE_NORMAL)) result += 3;
 	if(!(flag & GEOMETRY_FLAG_DISABLE_TEXCOORD)) result += 2;
@@ -27,7 +27,7 @@ static size_t GetVertexStride(GEOMETRY_FLAG flag) {
 	return result;
 }
 
-std::vector<float> GeometryGenerator::Cube(float scalex, float scaley, float scalez, GEOMETRY_FLAG flag) {
+std::vector<float> GeometryGenerator::Cube(float scalex, float scaley, float scalez, int flag) {
 	size_t vertexStride = GetVertexStride(flag);
 	size_t vertexNum = 36;//6 * 2 * 3
 
@@ -157,7 +157,7 @@ std::vector<float> GeometryGenerator::Cube(float scalex, float scaley, float sca
 	return std::move(result);
 }
 
-std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Plane(float width, float height, size_t gridu, size_t gridv, GEOMETRY_FLAG flag) {
+std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Plane(float width, float height, size_t gridu, size_t gridv, int flag) {
 	size_t vertexStride = GetVertexStride(flag);
 	size_t vertexNum = (gridu + 1)* (gridv + 1);//6 * 2 * 3
 
@@ -197,9 +197,9 @@ std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Plane(fl
 	return std::move(std::make_pair(std::move(vdata),std::move(idata)));
 }
 
-std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Square(float width, float height, GEOMETRY_FLAG flag) {
+std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Square(float width, float height, int flag) {
 	return std::move(Plane(width, height, 1, 1, flag));
 }
-std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Sphere(float radius, size_t gridu, size_t gridv, GEOMETRY_FLAG flag) {
+std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Sphere(float radius, size_t gridu, size_t gridv, int flag) {
 	return std::make_pair(std::vector<float>(),std::vector<uint16_t>());
 }

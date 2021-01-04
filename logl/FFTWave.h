@@ -36,8 +36,9 @@ public:
 		OceanLength = len;
 	}
 
-	void SetWaveColor(Game::Vector3 color) {
-		objectPass->GetBufferPtr()->Color = Game::Vector4(color, 1.);
+	void SetWaveColor(Game::Vector3 dcolor,Game::Vector3 scolor) {
+		objectPass->GetBufferPtr()->DepthColor = Game::Vector4(dcolor, 1.);
+		objectPass->GetBufferPtr()->SwallowColor = Game::Vector4(scolor, 1.);
 	}
 private:
 	void UpdateWaveConstant();
@@ -64,7 +65,8 @@ private:
 	struct FFTWaveObjectPass {
 		Game::Mat4x4 world;
 		Game::Mat4x4 transInvWorld;
-		Game::Vector4 Color;
+		Game::Vector4 DepthColor;
+		Game::Vector4 SwallowColor;
 	};
 	std::unique_ptr<ConstantBuffer<FFTWaveObjectPass>> objectPass;
 	std::unique_ptr<ConstantBuffer<WaveConstant>> waveConstant;
@@ -77,12 +79,12 @@ private:
 
 	int NPow = 9;
 	int N;
-	float windScale = 70.;
+	float windScale = 20.;
 	Game::Vector2 windDir = Game::Vector2(0.,1.);
 	Game::Vector2 randSeed;
 	float currentTime;
-	float Lambda  = 1.;			
-	float HeightScale = 1.5;		
+	float Lambda  = 0.;			
+	float HeightScale = 8.;		
 	float BubblesScale = 28.;	 
 	float BubblesThreshold = 1.;
 	float OceanLength = 512.;
@@ -101,10 +103,10 @@ public:
 	void SetScale(Game::Vector3 scale) { this->scale = scale; transformUpdated = true;}
 
 	FFTWaveRenderPass* GetRenderPass() { return mRenderPass.get(); }
-	void SetColor(Game::Vector3 color) { mRenderPass->SetWaveColor(color); }
+	void SetColor(Game::Vector3 dcolor,Game::Vector3 scolor) { mRenderPass->SetWaveColor(dcolor,scolor); }
 private:
 	//static constexpr size_t rowNum = 64;
-	std::unique_ptr<DynamicMesh<MeshVertex>> mMesh;
+	std::unique_ptr<StaticMesh<MeshVertex>> mMesh;
 	std::unique_ptr<FFTWaveRenderPass> mRenderPass;
 
 	float currentTime;
