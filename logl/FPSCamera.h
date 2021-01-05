@@ -7,6 +7,7 @@ class FPSCamera
 public:
 
 	void attach(Camera* camera);
+	void attach(Game::Vector3 Position,Game::Vector3 Rotation);
 
 	FPSCamera(Camera* camera = nullptr) {
 		attach(camera);
@@ -24,6 +25,8 @@ public:
 	void look(Game::Vector3 Position);
 
 	void setPosition(Game::Vector3 pos);
+
+	Game::Mat4x4 GetLookAtMat();
 private:
 	void updateAxis();
 	void updateAngle();

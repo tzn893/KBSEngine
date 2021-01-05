@@ -44,6 +44,17 @@ void FPSCamera::attach(Camera* camera) {
 	this->camera = camera;
 }
 
+void FPSCamera::attach(Game::Vector3 position,Game::Vector3 rotation) {
+	this->camera = nullptr;
+	Position = position;
+	Game::Mat4x4 Rotation = Game::MatrixRotation(rotation);
+	lookAt = Game::normalize(Game::Vector3(Rotation.a[0][2], Rotation.a[1][2], Rotation.a[2][2]));
+	biAxis = Game::normalize(Game::cross(Game::Vector3(0., 1., 0.), lookAt));
+	up = Game::normalize(Game::cross(lookAt, biAxis));
+
+	updateAngle();
+}
+
 void FPSCamera::look(Game::Vector3 Position) {
 	if (Game::length(Position - this->Position) < 1e-7)
 		return;
@@ -67,14 +78,23 @@ void FPSCamera::updateAngle() {
 }
 
 void FPSCamera::update() {
-	if (camera == nullptr) return;
 	Game::Mat4x4 lookAtMat = Game::Mat4x4(
 		biAxis[0], up[0], lookAt[0], Position[0],
 		biAxis[1], up[1], lookAt[1], Position[1],
 		biAxis[2], up[2], lookAt[2], Position[2],
 		0, 0, 0, 1
 	);
+	if (camera == nullptr) return;
 	camera->SetTransform(lookAtMat);
+}
+
+Game::Mat4x4 FPSCamera::GetLookAtMat() {
+	return Game::Mat4x4(
+		biAxis[0], up[0], lookAt[0], Position[0],
+		biAxis[1], up[1], lookAt[1], Position[1],
+		biAxis[2], up[2], lookAt[2], Position[2],
+		0, 0, 0, 1
+	);
 }
 
 void FPSCamera::setPosition(Game::Vector3 pos) {

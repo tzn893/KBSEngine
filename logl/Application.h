@@ -9,6 +9,8 @@ public:
 	bool initialize();
 	void update();
 	void finalize();
+
+	void Quit();
 };
 
 inline Application gApp;

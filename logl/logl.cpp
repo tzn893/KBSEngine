@@ -19,9 +19,17 @@ WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
 HWND  winHnd;
 
-int height = 600, width = 800;
-//int height = 960, width = 1280;
-bool Quit = false;
+//int height = 600, width = 800;
+int height = 960, width = 1280;
+
+int GetWinHeight() {
+	return height;
+}
+int GetWinWidth() {
+	return width;
+}
+
+bool quit = false;
 // 此代码模块中包含的函数的前向声明:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -54,7 +62,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MSG msg;
 
     // 主消息循环:
-    while (!Quit)
+    while (!quit)
     {
         if (PeekMessage(&msg,0,0,0,PM_REMOVE))
         {
@@ -124,11 +132,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	auto ws = WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME);
 
 	HWND hWnd = CreateWindowW(szWindowClass, L"Linux 作业",ws,//WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME),
-	0,0, width, height, nullptr, nullptr, hInstance, nullptr);
+	100,100, width, height, nullptr, nullptr, hInstance, nullptr);
 	winHnd = hWnd;
 
 	RECT R = {0,0,width,height};
 	AdjustWindowRect(&R, ws, false);
+	width = R.right;
+	height = R.bottom;
 
 	if (!hWnd)
 	{
@@ -184,7 +194,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_DESTROY:
         PostQuitMessage(0);
-		Quit = true;
+		quit = true;
         break;
 #ifndef GET_X_FROM_LPARAM
 #define GET_X_FROM_LPARAM(lParam) lParam & 0xffff
@@ -213,19 +223,45 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEMOVE:
 		gInput.BufferWriteMousePosition(GET_X_FROM_LPARAM(lParam), GET_Y_FROM_LPARAM(lParam));
 		break;
+	case WM_SIZE:
+
 	case WM_KEYDOWN: 
 		{
-			int keycode = wParam - 0x41;
-			if (keycode >= 0 && keycode < 26) {
-				gInput.BufferWriteKeyDown((InputBuffer::KeyCode)keycode);
+			if (wParam == VK_CONTROL) {
+				gInput.BufferWriteKeyDown(InputBuffer::CTRL);
+			}else if (wParam == VK_LSHIFT) {
+				gInput.BufferWriteKeyDown(InputBuffer::LSHIFT);
+			}else if (wParam == VK_RSHIFT) {
+				gInput.BufferWriteKeyDown(InputBuffer::RSHIFT);
+			}else if (wParam == VK_ESCAPE) {
+				gInput.BufferWriteKeyDown(InputBuffer::ESCAPE);
+			}else {
+				int keycode = wParam - 0x41;
+				if (keycode >= 0 && keycode < 26) {
+					gInput.BufferWriteKeyDown((InputBuffer::KeyCode)keycode);
+				}
 			}
 		}
 		break;
 	case WM_KEYUP:
 		{
-			int keycode = wParam - 0x41;
-			if (keycode >= 0 && keycode < 26) {
-				gInput.BufferWriteKeyUp((InputBuffer::KeyCode)keycode);
+			if (wParam == VK_CONTROL) {
+				gInput.BufferWriteKeyUp(InputBuffer::CTRL);
+			}
+			else if (wParam == VK_LSHIFT) {
+				gInput.BufferWriteKeyUp(InputBuffer::LSHIFT);
+			}
+			else if (wParam == VK_RSHIFT) {
+				gInput.BufferWriteKeyUp(InputBuffer::RSHIFT);
+			}
+			else if (wParam == VK_ESCAPE) {
+				gInput.BufferWriteKeyUp(InputBuffer::ESCAPE);
+			}
+			else {
+				int keycode = wParam - 0x41;
+				if (keycode >= 0 && keycode < 26) {
+					gInput.BufferWriteKeyUp((InputBuffer::KeyCode)keycode);
+				}
 			}
 		}
 		break;
@@ -253,4 +289,8 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
+}
+
+void ApplicationQuit() {
+	quit = true;
 }

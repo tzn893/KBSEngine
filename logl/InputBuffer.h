@@ -10,7 +10,7 @@ public:
 		O = 14, P = 15, Q = 16, R = 17, S = 18, T = 19, U = 20,
 		V = 21, W = 22, X = 23, Y = 24, Z = 25,
 		MOUSE_LEFT = 26, MOUSE_RIGHT = 27, MOUSE_MIDDLE = 28,
-		KEY_CODE_SIZE = 29
+		ESCAPE = 29,LSHIFT = 30,RSHIFT = 31,CTRL = 32, KEY_CODE_SIZE = 33
 	};
 
 	virtual bool initialize(){
@@ -26,6 +26,10 @@ public:
 	bool KeyUp(KeyCode code);
 
 	Game::Vector2 MousePosition();
+	void SetMousePosition(int x, int y);
+	void LockCursor();
+	void HideCursor();
+	void ShowCursor();
 
 	//only application could write to input buffer
 	void BufferWriteKeyDown(KeyCode code);
@@ -34,10 +38,12 @@ public:
 	//only application could write to input buffer
 	void BufferWriteMousePosition(uint32_t x, uint32_t y);
 
+	
 private:
 
 	uint8_t buffer[KEY_CODE_SIZE];
 	uint32_t mousePosx, mousePosy;
+	bool cursorLocked = false;
 };
 
 inline InputBuffer gInput;

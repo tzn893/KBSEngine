@@ -279,6 +279,6 @@ void FFTWave::Update(float deltaTime) {
 	}
 
 
-	currentTime += deltaTime;
+	currentTime += deltaTime * 2.;
 	mRenderPass->UpdateTime(currentTime);
 }

@@ -44,6 +44,9 @@
     <ClInclude Include="RandomGenerator.h">
       <Filter>源文件</Filter>
     </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="logl.cpp">
@@ -62,6 +65,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="FPSCamera.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

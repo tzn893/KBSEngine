@@ -21,6 +21,8 @@
 #include "FPSCamera.h"
 #include "FFTWave.h"
 
+#include "Player.h"
+
 struct BoxConstantBuffer {
 
 	Game::Mat4x4 world;
@@ -34,10 +36,10 @@ Texture* face;
 PhongRenderPass* prp;
 
 std::unique_ptr<RenderObject> rp;
-
-FPSCamera fpsCamera;
+std::unique_ptr<Player> player;
 
 FFTWave wave;
+extern bool Quit;
 
 void upload(){
 
@@ -60,6 +62,7 @@ bool Application::initialize() {
 	srp = gGraphic.GetRenderPass<SpriteRenderPass>();
 	prp = gGraphic.GetRenderPass<PhongRenderPass>();
 	
+	
 	UploadBatch up = UploadBatch::Begin();
 	face = gTextureManager.loadTexture(L"../asserts/awesomeface.png", L"face",true,&up);
 	face->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
@@ -67,9 +70,10 @@ bool Application::initialize() {
 	rp = std::make_unique<RenderObject>(plane, Game::Vector3(0.,20.,5.),Game::Vector3(0.,0.,0.),Game::Vector3(.1,.1,.1));
 	up.End();
 
+	player = std::make_unique<Player>(Game::Vector3(0., 20., 3.), Game::Vector3(.1, .1, .1),plane);
 
-	fpsCamera.attach(gGraphic.GetMainCamera());
-	fpsCamera.setPosition(Game::Vector3(0., 20., 0.));
+	//fpsCamera.attach(gGraphic.GetMainCamera());
+	//fpsCamera.setPosition(Game::Vector3(0., 20., 0.));
 
 	data[0].Color = Game::Vector4(1.,1.,1.,.5);
 	data[0].Position = Game::Vector3(0., 0., .5);
@@ -78,11 +82,9 @@ bool Application::initialize() {
 	
 	return true;
 }
-float r = 0.,b = 0.,g = 0.;
-Game::Vector2 pos;
 void Application::update() {
 	
-	if (gInput.KeyHold(InputBuffer::I)) {
+	/*if (gInput.KeyHold(InputBuffer::I)) {
 		r += gTimer.DeltaTime() * 90.;
 	}
 	else if (gInput.KeyHold(InputBuffer::K)) {
@@ -93,8 +95,8 @@ void Application::update() {
 	}
 	else if (gInput.KeyHold(InputBuffer::L)) {
 		b += gTimer.DeltaTime() * 90.;
-	}
-
+	}*/
+	/*
 	if (gInput.KeyHold(InputBuffer::D)) {
 		fpsCamera.strafe(gTimer.DeltaTime() * 2.);
 	}
@@ -123,18 +125,24 @@ void Application::update() {
 	}
 	else if (gInput.KeyHold(InputBuffer::E)) {
 		g -= 4e-3;
-	}
+	}*/
 
 	LightData light;
 	light.intensity = Game::Vector3(1., 1., 1.);
-	light.direction = Game::normalize(Game::Vector3(0., sinf(g), cosf(g)));
+	light.direction = Game::normalize(Game::Vector3(0., -1., 1.));
 	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
 	gLightManager.SetMainLightData(light);
 	
 	srp->DrawSpriteTransparent(1, data, face);
 	rp->Render(prp);
 	wave.Update(gTimer.DeltaTime());
+
+	player->Update();
 }
 
 void Application::finalize() {
+}
+
+void Application::Quit() {
+	
 }

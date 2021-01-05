@@ -1,4 +1,7 @@
 #include "InputBuffer.h"
+#include <Windows.h>
+#include <WinUser.h>
+#include "logl.h"
 
 enum KeyState {
 	NONE = 0, DOWN = 1, HOLD = 2, UP = 3
@@ -27,6 +30,12 @@ void InputBuffer::update() {
 			break;
 		}
 	}
+	if (cursorLocked) {
+		int cwidth = GetWinWidth() / 2;
+		int cheight = GetWinHeight() / 2;
+
+		SetPhysicalCursorPos(cwidth, cheight);
+	}
 }
 
 bool InputBuffer::KeyDown(InputBuffer::KeyCode code) { return buffer[code] == DOWN; }
@@ -37,4 +46,20 @@ bool InputBuffer::KeyHold(InputBuffer::KeyCode code) {
 
 Game::Vector2 InputBuffer::MousePosition() {
 	return Game::Vector2(mousePosx, mousePosy);
+}
+
+void InputBuffer::SetMousePosition(int x,int y) {
+	SetPhysicalCursorPos(x, y);
+}
+
+void InputBuffer::HideCursor() {
+	::ShowCursor(false);
+}
+
+void InputBuffer::ShowCursor() {
+	::ShowCursor(true);
+}
+
+void InputBuffer::LockCursor() {
+	cursorLocked = true;
 }
