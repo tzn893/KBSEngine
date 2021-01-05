@@ -249,3 +249,10 @@ private:
 
 	bool isValid;
 };
+
+struct Mesh {
+	D3D12_VERTEX_BUFFER_VIEW* vbv;
+	D3D12_INDEX_BUFFER_VIEW* ibv;
+	size_t startIndex;
+	size_t indiceNum;
+};

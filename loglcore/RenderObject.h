@@ -3,7 +3,6 @@
 #include "Model.h"
 #include "PhongRenderPass.h"
 
-
 class RenderObject {
 public:
 	RenderObject(Model* model, Game::Vector3 worldPosition,
@@ -12,15 +11,33 @@ public:
 		worldScale(worldScale), worldRotation(worldRotation),model(model) {
 		if (name != nullptr) this->name = name;
 		else {
-			static size_t index = 0;
-			this->name = std::string("_unnamed_renderobject") + std::to_string(index++);
+			this->name = std::string("_unnamed_renderobject") + std::to_string(renderItemIndex++);
 		}
+		type = RENDER_OBJECT_TYPE_MODEL;
 	}
-
+	RenderObject(Mesh mesh,SubMeshMaterial material, Game::Vector3 worldPosition,
+		Game::Vector3 worldRotation, Game::Vector3 worldScale,
+		const char* name = nullptr):worldPosition(worldPosition),
+		worldRotation(worldRotation),worldScale(worldScale){
+		type = RENDER_OBJECT_TYPE_MESH;
+		if (name != nullptr) this->name = name;
+		else {
+			this->name = std::string("_unnamed_renderobject") + std::to_string(renderItemIndex++);
+		}
+		this->mMesh = mesh;
+		this->mMaterial = material;
+	}
 	template<typename RPType>
 	void Render(RPType* RenderPass) {
-		if constexpr (std::is_same<RPType,PhongRenderPass>::value) {
-			RenderByPhongPass(RenderPass);
+		if constexpr (std::is_same<RPType, PhongRenderPass>::value) {
+			switch (type) {
+			case RENDER_OBJECT_TYPE_MODEL:
+				RenderByPhongPass(RenderPass);
+				break;
+			case RENDER_OBJECT_TYPE_MESH:
+				RenderByPhongPassMesh(RenderPass);
+				break;
+			}
 		}
 		else {
 			//otherwise we do nothing
@@ -37,9 +54,22 @@ public:
 
 	~RenderObject();
 private:
-	void RenderByPhongPass(PhongRenderPass* rp);
+	enum RENDER_OBJECT_TYPE {
+		RENDER_OBJECT_TYPE_MODEL,
+		RENDER_OBJECT_TYPE_MESH
+	} type;
 
-	Model* model;
+	void RenderByPhongPass(PhongRenderPass* rp);
+	void RenderByPhongPassMesh(PhongRenderPass* rp);
+
+	union {
+		struct {
+			Mesh mMesh;
+			SubMeshMaterial mMaterial;
+		};
+		Model* model;
+	};
+	
 	std::string name;
 	Game::Vector3 worldPosition;
 	Game::Vector3 worldRotation;
@@ -50,5 +80,5 @@ private:
 		std::vector<PhongObjectID> phongObjectID;
 		std::vector<PhongMaterialTexture> phongMaterialTextures;
 	} phongRPData;
-	
+	static size_t renderItemIndex;
 };
