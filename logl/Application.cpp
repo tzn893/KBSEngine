@@ -22,6 +22,7 @@
 #include "FFTWave.h"
 
 #include "Player.h"
+#include "Bullet.h"
 
 struct BoxConstantBuffer {
 
@@ -37,9 +38,12 @@ PhongRenderPass* prp;
 
 std::unique_ptr<RenderObject> rp;
 std::unique_ptr<Player> player;
+std::unique_ptr<BulletRenderPass> brp;
 
 FFTWave wave;
 extern bool Quit;
+
+std::vector<Game::Vector3> bullets;
 
 void upload(){
 
@@ -61,7 +65,8 @@ bool Application::initialize() {
 	}
 	srp = gGraphic.GetRenderPass<SpriteRenderPass>();
 	prp = gGraphic.GetRenderPass<PhongRenderPass>();
-	
+	brp = std::make_unique<BulletRenderPass>();
+	gGraphic.RegisterRenderPass(brp.get());
 	
 	UploadBatch up = UploadBatch::Begin();
 	face = gTextureManager.loadTexture(L"../asserts/awesomeface.png", L"face",true,&up);
@@ -72,8 +77,11 @@ bool Application::initialize() {
 
 	player = std::make_unique<Player>(Game::Vector3(0., 20., 3.), Game::Vector3(.1, .1, .1),plane);
 
-	//fpsCamera.attach(gGraphic.GetMainCamera());
-	//fpsCamera.setPosition(Game::Vector3(0., 20., 0.));
+	LightData light;
+	light.intensity = Game::Vector3(1., 1., 1.);
+	light.direction = Game::normalize(Game::Vector3(0., -1., 1.));
+	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
+	gLightManager.SetMainLightData(light);
 
 	data[0].Color = Game::Vector4(1.,1.,1.,.5);
 	data[0].Position = Game::Vector3(0., 0., .5);
@@ -84,58 +92,11 @@ bool Application::initialize() {
 }
 void Application::update() {
 	
-	/*if (gInput.KeyHold(InputBuffer::I)) {
-		r += gTimer.DeltaTime() * 90.;
-	}
-	else if (gInput.KeyHold(InputBuffer::K)) {
-		r -= gTimer.DeltaTime() * 90.;
-	}
-	if (gInput.KeyHold(InputBuffer::J)) {
-		b -= gTimer.DeltaTime() * 90.;
-	}
-	else if (gInput.KeyHold(InputBuffer::L)) {
-		b += gTimer.DeltaTime() * 90.;
-	}*/
-	/*
-	if (gInput.KeyHold(InputBuffer::D)) {
-		fpsCamera.strafe(gTimer.DeltaTime() * 2.);
-	}
-	else if (gInput.KeyHold(InputBuffer::A)) {
-		fpsCamera.strafe(-gTimer.DeltaTime() * 2.);
-	}
-	if (gInput.KeyHold(InputBuffer::W)) {
-		fpsCamera.walk(gTimer.DeltaTime() * 2.);
-	}
-	else if (gInput.KeyHold(InputBuffer::S)) {
-		fpsCamera.walk(-gTimer.DeltaTime() * 2.);
-	}
-
-	if (gInput.KeyDown(InputBuffer::MOUSE_LEFT)) {
-		pos = gInput.MousePosition();
-	}else if (gInput.KeyHold(InputBuffer::MOUSE_LEFT)) {
-		Game::Vector2 deltaPos = gInput.MousePosition() - pos;
-		float speed = 10.;
-		fpsCamera.rotateX(deltaPos.x * gTimer.DeltaTime() * speed);
-		fpsCamera.rotateY(deltaPos.y * gTimer.DeltaTime() * speed);
-		pos = gInput.MousePosition();
-	}
-
-	if (gInput.KeyHold(InputBuffer::Q)) {
-		g += 4e-3;
-	}
-	else if (gInput.KeyHold(InputBuffer::E)) {
-		g -= 4e-3;
-	}*/
-
-	LightData light;
-	light.intensity = Game::Vector3(1., 1., 1.);
-	light.direction = Game::normalize(Game::Vector3(0., -1., 1.));
-	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
-	gLightManager.SetMainLightData(light);
-	
 	srp->DrawSpriteTransparent(1, data, face);
 	rp->Render(prp);
 	wave.Update(gTimer.DeltaTime());
+
+	brp->UpdateBulletPositions(bullets.size(),bullets.data());
 
 	player->Update();
 }

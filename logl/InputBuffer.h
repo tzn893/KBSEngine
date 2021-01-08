@@ -10,7 +10,7 @@ public:
 		O = 14, P = 15, Q = 16, R = 17, S = 18, T = 19, U = 20,
 		V = 21, W = 22, X = 23, Y = 24, Z = 25,
 		MOUSE_LEFT = 26, MOUSE_RIGHT = 27, MOUSE_MIDDLE = 28,
-		ESCAPE = 29,LSHIFT = 30,RSHIFT = 31,CTRL = 32, KEY_CODE_SIZE = 33
+		ESCAPE = 29,SHIFT = 30,CTRL = 31, KEY_CODE_SIZE = 32
 	};
 
 	virtual bool initialize(){

@@ -22,8 +22,8 @@ void FPSCamera::rotateY(float angle) {
 }
 
 void FPSCamera::updateAxis() {
-	float sin_phi = sin(phi), cos_phi = cos(phi);
-	float sin_theta = sin(theta), cos_theta = cos(theta);
+	float sin_phi = sin(phi * PI / 180.), cos_phi = cos(phi* PI / 180.);
+	float sin_theta = sin(theta * PI / 180.), cos_theta = cos(theta * PI / 180.);
 
 	lookAt = Game::Vector3(cos_theta * sin_phi, sin_theta, cos_theta * cos_phi);
 

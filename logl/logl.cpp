@@ -229,18 +229,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			if (wParam == VK_CONTROL) {
 				gInput.BufferWriteKeyDown(InputBuffer::CTRL);
-			}else if (wParam == VK_LSHIFT) {
-				gInput.BufferWriteKeyDown(InputBuffer::LSHIFT);
-			}else if (wParam == VK_RSHIFT) {
-				gInput.BufferWriteKeyDown(InputBuffer::RSHIFT);
-			}else if (wParam == VK_ESCAPE) {
-				gInput.BufferWriteKeyDown(InputBuffer::ESCAPE);
-			}else {
-				int keycode = wParam - 0x41;
-				if (keycode >= 0 && keycode < 26) {
-					gInput.BufferWriteKeyDown((InputBuffer::KeyCode)keycode);
-				}
 			}
+			if (wParam == VK_SHIFT) {
+				gInput.BufferWriteKeyDown(InputBuffer::SHIFT);
+			}
+			if (wParam == VK_ESCAPE) {
+				gInput.BufferWriteKeyDown(InputBuffer::ESCAPE);
+			}
+			int keycode = wParam - 0x41;
+			if (keycode >= 0 && keycode < 26) {
+				gInput.BufferWriteKeyDown((InputBuffer::KeyCode)keycode);
+			}
+			
 		}
 		break;
 	case WM_KEYUP:
@@ -248,11 +248,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (wParam == VK_CONTROL) {
 				gInput.BufferWriteKeyUp(InputBuffer::CTRL);
 			}
-			else if (wParam == VK_LSHIFT) {
-				gInput.BufferWriteKeyUp(InputBuffer::LSHIFT);
-			}
-			else if (wParam == VK_RSHIFT) {
-				gInput.BufferWriteKeyUp(InputBuffer::RSHIFT);
+			else if (wParam == VK_SHIFT) {
+				gInput.BufferWriteKeyUp(InputBuffer::SHIFT);
 			}
 			else if (wParam == VK_ESCAPE) {
 				gInput.BufferWriteKeyUp(InputBuffer::ESCAPE);

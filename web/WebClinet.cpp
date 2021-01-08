@@ -2,7 +2,7 @@
 
 
 constexpr int DEFAULT_PORT = 8000;
-
+/*
 int SocketBody(int argc, char* argv[])
 {
 
@@ -65,8 +65,8 @@ int SocketBody(int argc, char* argv[])
 	system("PAUSE");
 	return 0;
 }
-
-constexpr size_t netBufferSize = 1 << 16;
+*/
+constexpr size_t netBufferSize = 1 << 10;
 
 bool WebClinet::Connent(const char* ip_addr,size_t port) {
 	
@@ -90,7 +90,7 @@ bool WebClinet::Connent(const char* ip_addr,size_t port) {
 	//(3)IP
 	SOCKADDR_IN addrSrv;
 	addrSrv.sin_family = AF_INET;
-	addrSrv.sin_addr.s_addr = inet_addr("127.0.0.1");
+	addrSrv.sin_addr.s_addr = inet_addr(ip_addr);
 	addrSrv.sin_port = htons(DEFAULT_PORT);
 
 	//(5)connect

@@ -16,6 +16,8 @@ public:
 
 	Player(Game::Vector3 Position,Game::Vector3 Scale,
 		Model* model);
+
+	void Shoot();
 private:
 	Game::Vector3 vecForward();
 	void UpdateTransform();
@@ -31,8 +33,15 @@ private:
 	float camTheta, camBeta;
 
 	Game::Vector2 mousePos;
-	float rangeY = 15.;
+	float rangeY = 45.;
 	float accY = 0.;
 	float drawBackSpeed = .01;
+	float rotateSpeedY = 90.;
+	float rotateSpeedX = 240.;
+
+	float speedSlow = 1.;
+	float speedFast = 5.;
+	float speedLerp = 0.;
+	float speedAcc = 10.;
 
 };

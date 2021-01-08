@@ -1,5 +1,6 @@
 #include "GeometryGenerator.h"
 #include "Vector.h"
+#include "Math.h"
 using namespace GeometryGenerator;
 
 static void SetVectors(float* target,Game::Vector3 Pos,Game::Vector3 Nom,Game::Vector3 tangent,Game::Vector2 TexCoord, int flag) {
@@ -200,6 +201,71 @@ std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Plane(fl
 std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Square(float width, float height, int flag) {
 	return std::move(Plane(width, height, 1, 1, flag));
 }
-std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Sphere(float radius, size_t gridu, size_t gridv, int flag) {
-	return std::make_pair(std::vector<float>(),std::vector<uint16_t>());
+std::pair<std::vector<float>, std::vector<uint16_t>> GeometryGenerator::Sphere(float radius, size_t faceNum, int flag) {
+	uint32_t vertNum = 2 + (faceNum - 1) * faceNum * 2;
+	uint32_t indexNum = faceNum * (faceNum - 1) * 12;
+
+	uint32_t vertexOffset = GetVertexStride(flag);
+
+	std::vector<float> vertices(vertNum * vertexOffset);
+	std::vector<uint16_t> indices(indexNum);
+
+	float* vWriter = vertices.data();
+	uint16_t* index = indices.data();
+
+	//fill the vertex buffer
+	SetVectors(vWriter, Game::Vector3(0.f, radius, 0.f),Game::Vector3(0.f,1.f,0.f), Game::Vector3(),Game::Vector2(0.f, 0.f),flag);
+	vWriter += vertexOffset;
+	//vertex[vertNum - 1] = {  };
+
+	float theta = PI / static_cast<float>(faceNum);
+	float invPI2 = 1.f / (PI * 2.f);
+	float invPI = 1.f / PI;
+
+	for (int y = 1; y != faceNum; y++) {
+		for (int x = 0; x != faceNum * 2; x++) {
+			float u = theta * x;
+			float v = theta * y;
+
+			Game::Vector3 Normal = Game::Vector3(sin(v) * cos(u), cos(v), sin(v) * sin(u));
+			Game::Vector3 Position = Normal * radius;
+			Game::Vector2 Texcoord = Game::Vector2(u * invPI2, v * invPI);
+
+			SetVectors(vWriter, Position, Normal, Game::Vector3(), Texcoord, flag);
+			vWriter += vertexOffset;
+			//vertex[x + faceNum * 2 * (y - 1) + 1] = { Texcoord,Vector3(),Normal,Position,Vector4() };
+		}
+	}
+	SetVectors(vWriter, Game::Vector3(0.f, -radius, 0.f), Game::Vector3(0.f, -1.f, 0.f),Game::Vector3(),Game::Vector2(1.f, 1.f), flag);
+	vWriter += vertexOffset;
+#define STEP(index,bound) ((index) + 1) % (bound)
+	for (int i = 0; i != faceNum * 2; i++) {
+		index[i * 3] = 0;
+		index[i * 3 + 1] = i + 1;
+		index[i * 3 + 2] = STEP(i, faceNum * 2) + 1;
+	}
+	index += faceNum * 2 * 3;
+	size_t vIndex = 1;
+	for (int y = 1; y != faceNum - 1; y++) {
+		for (int x = 0; x != faceNum * 2; x++) {
+			index[x * 6] = vIndex + x;
+			index[x * 6 + 1] = vIndex + faceNum * 2 + x;
+			index[x * 6 + 2] = vIndex + faceNum * 2 + STEP(x, faceNum * 2);
+
+			index[x * 6 + 3] = vIndex + x;
+			index[x * 6 + 4] = vIndex + faceNum * 2 + STEP(x, faceNum * 2);
+			index[x * 6 + 5] = vIndex + STEP(x, faceNum * 2);
+		}
+		vIndex += faceNum * 2;
+		index += faceNum * 12;
+	}
+
+	for (int i = 0; i != faceNum * 2; i++) {
+		index[i * 3] = vIndex + i;
+		index[i * 3 + 1] = vIndex + faceNum * 2;
+		index[i * 3 + 2] = vIndex + STEP(i, faceNum * 2);
+	}
+
+
+	return std::move(std::make_pair(vertices,indices));
 }

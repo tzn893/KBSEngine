@@ -137,6 +137,10 @@ public:
 	}
 
 	bool    RegisterRenderPasses(RenderPass** RP, size_t num = 1);
+	inline  bool RegisterRenderPass(RenderPass* rp) {
+		RenderPass* rps[] = {rp};
+		return RegisterRenderPasses(rps);
+	}
 
 	void    SetSissorRect(D3D12_RECT* sissorRect, size_t num = 1);
 	void	SetViewPort(D3D12_VIEWPORT* vp, size_t num = 1);

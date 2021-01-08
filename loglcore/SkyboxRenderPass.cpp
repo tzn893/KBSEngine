@@ -40,8 +40,8 @@ bool SkyboxRenderPass::Initialize(UploadBatch* batch) {
 		return false;
 	}
 
-	std::vector<float> boxMesh = std::move(GeometryGenerator::Cube(1., 1., 1., GeometryGenerator::GEOMETRY_FLAG_DISABLE_NORMAL | GeometryGenerator::GEOMETRY_FLAG_DISABLE_TANGENT
-		| GeometryGenerator::GEOMETRY_FLAG_DISABLE_TEXCOORD));
+	std::vector<float> boxMesh = std::move(GeometryGenerator::Cube(1., 1., 1., GEOMETRY_FLAG_DISABLE_NORMAL | GEOMETRY_FLAG_DISABLE_TANGENT
+		| GEOMETRY_FLAG_DISABLE_TEXCOORD));
 	
 	mBox = std::make_unique<StaticMesh<Game::Vector3>>(gGraphic.GetDevice(), boxMesh.size() / 3,
 		reinterpret_cast<Game::Vector3*>(boxMesh.data()), batch);

@@ -4,6 +4,8 @@
 #include "Timer.h"
 #include "logl.h"
 
+
+extern std::vector<Game::Vector3> bullets;
 Game::Vector2 pos;
 void Player::Update() {
 	PhongRenderPass* rp = gGraphic.GetRenderPass<PhongRenderPass>();
@@ -22,26 +24,37 @@ void Player::Update() {
 	camBeta = clamp(45., -45., camBeta);
 	camTheta = clamp(45., -45., camTheta);
 
-	camera.setPosition(vecForward() * -cameraDis + GetWorldPosition());
-	camera.look(GetWorldPosition());
+	camera.setPosition(vecForward() * -cameraDis + GetWorldPosition() + Game::Vector3(0.,.3,0.));
+	camera.look(GetWorldPosition() + Game::Vector3(0., .3, 0.));
+
+	if (gInput.KeyHold(InputBuffer::SHIFT)) {
+		speedLerp = Game::fmin(speedLerp + speedAcc * gTimer.DeltaTime(), 1.);
+	}
+	else {
+		speedLerp = Game::fmax(speedLerp - (speedFast * 4.) * gTimer.DeltaTime(),0.);
+	}
+
+	float speed = speedSlow * (1. - speedLerp) + speedFast * speedLerp;
+	moveCamera.walk(speed * gTimer.DeltaTime());
+
 
 	if (gInput.KeyDown(InputBuffer::ESCAPE)) {
 		ApplicationQuit();
 	}
 	
 	if (gInput.KeyHold(InputBuffer::A)) {
-		moveCamera.rotateX(-3. * gTimer.DeltaTime());
+		moveCamera.rotateX(-rotateSpeedX * gTimer.DeltaTime());
 	}
 	if (gInput.KeyHold(InputBuffer::D)) {
-		moveCamera.rotateX(3. * gTimer.DeltaTime());
+		moveCamera.rotateX(rotateSpeedX * gTimer.DeltaTime());
 	}
 
 	float deltaY = 0.;
 	if (gInput.KeyHold(InputBuffer::W)) {
-		deltaY  = 3. * gTimer.DeltaTime();
+		deltaY  = rotateSpeedY * gTimer.DeltaTime();
 	}
 	if (gInput.KeyHold(InputBuffer::S)) {
-		deltaY = -3. * gTimer.DeltaTime();
+		deltaY = -rotateSpeedY * gTimer.DeltaTime();
 	}
 
 	if (deltaY != 0.) {
@@ -56,6 +69,9 @@ void Player::Update() {
 		accY += drawbackDelta;
 	}
 
+	if (gInput.KeyDown(InputBuffer::KeyCode::Q)) {
+		Shoot();
+	}
 	UpdateTransform();
 }
 
@@ -112,4 +128,8 @@ void Player::SetWorldRotation(Game::Vector3 rotation) {
 
 void Player::SetWorldScale(Game::Vector3 scale) {
 	ro->SetWorldScale(scale);
+}
+
+void Player::Shoot() {
+	bullets.push_back(GetWorldPosition());
 }

@@ -241,7 +241,7 @@ void	FFTWaveRenderPass::UpdateWaveConstant(){
 
 bool FFTWave::Initialize(float width,float height) {
 	auto[vertices, indices] = GeometryGenerator::Plane(512, 512,
-		250,250,GeometryGenerator::GEOMETRY_FLAG_DISABLE_TANGENT);
+		250,250,GEOMETRY_FLAG_DISABLE_TANGENT);
 
 	mMesh = std::make_unique<StaticMesh<MeshVertex>>(
 			gGraphic.GetDevice(),
