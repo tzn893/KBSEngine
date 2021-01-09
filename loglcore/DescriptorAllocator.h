@@ -59,7 +59,11 @@ private:
 class DescriptorAllocator {
 public:
 	DescriptorAllocator();
-	~DescriptorAllocator() { currHeap = nullptr; usedHeaps.clear(); }
+	void finalize() {
+		currHeap = nullptr;
+		for (auto& item : usedHeaps) item = nullptr;
+		usedHeaps.clear();
+	}
 	Descriptor AllocateDescriptor(size_t num = 1);
 private:
 	ComPtr<ID3D12DescriptorHeap> CreateHeap();

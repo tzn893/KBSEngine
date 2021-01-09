@@ -17,8 +17,9 @@ public:
 	void Close();
 
 	bool Send(ProtocolPost* post);
-	bool Receive(ProtocolPost* post) { return false; }
+	bool Receive(ProtocolPost* post);
 private:
+	bool connected = false;
 	SOCKET socketClt;
 	NetBuffer netBuffer;
 };

@@ -30,7 +30,7 @@ struct BoxConstantBuffer {
 	Game::Mat4x4 transInvWorld;
 };
 
-SpriteData data[100];
+SpriteData sdata[100];
 SpriteRenderPass* srp;
 Texture* face;
 
@@ -58,7 +58,16 @@ void upload(){
 
 }
 
+#include "../web/WebClinet.h"
+#include "Config.h"
+
 bool Application::initialize() {
+	if (!gWebClinet.Connent(gConfig.GetValue<std::string>("ip").c_str(), gConfig.GetValue<int>("port"))) {
+		MessageBeep(MB_ICONERROR);
+		MessageBox(NULL, L"fail to connect to host ip:49.232.215.28 port:8000.\nYou can change the connection setting in file config.init", L"Error!", MB_OK | MB_ICONWARNING);
+		return false;
+	}
+
 	upload();
 	if (!wave.Initialize(512,512)) {
 		return false;
@@ -83,22 +92,93 @@ bool Application::initialize() {
 	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
 	gLightManager.SetMainLightData(light);
 
-	data[0].Color = Game::Vector4(1.,1.,1.,.5);
-	data[0].Position = Game::Vector3(0., 0., .5);
-	data[0].rotation = 0.;
-	data[0].Scale = Game::Vector2(.3,.3);
+	sdata[0].Color = Game::Vector4(1.,1.,1.,.5);
+	sdata[0].Position = Game::Vector3(0., 0., .5);
+	sdata[0].rotation = 0.;
+	sdata[0].Scale = Game::Vector2(.3,.3);
 	
 	return true;
 }
+
+
+#include <sstream>
+
+void splitstr(std::vector<std::string>& res, std::string& str, char dim) {
+	std::istringstream iss(str);
+	std::string temp;
+
+	res.clear();
+	while (std::getline(iss, temp, dim)) {
+		res.push_back(temp);
+	}
+}
+
+std::pair<Game::Vector3, Game::Vector3> UnpackPlayerState(std::string& cmd) {
+	std::vector<std::string> data;
+	splitstr(data, cmd, ',');
+	Game::Vector3 Position, Rotation;
+
+	Position[0] = (float)std::stoi(data[0]) / 10000.;
+	Position[1] = (float)std::stoi(data[1]) / 10000.;
+	Position[2] = (float)std::stoi(data[2]) / 10000.;
+	Rotation[0] = (float)std::stoi(data[3]) / 10000.;
+	Rotation[1] = (float)std::stoi(data[4]) / 10000.;
+	Rotation[2] = (float)std::stoi(data[5]) / 10000.;
+
+	return std::make_pair(Position,Rotation);
+}
+
+std::string PackPlayerState(Game::Vector3 Position,Game::Vector3 Rotation) {
+	std::string cmd = std::to_string((int)(Position[0] * 10000.)) + ",";
+	cmd += std::to_string((int)(Position[1] * 10000.)) + ",";
+	cmd += std::to_string((int)(Position[2] * 10000.)) + ",";
+	cmd += std::to_string((int)(Rotation[0] * 10000.)) + ",";
+	cmd += std::to_string((int)(Rotation[1] * 10000.)) + ",";
+	cmd += std::to_string((int)(Rotation[2] * 10000.));
+
+	return std::move(cmd);
+}
+
+
+
+
 void Application::update() {
 	
-	srp->DrawSpriteTransparent(1, data, face);
+	srp->DrawSpriteTransparent(1, sdata, face);
 	rp->Render(prp);
 	wave.Update(gTimer.DeltaTime());
 
 	brp->UpdateBulletPositions(bullets.size(),bullets.data());
 
 	player->Update();
+	
+
+	static float time = 0;
+	if (time < 0.) return;
+	
+	if (time > 5e-2) {
+		ProtocolPost post;
+		post.head = PROTOCOL_HEAD_CLINET_MESSAGE;
+		post.protocolCommands.push_back({
+			PROTOCOL_COMMAND_TYPE_PLAYER_POSITION,
+			PackPlayerState(player->GetWorldPosition(),player->GetWorldRotation())
+		});
+		gWebClinet.Send(&post);
+		gWebClinet.Receive(&post);
+
+		for (auto cmd : post.protocolCommands) {
+			if (cmd.type = PROTOCOL_COMMAND_TYPE_PLAYER_POSITION) {
+				auto[position, rotation] = UnpackPlayerState(cmd.command);
+				rp->SetWorldPosition(position);
+				rp->SetWorldRotation(rotation);
+			}
+		}
+		time = 0.;
+	}
+	else {
+		time += gTimer.DeltaTime();
+	}
+
 }
 
 void Application::finalize() {

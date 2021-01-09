@@ -1,6 +1,9 @@
 #include "graphic.h"
 #include "LightManager.h"
 
+#include "DescriptorAllocator.h"
+#include "TextureManager.h"
+
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"d3dcompiler.lib")
@@ -499,6 +502,11 @@ void Graphic::end() {
 
 void Graphic::finalize() {
 	FlushCommandQueue();
+
+	for (auto[name, rp] : RPQueue) {
+		for (auto item : rp) item->finalize();
+	}
+	gDescriptorAllocator.finalize();
 
 	cameraPassData.release();
 

@@ -17,11 +17,12 @@ public:
 	Player(Game::Vector3 Position,Game::Vector3 Scale,
 		Model* model);
 
-	void Shoot();
+	bool ShootSignal();
+	std::pair<Game::Vector3, Game::Vector3> Bullet();
 private:
 	Game::Vector3 vecForward();
 	void UpdateTransform();
-
+	void Shoot();
 
 	FPSCamera camera;
 	//this camera is used to compute the object's movement
@@ -39,9 +40,14 @@ private:
 	float rotateSpeedY = 90.;
 	float rotateSpeedX = 240.;
 
-	float speedSlow = 1.;
-	float speedFast = 5.;
-	float speedLerp = 0.;
-	float speedAcc = 10.;
+	float speedSlow = 1.f;
+	float speedFast = 5.f;
+	float speedLerp = 0.f;
+	float speedAcc = 10.f;
 
+	static constexpr float shootCD = .2f;
+	bool  shootSignal;
+	float shootTimer = 0.f;
+
+	float shootOffset = .3;
 };

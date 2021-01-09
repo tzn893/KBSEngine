@@ -66,10 +66,12 @@ int SocketBody(int argc, char* argv[])
 	return 0;
 }
 */
+
 constexpr size_t netBufferSize = 1 << 10;
 
 bool WebClinet::Connent(const char* ip_addr,size_t port) {
-	
+	if (connected) return false;
+	connected = true;
 	WORD	wVersionRequested;
 	WSADATA wsaData;
 	int		err, iLen;
@@ -91,7 +93,7 @@ bool WebClinet::Connent(const char* ip_addr,size_t port) {
 	SOCKADDR_IN addrSrv;
 	addrSrv.sin_family = AF_INET;
 	addrSrv.sin_addr.s_addr = inet_addr(ip_addr);
-	addrSrv.sin_port = htons(DEFAULT_PORT);
+	addrSrv.sin_port = htons(port);
 
 	//(5)connect
 	err = connect(socketClt, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
@@ -103,9 +105,17 @@ bool WebClinet::Connent(const char* ip_addr,size_t port) {
 	}
 
 	netBuffer.Resize(netBufferSize);
+	return true;
 }
 
 void WebClinet::Close() {
+	if (!connected) return;
+	connected = false;
+
+	ProtocolPost post;
+	post.head = PROTOCOL_HEAD_CLINET_DISCONNECT;
+	Send(&post);
+	Sleep(100);
 	closesocket(socketClt);
 	WSACleanup();
 }
@@ -123,5 +133,22 @@ bool WebClinet::Send(ProtocolPost* post) {
 	}
 	if (state == PROTOCOL_PARSER_STATE_FAIL) return false;
 	post->protocolCommands.clear();
+	return true;
+}
+
+bool WebClinet::Receive(ProtocolPost* post) {
+	post->protocolCommands.clear();
+	PROTOCOL_PARSER_STATE state = PROTOCOL_PARSER_STATE_CONTINUE;
+	std::vector<ProtocolCommand> cmds;
+	while (state == PROTOCOL_PARSER_STATE_CONTINUE) {
+		ProtocolPost tmp;
+		recv(socketClt, netBuffer.Get<char>(0), netBuffer.GetSize(), 0);
+		state = ProtocolParser::Buffer2CommandList(&tmp, &netBuffer);
+		if (state != PROTOCOL_PARSER_STATE_FAIL) {
+			post->protocolCommands.insert(post->protocolCommands.end(), tmp.protocolCommands.begin(), tmp.protocolCommands.end());
+			post->head = tmp.head;
+		}
+	}
+	if (state == PROTOCOL_PARSER_STATE_FAIL) return false;
 	return true;
 }

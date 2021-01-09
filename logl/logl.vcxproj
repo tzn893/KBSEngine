@@ -112,7 +112,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\CG\logl\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>loglcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>loglcore.lib;web.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -153,12 +153,13 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\CG\logl\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>loglcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>loglcore.lib;web.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Bullet.h" />
+    <ClInclude Include="Config.h" />
     <ClInclude Include="FFTWave.h" />
     <ClInclude Include="FPSCamera.h" />
     <ClInclude Include="framework.h" />

@@ -10,6 +10,7 @@
 #include "Application.h"
 #include "InputBuffer.h"
 #include "Timer.h"
+#include "../web/WebClinet.h"
 
 #define MAX_LOADSTRING 100
 
@@ -71,8 +72,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}else{
 			gTimer.tick();
 
-			std::wstring fpsStr = L"fps : " + std::to_wstring(1. / gTimer.DeltaTime());
-			SetWindowText(winHnd,fpsStr.c_str());
+			static uint32_t frameCounter = 0;
+			static float timer = 0.;
+			timer += gTimer.DeltaTime();
+			frameCounter++;
+			if (timer > .5) {
+				std::wstring fpsStr = L"fps : " + std::to_wstring(frameCounter * 2);
+				SetWindowText(winHnd, fpsStr.c_str());
+				frameCounter = 0;
+				timer = 0;
+			}
+
 
 			gGraphic.begin();
 			gApp.update();
@@ -81,9 +91,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			gInput.update();
 		}
     }
+	gWebClinet.Close();
 	gApp.finalize();
 	gGraphic.finalize();
-
     return (int) msg.wParam;
 }
 
@@ -125,8 +135,18 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        在此函数中，我们在全局变量中保存实例句柄并
 //        创建和显示主程序窗口。
 //
+#include "Config.h"
+
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
+	if (!gConfig.Open()) {
+		MessageBeep(MB_ICONERROR);
+		MessageBox(NULL, L"fail to open config.init file", L"Error!", MB_OK | MB_ICONWARNING);
+		return false;
+	}
+	width = gConfig.GetValue<int>("width");
+	height = gConfig.GetValue<int>("height");
+
 	hInst = hInstance; // 将实例句柄存储在全局变量中
 
 	auto ws = WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME);
@@ -148,9 +168,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		return FALSE;
 	}
 	if (!gApp.initialize()) {
+		gGraphic.finalize();
 		return FALSE;
 	}
 	if (!gTimer.initialize()) {
+		gGraphic.finalize();
+		gApp.finalize();
 		return FALSE;
 	}
 	gInput.initialize();

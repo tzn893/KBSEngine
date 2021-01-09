@@ -152,16 +152,6 @@ public:
 
 	void	SetDefaultClearColor(float* newColor) { memcpy(mRTVClearColor, newColor, sizeof(float) * 4); }
 
-	/*template<typename CommandType>
-	CommandType	BeginCommand() {
-		if constexpr (std::is_same<CommandType, ComputeCommand>::value) {
-			return ComputeCommand(this);
-		}
-		else {
-			//dummy;
-		}
-	}*/
-
 	inline size_t GetDescriptorHandleSize(D3D12_DESCRIPTOR_HEAP_TYPE type) {
 		if (type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) {
 			return mDescriptorHandleSizeCBVSRVUAV;

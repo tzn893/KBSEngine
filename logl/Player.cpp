@@ -42,10 +42,10 @@ void Player::Update() {
 		ApplicationQuit();
 	}
 	
-	if (gInput.KeyHold(InputBuffer::A)) {
+	if (gInput.KeyHold(InputBuffer::D)) {
 		moveCamera.rotateX(-rotateSpeedX * gTimer.DeltaTime());
 	}
-	if (gInput.KeyHold(InputBuffer::D)) {
+	if (gInput.KeyHold(InputBuffer::A)) {
 		moveCamera.rotateX(rotateSpeedX * gTimer.DeltaTime());
 	}
 
@@ -69,9 +69,7 @@ void Player::Update() {
 		accY += drawbackDelta;
 	}
 
-	if (gInput.KeyDown(InputBuffer::KeyCode::Q)) {
-		Shoot();
-	}
+	Shoot();
 	UpdateTransform();
 }
 
@@ -129,7 +127,32 @@ void Player::SetWorldRotation(Game::Vector3 rotation) {
 void Player::SetWorldScale(Game::Vector3 scale) {
 	ro->SetWorldScale(scale);
 }
-
+/*
 void Player::Shoot() {
 	bullets.push_back(GetWorldPosition());
+}
+*/
+void Player::Shoot() {
+	if (shootTimer > shootCD) {
+		if (gInput.KeyHold(InputBuffer::MOUSE_LEFT)) {
+			shootTimer = 0.f;
+			shootSignal = true;
+		}
+	}
+	else{
+		shootTimer += gTimer.DeltaTime();
+	}
+}
+
+bool Player::ShootSignal() {
+	bool rv = shootSignal;
+	shootSignal = false;
+	return rv;
+}
+
+std::pair<Game::Vector3, Game::Vector3> Player::Bullet() {
+	Game::Vector3 Position, Direction;
+	Direction = vecForward();
+	Position = Direction * shootOffset + GetWorldPosition();
+	return std::make_pair(Position,Direction);
 }
