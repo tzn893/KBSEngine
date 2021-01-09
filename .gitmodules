@@ -1,0 +1,3 @@
+[submodule "linux_less_game_server"]
+	path = linux_less_game_server
+	url = https://github.com/137900114/linux_less_game_server.git
