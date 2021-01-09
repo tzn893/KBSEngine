@@ -64,7 +64,9 @@ void upload(){
 bool Application::initialize() {
 	if (!gWebClinet.Connent(gConfig.GetValue<std::string>("ip").c_str(), gConfig.GetValue<int>("port"))) {
 		MessageBeep(MB_ICONERROR);
-		MessageBox(NULL, L"fail to connect to host ip:49.232.215.28 port:8000.\nYou can change the connection setting in file config.init", L"Error!", MB_OK | MB_ICONWARNING);
+		std::string message = "fail to connect to host ip:" + gConfig.GetValue<std::string>("ip") + " port:" + gConfig.GetValue<std::string>("port")
+			+"\nYou can change the connection setting in file config.init";
+		MessageBoxA(NULL, message.c_str(), "Error!", MB_OK | MB_ICONWARNING);
 		return false;
 	}
 
@@ -128,6 +130,18 @@ std::pair<Game::Vector3, Game::Vector3> UnpackPlayerState(std::string& cmd) {
 	return std::make_pair(Position,Rotation);
 }
 
+Game::Vector3 UnpackBulletState(std::string& cmd) {
+	std::vector<std::string> data;
+	splitstr(data, cmd, ',');
+
+	Game::Vector3 Position;
+	Position[0] = (float)std::stoi(data[0]) / 10000.;
+	Position[1] = (float)std::stoi(data[1]) / 10000.;
+	Position[2] = (float)std::stoi(data[2]) / 10000.;
+
+	return Position;
+}
+
 std::string PackPlayerState(Game::Vector3 Position,Game::Vector3 Rotation) {
 	std::string cmd = std::to_string((int)(Position[0] * 10000.)) + ",";
 	cmd += std::to_string((int)(Position[1] * 10000.)) + ",";
@@ -149,36 +163,49 @@ void Application::update() {
 	wave.Update(gTimer.DeltaTime());
 
 	brp->UpdateBulletPositions(bullets.size(),bullets.data());
+	bullets.clear();
 
 	player->Update();
 	
 
-	static float time = 0;
-	if (time < 0.) return;
+	/*static float time = 0;
+	if (time < 0.) return;*/
 	
-	if (time > 5e-2) {
+	/*if (time > 5e-2) {*/
 		ProtocolPost post;
 		post.head = PROTOCOL_HEAD_CLINET_MESSAGE;
 		post.protocolCommands.push_back({
 			PROTOCOL_COMMAND_TYPE_PLAYER_POSITION,
 			PackPlayerState(player->GetWorldPosition(),player->GetWorldRotation())
 		});
+		if (player->ShootSignal()) {
+			auto[position, direction] = player->Bullet();
+			post.protocolCommands.push_back(
+				{
+					PROTOCOL_COMMAND_TYPE_SHOOT,
+					PackPlayerState(position,direction)
+				}
+			);
+		}
 		gWebClinet.Send(&post);
 		gWebClinet.Receive(&post);
 
 		for (auto cmd : post.protocolCommands) {
-			if (cmd.type = PROTOCOL_COMMAND_TYPE_PLAYER_POSITION) {
+			if (cmd.type == PROTOCOL_COMMAND_TYPE_PLAYER_POSITION) {
 				auto[position, rotation] = UnpackPlayerState(cmd.command);
 				rp->SetWorldPosition(position);
 				rp->SetWorldRotation(rotation);
 			}
+			else if (cmd.type == PROTOCOL_COMMAND_TYPE_BULLET_POSITION) {
+				auto position = UnpackBulletState(cmd.command);
+				bullets.push_back(position);
+			}
 		}
-		time = 0.;
-	}
-	else {
-		time += gTimer.DeltaTime();
-	}
-
+		//time = 0.;	//}
+	//else {
+		//time += gTimer.DeltaTime();
+	//}
+	
 }
 
 void Application::finalize() {

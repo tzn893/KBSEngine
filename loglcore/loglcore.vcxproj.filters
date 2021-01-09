@@ -198,5 +198,8 @@
     <ClInclude Include="SkyboxRenderPass.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="BoundingBox.h">
+      <Filter>Math</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

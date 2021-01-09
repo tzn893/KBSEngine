@@ -126,10 +126,7 @@ bool WebClinet::Send(ProtocolPost* post) {
 	PROTOCOL_PARSER_STATE state = PROTOCOL_PARSER_STATE_CONTINUE;
 	while (state == PROTOCOL_PARSER_STATE_CONTINUE) {
 		state = ProtocolParser::CommandList2Buffer(&netBuffer,post,offset);
-		int err = send(socketClt, netBuffer.Get<char>(0), netBuffer.GetSize(), 0);
-		if (err != 0) {
-			return false;
-		}
+		send(socketClt, netBuffer.Get<char>(0), netBuffer.GetSize(), 0);
 	}
 	if (state == PROTOCOL_PARSER_STATE_FAIL) return false;
 	post->protocolCommands.clear();
@@ -140,6 +137,8 @@ bool WebClinet::Receive(ProtocolPost* post) {
 	post->protocolCommands.clear();
 	PROTOCOL_PARSER_STATE state = PROTOCOL_PARSER_STATE_CONTINUE;
 	std::vector<ProtocolCommand> cmds;
+	
+	int counter = 0;
 	while (state == PROTOCOL_PARSER_STATE_CONTINUE) {
 		ProtocolPost tmp;
 		recv(socketClt, netBuffer.Get<char>(0), netBuffer.GetSize(), 0);

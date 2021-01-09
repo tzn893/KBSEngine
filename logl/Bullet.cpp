@@ -36,7 +36,7 @@ bool BulletRenderPass::Initialize(UploadBatch* batch) {
 
 	bulletConstant = std::make_unique<ConstantBuffer<BulletWorld>>(gGraphic.GetDevice(), maxRenderedBullets, true);
 
-	auto[vertices, indices] = GeometryGenerator::Sphere(.1,12, GEOMETRY_FLAG_DISABLE_NORMAL | GEOMETRY_FLAG_DISABLE_TANGENT
+	auto[vertices, indices] = GeometryGenerator::Sphere(.05,12, GEOMETRY_FLAG_DISABLE_NORMAL | GEOMETRY_FLAG_DISABLE_TANGENT
 		| GEOMETRY_FLAG_DISABLE_TEXCOORD);
 	bulletMesh = std::make_unique<StaticMesh<Game::Vector3>>(gGraphic.GetDevice(),
 		indices.size(), indices.data(),

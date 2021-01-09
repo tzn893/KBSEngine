@@ -152,7 +152,7 @@ bool Player::ShootSignal() {
 
 std::pair<Game::Vector3, Game::Vector3> Player::Bullet() {
 	Game::Vector3 Position, Direction;
-	Direction = vecForward();
+	Direction = moveCamera.GetViewDir();
 	Position = Direction * shootOffset + GetWorldPosition();
 	return std::make_pair(Position,Direction);
 }

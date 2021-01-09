@@ -26,6 +26,8 @@ public:
 
 	void setPosition(Game::Vector3 pos);
 
+	Game::Vector3 GetViewDir() { return lookAt; }
+
 	Game::Mat4x4 GetLookAtMat();
 private:
 	void updateAxis();

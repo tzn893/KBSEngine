@@ -31,7 +31,7 @@ PROTOCOL_PARSER_STATE ProtocolParser::Buffer2CommandList(ProtocolPost* post, Net
 		post->protocolCommands[i] = std::move(cmd);
 	}
 
-	if (buffer_ptr)
+	if (!continue_cmd)
 		return PROTOCOL_PARSER_STATE_FINISH;
 	else
 		return PROTOCOL_PARSER_STATE_CONTINUE;

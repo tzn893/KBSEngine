@@ -62,7 +62,7 @@ Model* ModelManager::loadInOBJFormat(const char* pathName,const char* name,Uploa
 	}
 	
 	std::unique_ptr<Model> model = std::make_unique<Model>(name);
-	
+	BoxAABB box(Game::Vector3(attrib.vertices.data()),Game::Vector3(attrib.vertices.data()));
 	
 	for (auto& shape : shapes) {
 		size_t vindex_start = shape.mesh.indices[0].vertex_index, vindex_end = vindex_start;
@@ -78,6 +78,7 @@ Model* ModelManager::loadInOBJFormat(const char* pathName,const char* name,Uploa
 		size_t icounter = 0;
 		tinyobj::index_t triangle[3];
 		for (auto& index : shape.mesh.indices) {
+			box = box.Merge(Game::Vector3(&attrib.vertices[index.vertex_index * 3]));
 			vertexs[index.vertex_index - vindex_start].Position = Game::Vector3(&attrib.vertices[index.vertex_index * 3]);
 			vertexs[index.vertex_index - vindex_start].TexCoord = Game::Vector2(&attrib.texcoords[index.texcoord_index * 2]);
 			vertexs[index.vertex_index - vindex_start].Normal = Game::Vector3(&attrib.normals[index.normal_index * 3]);
@@ -115,6 +116,7 @@ Model* ModelManager::loadInOBJFormat(const char* pathName,const char* name,Uploa
 
 		model->PushBackSubMesh(submesh);
 	}
+	model->SetBoundingBox(box);
 	for (auto& material : materials) {
 		SubMeshMaterial sbMaterial;
 		Texture* bumpMap = nullptr, *diffuseMap = nullptr, *specularMap = nullptr;

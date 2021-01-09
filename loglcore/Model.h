@@ -2,6 +2,7 @@
 #include "Mesh.h"
 #include "ShaderDataStruct.h"
 #include "Texture.h"
+#include "BoundingBox.h"
 
 #include <functional>
 
@@ -41,7 +42,7 @@ private:
 
 class Model {
 public:
-	Model(const char* name) :name(name) {}
+	Model(const char* name) :name(name){}
 
 	SubMesh* GetSubMesh(size_t index) { 
 		if (index < subMeshs.size()) 
@@ -82,9 +83,13 @@ public:
 	}
 	size_t GetSubMeshNum() { return subMeshs.size(); }
 	size_t GetSubMaterialNum() { return subMaterials.size(); }
+
+	BoxAABB GetBoundingBox() { return boundingBox; }
+	void SetBoundingBox(BoxAABB box) {boundingBox = box; }
 private:
 
 	std::vector<std::unique_ptr<SubMesh>> subMeshs;
 	std::vector<SubMeshMaterial> subMaterials;
 	std::string name;
+	BoxAABB boundingBox;
 };

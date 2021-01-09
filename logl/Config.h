@@ -20,17 +20,23 @@ public:
 	template<typename T>
 	T GetValue(const char* name) {
 		if (auto res = values.find(name);res != values.end()) {
-			if constexpr (std::is_same<T,std::string>::value) {
-				return res->second;
+			try {
+				if constexpr (std::is_same<T, std::string>::value) {
+					return res->second;
+				}
+				else if constexpr (std::is_same<T, float>::value) {
+					return std::stof(res->second);
+				}
+				else if constexpr (std::is_same<T, int>::value) {
+					return std::stoi(res->second);
+				}
+				else {
+					return T(res->second);
+				}
 			}
-			else if constexpr (std::is_same<T,float>::value) {
-				return std::stof(res->second);
-			}
-			else if constexpr (std::is_same<T,int>::value) {
-				return std::stoi(res->second);
-			}
-			else {
-				return T(res->second);
+			catch (...) {
+				OUTPUT_DEBUG_STRING("invalid config string\n");
+				return T();
 			}
 		}
 		else {
