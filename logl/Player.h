@@ -2,6 +2,32 @@
 #include "../loglcore/Model.h"
 #include "../loglcore/RenderObject.h"
 #include "FPSCamera.h"
+#include "../loglcore/RenderPass.h"
+#include "../loglcore/Texture.h"
+#include "../loglcore/DescriptorAllocator.h"
+
+
+class PlayerPostEffect : public RenderPass {
+public:
+	virtual size_t GetPriority() { return 0; }
+
+	virtual void   PreProcess() {}
+	virtual bool   Initialize(UploadBatch* batch = nullptr) override;
+	virtual void   Render(Graphic* graphic, RENDER_PASS_LAYER layer) {}
+	virtual void   PostProcess(ID3D12Resource* renderTarget) override;
+
+	virtual void   finalize() override;
+
+	void SetHealthFactor(float health);
+private:
+	struct TextureConstantBuffer {
+		float width, height;
+		float healthFactor;
+	};
+	std::unique_ptr<Texture> texture;
+	std::unique_ptr<DescriptorHeap> mHeap;
+	std::unique_ptr<ConstantBuffer<TextureConstantBuffer>> mBuffer;
+};
 
 class Player {
 public:
@@ -19,6 +45,11 @@ public:
 
 	bool ShootSignal();
 	std::pair<Game::Vector3, Game::Vector3> Bullet();
+
+	void Shooted(float damage);
+
+	float GetHealth() { return health; }
+	void SetHealth(float health) { this->health = health; }
 private:
 	Game::Vector3 vecForward();
 	void UpdateTransform();
@@ -28,6 +59,7 @@ private:
 	//this camera is used to compute the object's movement
 	FPSCamera moveCamera;
 	std::unique_ptr<RenderObject> ro;
+	std::unique_ptr<PlayerPostEffect> postEffect;
 
 	static constexpr float cameraDis = 2.;
 	static constexpr float camSpeed = 10.;
@@ -50,4 +82,9 @@ private:
 	float shootTimer = 0.f;
 
 	float shootOffset = .3;
+
+	float recoverTimer = 0.;
+	static constexpr float recoverTime = 2.;
+	float health = 100.;
+	static constexpr float recoverSpeed = 50.;
 };

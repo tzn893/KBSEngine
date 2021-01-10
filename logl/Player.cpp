@@ -5,6 +5,7 @@
 #include "logl.h"
 
 
+
 extern std::vector<Game::Vector3> bullets;
 Game::Vector2 pos;
 void Player::Update() {
@@ -71,6 +72,15 @@ void Player::Update() {
 
 	Shoot();
 	UpdateTransform();
+
+	if (recoverTimer > recoverTime) {
+		health = fmin(100., health + recoverSpeed * gTimer.DeltaTime());
+	}
+	else {
+		recoverTimer += gTimer.DeltaTime();
+	}
+
+	postEffect->SetHealthFactor(health);
 }
 
 void Player::UpdateTransform() {
@@ -95,6 +105,10 @@ Player::Player(Game::Vector3 Position,Game::Vector3 Scale,
 	moveCamera.attach(GetWorldPosition(), GetWorldRotation());
 
 	gInput.HideCursor();
+	health = 100.;
+
+	postEffect = std::make_unique<PlayerPostEffect>();
+	gGraphic.RegisterRenderPass(postEffect.get());
 }
 
 Game::Vector3 Player::vecForward() {
@@ -155,4 +169,86 @@ std::pair<Game::Vector3, Game::Vector3> Player::Bullet() {
 	Direction = moveCamera.GetViewDir();
 	Position = Direction * shootOffset + GetWorldPosition();
 	return std::make_pair(Position,Direction);
+}
+
+void Player::Shooted(float damage) {
+	health -= damage;
+	recoverTimer = 0.f;
+}
+
+bool PlayerPostEffect::Initialize(UploadBatch* batch){
+	Game::RootSignature rootSig(2, 0);
+	rootSig[0].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
+	rootSig[1].initAsConstantBuffer(0, 0);
+
+	if (!gGraphic.CreateRootSignature(L"player",&rootSig)) {
+		OUTPUT_DEBUG_STRING("fail to create root signature for player's post effect\n");
+		return false;
+	}
+
+	ComputeShader* CS = gShaderManager.loadComputeShader(L"../shader/Custom/RedPostEffect.hlsl",
+		"main", L"player", L"player", nullptr);
+	if (CS == nullptr) {
+		OUTPUT_DEBUG_STRING("fail to create compute shader for player's post effect\n");
+		return false;
+	}
+
+	Game::ComputePSO cPso = Game::ComputePSO::Default();
+	if (!gGraphic.CreateComputePipelineStateObject(CS,&cPso,L"player")) {
+		OUTPUT_DEBUG_STRING("fail to create compute pipeline state object for player's post effect\n");
+		return false;
+	}
+
+	texture = std::make_unique<Texture>(GetWinWidth(), GetWinHeight(), TEXTURE_FORMAT_RGBA, TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,
+		D3D12_RESOURCE_STATE_COPY_SOURCE);
+	mHeap = std::make_unique<DescriptorHeap>(1);
+	texture->CreateUnorderedAccessView(mHeap->Allocate());
+
+	mBuffer = std::make_unique<ConstantBuffer<TextureConstantBuffer>>(gGraphic.GetDevice());
+	mBuffer->GetBufferPtr()->healthFactor = 0.;
+	mBuffer->GetBufferPtr()->height = (float)GetWinHeight();
+	mBuffer->GetBufferPtr()->width = (float)GetWinWidth();
+
+	return true;
+}
+
+#include "../loglcore/ComputeCommand.h"
+
+void PlayerPostEffect::PostProcess(ID3D12Resource* res) {
+
+
+	{
+		ComputeCommand cc = ComputeCommand::Begin();
+		cc.ResourceTrasition(texture->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+		cc.ResourceTrasition(res, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
+		cc.ResourceCopy(texture->GetResource(), res);
+		cc.ResourceTrasition(texture->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		
+		
+		cc.BindDescriptorHeap(mHeap->GetHeap());
+		cc.SetCPSOAndRootSignature(L"player", L"player");
+		cc.BindConstantBuffer(1, mBuffer->GetADDR());
+		cc.BindDescriptorHandle(0, texture->GetUnorderedAccessViewGPU());
+		size_t Width = GetWinWidth(), Height = GetWinHeight();
+		size_t x = Width / 16, y = Height / 16;
+		cc.Dispatch(x, y, 1);
+
+
+		cc.ResourceTrasition(texture->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE);
+		cc.ResourceTrasition(res, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+		cc.ResourceCopy(res, texture->GetResource());
+		cc.ResourceTrasition(res, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+		cc.End();
+	}
+}
+
+void PlayerPostEffect::SetHealthFactor(float health) {
+	mBuffer->GetBufferPtr()->healthFactor = 1. - (health / 100.);
+}
+
+void PlayerPostEffect::finalize() {
+	mBuffer.release();
+	mHeap.release();
+	texture.release();
 }

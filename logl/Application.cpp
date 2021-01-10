@@ -36,9 +36,11 @@ Texture* face;
 
 PhongRenderPass* prp;
 
-std::unique_ptr<RenderObject> rp;
+std::unique_ptr<RenderObject> rp,bro[10];
+std::unique_ptr<StaticMesh<MeshVertexNormal>> boxMesh;
 std::unique_ptr<Player> player;
 std::unique_ptr<BulletRenderPass> brp;
+Texture* boxDiffuse,* boxNormal;
 
 FFTWave wave;
 extern bool Quit;
@@ -59,6 +61,7 @@ void upload(){
 }
 
 #include "../web/WebClinet.h"
+#include "logl.h"
 #include "Config.h"
 
 bool Application::initialize() {
@@ -84,7 +87,44 @@ bool Application::initialize() {
 	face->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 	Model* plane = gModelManager.loadModel("../asserts/spaceship/spaceship.obj", "plane",&up);
 	rp = std::make_unique<RenderObject>(plane, Game::Vector3(0.,20.,5.),Game::Vector3(0.,0.,0.),Game::Vector3(.1,.1,.1));
+	
+	auto vertices = GeometryGenerator::Cube(1., 1., 1., GEOMETRY_FLAG_NONE);
+	
+	boxMesh = std::make_unique<StaticMesh<MeshVertexNormal>>(gGraphic.GetDevice(),
+		vertices.size() / getVertexStrideByFloat<MeshVertexNormal>(),
+		reinterpret_cast<MeshVertexNormal*>(vertices.data()),
+		&up);
+
+	boxDiffuse = gTextureManager.loadTexture(L"../asserts/brickwall.jpg", L"box_diffuse", true, &up);
+	boxNormal = gTextureManager.loadTexture(L"../asserts/brickwall_normal.jpg", L"box_normal", true, &up);
+	boxDiffuse->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	boxNormal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+
+	Mesh mesh;
+	mesh.vbv = boxMesh->GetVBV();
+	mesh.startIndex = 0;
+	mesh.ibv = nullptr;
+	mesh.indiceNum = boxMesh->GetVertexNum();
+
+	SubMeshMaterial material;
+	material.diffuse = Game::Vector3(1., 1., 1.);
+	material.roughness = .9;
+	material.specular = Game::Vector3(1., 1., 1.);
+	material.textures[SUBMESH_MATERIAL_TYPE_BUMP] = boxNormal;
+	material.textures[SUBMESH_MATERIAL_TYPE_DIFFUSE] = boxDiffuse;
+
 	up.End();
+
+	bro[0] = std::make_unique<RenderObject>(mesh, material, Game::Vector3(0., 5. / 3., 10.) * 3., Game::Vector3(), Game::Vector3(4., 10., 4.));
+	bro[1] = std::make_unique<RenderObject>(mesh, material, Game::Vector3(32., 1. / 3., 33.) * 3., Game::Vector3(), Game::Vector3(4., 10., 4.));
+	bro[2] = std::make_unique<RenderObject>(mesh, material, Game::Vector3(6., 8. / 3., 17.) * 3., Game::Vector3(), Game::Vector3(4., 10., 4.));
+	bro[3] = std::make_unique<RenderObject>(mesh, material, Game::Vector3(-14.5, 11. / 3., -10.) * 3., Game::Vector3(), Game::Vector3(4., 10., 4.));
+	bro[4] = std::make_unique<RenderObject>(mesh, material, Game::Vector3(7., 5. / 3., -30.) * 3., Game::Vector3(), Game::Vector3(4., 10., 4.));
+	bro[5] = std::make_unique<RenderObject>(mesh, material, Game::Vector3(22., 5. / 3., -10.)* 3., Game::Vector3(), Game::Vector3(4., 10., 4.));
+	bro[6] = std::make_unique<RenderObject>(mesh, material, Game::Vector3(33., 5. / 3., 30.)* 3., Game::Vector3(), Game::Vector3(4., 10., 4.));
+	bro[7] = std::make_unique<RenderObject>(mesh, material, Game::Vector3(50., 5. / 3., 20.) * 3., Game::Vector3(), Game::Vector3(4., 10., 4.));
+	bro[8] = std::make_unique<RenderObject>(mesh, material, Game::Vector3(12.3, 5. / 3., -66.)* 3., Game::Vector3(), Game::Vector3(4., 10., 4.));
+	bro[9] = std::make_unique<RenderObject>(mesh, material, Game::Vector3(-22., 5. / 3., 20.) * 3., Game::Vector3(), Game::Vector3(4., 10., 4.));
 
 	player = std::make_unique<Player>(Game::Vector3(0., 20., 3.), Game::Vector3(.1, .1, .1),plane);
 
@@ -153,7 +193,7 @@ std::string PackPlayerState(Game::Vector3 Position,Game::Vector3 Rotation) {
 	return std::move(cmd);
 }
 
-
+constexpr float damage = 11.4514f;
 
 
 void Application::update() {
@@ -167,11 +207,6 @@ void Application::update() {
 
 	player->Update();
 	
-
-	/*static float time = 0;
-	if (time < 0.) return;*/
-	
-	/*if (time > 5e-2) {*/
 		ProtocolPost post;
 		post.head = PROTOCOL_HEAD_CLINET_MESSAGE;
 		post.protocolCommands.push_back({
@@ -200,12 +235,27 @@ void Application::update() {
 				auto position = UnpackBulletState(cmd.command);
 				bullets.push_back(position);
 			}
+			else if (cmd.type = PROTOCOL_COMMAND_TYPE_SHOOTED) {
+				size_t count = std::stoi(cmd.command);
+				player->Shooted(damage * count);
+			}
 		}
-		//time = 0.;	//}
-	//else {
-		//time += gTimer.DeltaTime();
-	//}
-	
+
+
+		if (player->GetHealth() < 0) {
+			gWebClinet.Close();
+			int rv = MessageBox(NULL, L"你死了，按确定复活", L"菜", MB_YESNO);
+			if (rv) {
+				gWebClinet.Connent(gConfig.GetValue<std::string>("ip").c_str(), gConfig.GetValue<int>("port"));
+				player->SetHealth(100.f);
+			}
+			else {
+				ApplicationQuit();
+				return;
+			}
+		}
+	for(size_t i = 0;i != 10;i++)
+		bro[i]->Render(prp);
 }
 
 void Application::finalize() {

@@ -16,6 +16,9 @@ public:
 	inline void BindDescriptorHeap(ID3D12DescriptorHeap* const * heaps, size_t heapNum) {
 		graphic->BindDescriptorHeap(heaps, heapNum);
 	}
+	inline void BindDescriptorHeap(ID3D12DescriptorHeap* heaps) {
+		graphic->BindDescriptorHeap(heaps);
+	}
 
 	inline void ResourceTrasition(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after) {
 		graphic->ResourceTransition(resource, before, after);

@@ -89,7 +89,7 @@ void RenderObject::RenderByPhongPassMesh(PhongRenderPass* RenderPass) {
 				&phongRPData.phongMaterialTextures[0]);
 		}
 		else {
-			RenderPass->DrawObject(mMesh.vbv, mMesh.ibv, 0, mMesh.indiceNum, phongRPData.phongObjectID[0],
+			RenderPass->DrawObject(mMesh.vbv, mMesh.ibv, mMesh.startIndex, mMesh.indiceNum, phongRPData.phongObjectID[0],
 				&phongRPData.phongMaterialTextures[0]);
 		}
 	}
