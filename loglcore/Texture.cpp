@@ -3,8 +3,9 @@
 
 static size_t  getFormatElementSize(TEXTURE_FORMAT format) {
 	switch (format) {
-	//case TEXTURE_FORMAT_RGB:
-		//return 3;
+	
+	case TEXTURE_FORMAT_FLOAT4:
+		return 4;
 	case TEXTURE_FORMAT_FLOAT2:
 		return 2;
 	case TEXTURE_FORMAT_RGBA:
@@ -17,8 +18,8 @@ static size_t  getFormatElementSize(TEXTURE_FORMAT format) {
 
 static DXGI_FORMAT getDXGIFormatFromTextureFormat(TEXTURE_FORMAT format) {
 	switch (format) {
-	//case TEXTURE_FORMAT_RGB:
-		//return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case TEXTURE_FORMAT_FLOAT4:
+		return DXGI_FORMAT_R32G32B32A32_FLOAT;
 	case TEXTURE_FORMAT_FLOAT2:
 		return DXGI_FORMAT_R32G32_FLOAT;
 	case TEXTURE_FORMAT_RGBA:
@@ -78,6 +79,7 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 		rDesc.SampleDesc.Quality = 0;
 
 		ID3D12Device* device = gGraphic.GetDevice();
+
 		HRESULT hr = device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 			D3D12_HEAP_FLAG_NONE,

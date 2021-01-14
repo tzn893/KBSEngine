@@ -129,8 +129,8 @@ Model* ModelManager::loadInOBJFormat(const char* pathName,const char* name,Uploa
 			diffuseMap = gTextureManager.loadTexture(fullname.c_str(), fullname.c_str(), true, batch);
 			diffuseMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 		}
-		if (!material.specular_highlight_texname.empty()) {
-			std::wstring fullname = String2WString(dirName + "/" + material.specular_highlight_texname);
+		if (!material.specular_texname.empty()) {
+			std::wstring fullname = String2WString(dirName + "/" + material.specular_texname);
 			specularMap = gTextureManager.loadTexture(fullname.c_str(), fullname.c_str(), true, batch);
 			specularMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 		}

@@ -12,6 +12,9 @@
     <Filter Include="tests">
       <UniqueIdentifier>{dda39bd3-3a78-44fc-8884-f8937a611520}</UniqueIdentifier>
     </Filter>
+    <Filter Include="linux">
+      <UniqueIdentifier>{6704010e-d7d5-4fe0-8eb3-6ac4e3332cb0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -29,9 +32,6 @@
     <ClInclude Include="Application.h">
       <Filter>源文件</Filter>
     </ClInclude>
-    <ClInclude Include="FFTWave.h">
-      <Filter>源文件</Filter>
-    </ClInclude>
     <ClInclude Include="InputBuffer.h">
       <Filter>源文件</Filter>
     </ClInclude>
@@ -41,17 +41,20 @@
     <ClInclude Include="FPSCamera.h">
       <Filter>源文件</Filter>
     </ClInclude>
-    <ClInclude Include="RandomGenerator.h">
-      <Filter>源文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Player.h">
+    <ClInclude Include="Config.h">
       <Filter>源文件</Filter>
     </ClInclude>
     <ClInclude Include="Bullet.h">
-      <Filter>源文件</Filter>
+      <Filter>linux</Filter>
     </ClInclude>
-    <ClInclude Include="Config.h">
-      <Filter>源文件</Filter>
+    <ClInclude Include="FFTWave.h">
+      <Filter>linux</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>linux</Filter>
+    </ClInclude>
+    <ClInclude Include="RandomGenerator.h">
+      <Filter>linux</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -59,9 +62,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Application.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="FFTWave.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="InputBuffer.cpp">
@@ -73,11 +73,14 @@
     <ClCompile Include="FPSCamera.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Player.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Bullet.cpp">
-      <Filter>源文件</Filter>
+      <Filter>linux</Filter>
+    </ClCompile>
+    <ClCompile Include="FFTWave.cpp">
+      <Filter>linux</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>linux</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -2,6 +2,7 @@
 
 #include "Model.h"
 #include "PhongRenderPass.h"
+#include "DeferredRenderPass.h"
 
 class RenderObject {
 public:
@@ -39,6 +40,16 @@ public:
 				break;
 			}
 		}
+		else if constexpr (std::is_same<RPType,DeferredRenderPass>::value) {
+			switch (type) {
+			case RENDER_OBJECT_TYPE_MODEL:
+				RenderByDeferredPass(RenderPass);
+				break;
+			case RENDER_OBJECT_TYPE_MESH:
+				RenderByDeferredPassMesh(RenderPass);
+				break;
+			}
+		}
 		else {
 			//otherwise we do nothing
 		}
@@ -61,6 +72,8 @@ private:
 
 	void RenderByPhongPass(PhongRenderPass* rp);
 	void RenderByPhongPassMesh(PhongRenderPass* rp);
+	void RenderByDeferredPass(DeferredRenderPass* drp);
+	void RenderByDeferredPassMesh(DeferredRenderPass* drp);
 
 	union {
 		struct {
@@ -80,5 +93,11 @@ private:
 		std::vector<PhongObjectID> phongObjectID;
 		std::vector<PhongMaterialTexture> phongMaterialTextures;
 	} phongRPData;
+	struct {
+		bool initialized = false;
+		std::vector<DeferredRenderPassID> deferredObjectID;
+		std::vector<DeferredRenderPassTexture> deferredTextures;
+	} deferredRPData;
+
 	static size_t renderItemIndex;
 };

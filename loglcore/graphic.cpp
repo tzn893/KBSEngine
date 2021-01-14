@@ -818,14 +818,13 @@ bool Graphic::RegisterRenderPasses(RenderPass** RP,size_t num) {
 }
 
 bool Graphic::createRenderPasses() {
-	UploadBatch mbacth;
-
 	spriteRenderPass = std::make_unique<SpriteRenderPass>();
 	//phongRenderPass = std::make_unique<PhongRenderPass>();
 	debugRenderPass = std::make_unique<DebugRenderPass>();
 	skyboxRenderPass = std::make_unique<SkyboxRenderPass>();
+	postProcessRenderPass = std::make_unique<PostProcessRenderPass>();
 	
-	RenderPass* rpList[] = { spriteRenderPass.get(),debugRenderPass.get(),skyboxRenderPass.get()};
+	RenderPass* rpList[] = { spriteRenderPass.get(),debugRenderPass.get(),skyboxRenderPass.get(),postProcessRenderPass.get()};
 	return RegisterRenderPasses(rpList, _countof(rpList));
 }
 
@@ -839,6 +838,15 @@ void Graphic::ResourceTransition(ID3D12Resource* resource,D3D12_RESOURCE_STATES 
 			afterState
 		)
 	);
+}
+
+void Graphic::ResourceTransition(ID3D12Resource** resource, D3D12_RESOURCE_STATES* initState, D3D12_RESOURCE_STATES* afterState,
+	size_t num) {
+	std::vector<D3D12_RESOURCE_BARRIER> barriers;
+	for (size_t i = 0; i != num; i++) {
+		barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(resource[i], initState[i], afterState[i]));
+	}
+	mDrawCmdList->ResourceBarrier(barriers.size(),barriers.data());
 }
 
 void Graphic::ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source) {
@@ -922,14 +930,17 @@ void Graphic::BindCurrentBackBufferAsRenderTarget(bool clear, float* clearValue)
 }
 
 void Graphic::BindRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE* rtvHandle,D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle,size_t rtvNum, 
-	bool clear,float* clearValue, D3D12_VIEWPORT* viewPort, D3D12_RECT* rect) {
+	bool clear,float* clearValue, D3D12_VIEWPORT* viewPort, D3D12_RECT* rect,bool clearDepth) {
 	if (state != BEGIN_COMMAND_RECORDING) return;
+	if (dsvHandle.ptr == 0) dsvHandle = this->mBackBufferDSVhHeap->GetCPUDescriptorHandleForHeapStart();
 
 	mDrawCmdList->OMSetRenderTargets(rtvNum, rtvHandle, true, &dsvHandle);
-	if (clear) {
+	if (clearDepth) {
 		mDrawCmdList->ClearDepthStencilView(dsvHandle,
 			D3D12_CLEAR_FLAG_STENCIL | D3D12_CLEAR_FLAG_DEPTH,
 			1.f, 0, 0, nullptr);
+	}
+	if (clear) {	
 		if (clearValue == nullptr) {
 			clearValue = mRTVClearColor;
 		}

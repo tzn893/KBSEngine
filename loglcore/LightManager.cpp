@@ -97,7 +97,8 @@ void   ShadowRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 	graphic->BindRenderTarget(
 		&mDepthRTVTex->GetRenderTargetViewCPU(),
 		mDepthDSVTex->GetDepthStencilViewCPU(),
-		1, true, clv, &mDepthView, &mDepthRect
+		1, true, clv, &mDepthView, &mDepthRect,
+		true
 	);
 
 	graphic->BindPSOAndRootSignature(shadowPsoName.c_str(), shadowRootSigName.c_str());

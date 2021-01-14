@@ -23,6 +23,7 @@
     <ClCompile Include="ComputeCommand.cpp" />
     <ClCompile Include="CopyBatch.cpp" />
     <ClCompile Include="DebugRenderPass.cpp" />
+    <ClCompile Include="DeferredRenderPass.cpp" />
     <ClCompile Include="DescriptorAllocator.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="graphic.cpp" />
@@ -31,6 +32,7 @@
     <ClCompile Include="ModelManager.cpp" />
     <ClCompile Include="PhongRenderPass.cpp" />
     <ClCompile Include="PipelineStateObject.cpp" />
+    <ClCompile Include="PostProcessRenderPass.cpp" />
     <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="Shader.cpp" />
@@ -65,6 +67,7 @@
     <ClInclude Include="ModelManager.h" />
     <ClInclude Include="PhongRenderPass.h" />
     <ClInclude Include="PipelineStateObject.h" />
+    <ClInclude Include="PostProcessRenderPass.h" />
     <ClInclude Include="Reflect_Registry.h" />
     <ClInclude Include="RenderObject.h" />
     <ClInclude Include="RenderPass.h" />

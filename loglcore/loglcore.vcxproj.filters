@@ -91,6 +91,12 @@
     <ClCompile Include="SkyboxRenderPass.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="PostProcessRenderPass.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="DeferredRenderPass.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -196,6 +202,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="SkyboxRenderPass.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="PostProcessRenderPass.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

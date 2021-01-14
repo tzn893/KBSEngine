@@ -19,7 +19,8 @@
 #include "ShaderDataStruct.h"
 #include "DebugRenderPass.h"
 #include "SkyboxRenderPass.h"
-
+#include "PostProcessRenderPass.h"
+#include "DeferredRenderPass.h"
 
 constexpr int Graphic_mBackBufferNum = 3;
 
@@ -68,6 +69,9 @@ public:
 	bool CreateComputePipelineStateObject(ComputeShader* shader, Game::ComputePSO* pso, const wchar_t* name = nullptr);
 
 	void ResourceTransition(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
+	void ResourceTransition(ID3D12Resource** resources,D3D12_RESOURCE_STATES* before,D3D12_RESOURCE_STATES* after,
+		size_t num);
+	
 	void ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source);
 	void ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source, D3D12_RESOURCE_STATES destInitState,
 		D3D12_RESOURCE_STATES sourceInitState, D3D12_RESOURCE_STATES destAfterState,
@@ -75,7 +79,8 @@ public:
 
 	void BindCurrentBackBufferAsRenderTarget(bool clear = false, float* clearValue = nullptr);
 	void BindRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, size_t rtvNum = 1,
-		bool clear = false, float* clearValule = nullptr, D3D12_VIEWPORT* viewPort = nullptr, D3D12_RECT* rect = nullptr);
+		bool clear = false, float* clearValule = nullptr, D3D12_VIEWPORT* viewPort = nullptr, D3D12_RECT* rect = nullptr,
+		bool clearDepth = false);
 
 	Camera* GetMainCamera() { return &mainCamera; }
 	float   GetHeightWidthRatio() { return (float)mWinWidth / (float)mWinHeight; }
@@ -89,7 +94,7 @@ public:
 			return spriteRenderPass.get();
 		}
 		else if constexpr (std::is_same<RPType, PhongRenderPass>::value) {
-			if (phongRenderPass.get() == nullptr) {
+			if (phongRenderPass.get() == nullptr && deferredRenderPass.get() == nullptr) {
 				phongRenderPass = std::make_unique<PhongRenderPass>();
 				RenderPass* rps[] = { phongRenderPass.get() };
 				RegisterRenderPasses(rps);
@@ -101,6 +106,13 @@ public:
 		}
 		else if constexpr (std::is_same<RPType, SkyboxRenderPass>::value) {
 			return skyboxRenderPass.get();
+		}
+		else if constexpr (std::is_same<RPType, DeferredRenderPass>::value) {
+			if (phongRenderPass.get() == nullptr && deferredRenderPass.get() == nullptr) {
+				deferredRenderPass = std::make_unique<DeferredRenderPass>();
+				RegisterRenderPass(deferredRenderPass.get());
+			}
+			return deferredRenderPass.get();
 		}
 		else {
 			return nullptr;
@@ -130,6 +142,11 @@ public:
 			FindRPAndErase(skyboxRenderPass.get());
 			skyboxRenderPass->finalize();
 			skyboxRenderPass.release();
+		}
+		else if constexpr (std::is_same<RPType, DeferredRenderPass>::value) {
+			FindRPAndErase(deferredRenderPass.get());
+			deferredRenderPass->finalize();
+			deferredRenderPass.release();
 		}
 		else {
 			return;//otherwise we do nothing
@@ -234,6 +251,8 @@ private:
 	std::unique_ptr<PhongRenderPass>  phongRenderPass;
 	std::unique_ptr<DebugRenderPass>  debugRenderPass;
 	std::unique_ptr<SkyboxRenderPass> skyboxRenderPass;
+	std::unique_ptr<PostProcessRenderPass> postProcessRenderPass;
+	std::unique_ptr<DeferredRenderPass> deferredRenderPass;
 };
 
 inline Graphic gGraphic;

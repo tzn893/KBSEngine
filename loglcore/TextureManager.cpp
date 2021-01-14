@@ -5,6 +5,7 @@
 using namespace std::filesystem;
 
 ManagedTexture* TextureManager::getTextureByName(const wchar_t* name) {
+
 	auto query = texturesByName.find(name);
 	if (query == texturesByName.end()) {
 		return nullptr;
@@ -208,4 +209,18 @@ ManagedTexture* TextureManager::loadCubeTexture(const wchar_t* filepath,
 	texturesByPath[filepath] = std::move(mtexture);
 
 	return rv;
+}
+
+#include "DescriptorAllocator.h"
+
+Texture* TextureManager::getWhiteTexture() {
+	if (white == nullptr) {
+		char* data = (char*)malloc(4);
+		data[0] = 0xff, data[1] = 0xff, data[2] = 0xff, data[3] = 0xff;
+		white = std::make_unique<Texture>(1, 1, TEXTURE_FORMAT_RGBA, reinterpret_cast<void**>(&data),
+			TEXTURE_FLAG_NONE);
+
+		white->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	}
+	return white.get();
 }
