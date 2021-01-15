@@ -30,11 +30,12 @@ struct BoxConstantBuffer {
 SpriteData sdata[100];
 SpriteRenderPass* srp;
 Texture* face;
+std::unique_ptr<StaticMesh<MeshVertexNormal>> planeMesh;
 
-//PhongRenderPass* prp;
+PhongRenderPass* prp;
 DeferredRenderPass* drp;
 
-std::unique_ptr<RenderObject> ro,cro;
+std::unique_ptr<RenderObject> ro,cro,fro;
 
 std::vector<Game::Vector3> bullets;
 FPSCamera camera;
@@ -44,8 +45,9 @@ FPSCamera camera;
 bool Application::initialize() {
 	
 	srp = gGraphic.GetRenderPass<SpriteRenderPass>();
-	drp = gGraphic.GetRenderPass<DeferredRenderPass>();
-	
+	//drp = gGraphic.GetRenderPass<DeferredRenderPass>();
+	prp = gGraphic.GetRenderPass<PhongRenderPass>();
+
 	UploadBatch up = UploadBatch::Begin();
 	face = gTextureManager.loadTexture(L"../asserts/awesomeface.png", L"face",true,&up);
 	face->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
@@ -53,13 +55,39 @@ bool Application::initialize() {
 	ro = std::make_unique<RenderObject>(plane, Game::Vector3(0.,0.,3.),Game::Vector3(0.,0.,0.),Game::Vector3(.1,.1,.1));
 	Model* suit = gModelManager.loadModel("../asserts/suit/nanosuit.obj", "suit", &up);
 	cro = std::make_unique<RenderObject>(suit, Game::Vector3(0.,0.,5.),Game::Vector3(0.,0.,0.),Game::Vector3(.05,.05,.05));
+
+	auto[v, i] = GeometryGenerator::Square(20., 20., GEOMETRY_FLAG_NONE);
+	planeMesh = std::make_unique<StaticMesh<MeshVertexNormal>>(gGraphic.GetDevice(),
+		i.size(),
+		i.data(),
+		v.size() / getVertexStrideByFloat<MeshVertexNormal>(),
+		reinterpret_cast<MeshVertexNormal*>(v.data()),
+		&up);
+
+	Texture* fdiff = gTextureManager.loadTexture(L"../asserts/brickwall.jpg", L"wall",
+		true, &up);
+	Texture* fnormal = gTextureManager.loadTexture(L"../asserts/brickwall_normal.jpg",
+		L"wall_normal", true, &up);
+
+	fdiff->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	fnormal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	SubMeshMaterial mat;
+	mat.diffuse = Game::Vector3(1., 1., 1.);
+	mat.roughness = 1.;
+	mat.specular = Game::Vector3(.3, .3, .3);
+	
+	mat.textures[SUBMESH_MATERIAL_TYPE_BUMP] = fnormal;
+	mat.textures[SUBMESH_MATERIAL_TYPE_DIFFUSE] = fdiff;
+	mat.textures[SUBMESH_MATERIAL_TYPE_SPECULAR] = nullptr;
+	
+	fro = std::make_unique<RenderObject>(planeMesh->GetMesh(), mat, Game::Vector3(0., -2., 5.), Game::Vector3(), Game::Vector3(1., 1., 1.), "floor");
 	up.End();
 
 
-	gLightManager.SetAmbientLight(Game::Vector3(3., 3., 3.));
+	gLightManager.SetAmbientLight(Game::Vector3(.1, .1, .1));
 	LightData light;
-	light.intensity = Game::Vector3(10., 10., 10.);
-	light.direction = Game::normalize(Game::Vector3(0., -1., -1.));
+	light.intensity = Game::Vector3(.3, .3, .3);
+	light.direction = Game::normalize(Game::Vector3(0., -1., 0.1));
 	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
 	gLightManager.SetMainLightData(light);
 
@@ -110,8 +138,9 @@ void Application::update() {
 
 
 	srp->DrawSpriteTransparent(1, sdata, face);
-	ro->Render(drp);
-	cro->Render(drp);
+	ro->Render(prp);
+	cro->Render(prp);
+	fro->Render(prp);
 }
 
 void Application::finalize() {

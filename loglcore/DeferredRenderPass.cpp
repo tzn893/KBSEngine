@@ -116,8 +116,8 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 	GBufferShadingPSO.SetSampleMask(UINT_MAX);
 	GBufferShadingPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 	GBufferShadingPSO.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
-	GBufferShadingPSO.SetRenderTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
-	GBufferShadingPSO.SetDepthStencilViewFomat(DXGI_FORMAT_D24_UNORM_S8_UINT);
+	GBufferShadingPSO.SetRenderTargetFormat(gGraphic.GetBackBufferFormat());
+	GBufferShadingPSO.SetDepthStencilViewFomat(gGraphic.GetBackBufferDepthFormat());
 
 	if (!gGraphic.CreatePipelineStateObject(shader,&GBufferShadingPSO,defShading)) {
 		OUTPUT_DEBUG_STRING("fail to create pso for deferred render pass");

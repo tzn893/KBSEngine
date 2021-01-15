@@ -4,7 +4,7 @@
 
 bool PostProcessRenderPass::Initialize(UploadBatch* batch) {
 	size_t winHeight = gGraphic.GetScreenHeight(), winWidth = gGraphic.GetScreenWidth();
-	mTex = std::make_unique<Texture>(winWidth,winHeight,TEXTURE_FORMAT_RGBA,TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,
+	mTex = std::make_unique<Texture>(winWidth,winHeight,TEXTURE_FORMAT_FLOAT4,TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,
 		D3D12_RESOURCE_STATE_COPY_SOURCE);
 
 	mHeap = std::make_unique<DescriptorHeap>(heapDefaultCapacity);

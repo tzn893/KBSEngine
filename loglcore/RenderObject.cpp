@@ -179,7 +179,7 @@ void RenderObject::RenderByDeferredPassMesh(DeferredRenderPass* RP) {
 		deferredRPData.initialized = true;
 	}
 	else {
-		ObjectPass* objPass = RP->GetObjectPass(phongRPData.phongObjectID[0]);
+		ObjectPass* objPass = RP->GetObjectPass(deferredRPData.deferredObjectID[0]);
 		objPass->world = world;
 		objPass->transInvWorld = transInvWorld;
 

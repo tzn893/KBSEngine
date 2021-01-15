@@ -27,34 +27,34 @@ constexpr int Graphic_mBackBufferNum = 3;
 class Graphic {
 	friend class ComputeCommand;
 public:
-	bool initialize(HWND winHnd,size_t width,size_t height);
-	
+	bool initialize(HWND winHnd, size_t width, size_t height);
+
 	void begin();
 	void end();
 
 	void finalize();
 	void onResize(size_t width, size_t height);
 
-	ID3D12Device* GetDevice() {  return mDevice.Get(); }
+	ID3D12Device* GetDevice() { return mDevice.Get(); }
 	ID3D12CommandQueue* GetCommandQueue() { return mCommandQueue.Get(); }
 
 	void BindShader(Shader* shader);
-	bool BindPSOAndRootSignature(const wchar_t* psoName,const wchar_t* rootSignatureName);
-	
-	void BindConstantBuffer(ID3D12Resource* res,size_t slot,size_t offset = 0);
-	void BindShaderResource(ID3D12Resource* res,size_t slot,size_t offset = 0);
+	bool BindPSOAndRootSignature(const wchar_t* psoName, const wchar_t* rootSignatureName);
+
+	void BindConstantBuffer(ID3D12Resource* res, size_t slot, size_t offset = 0);
+	void BindShaderResource(ID3D12Resource* res, size_t slot, size_t offset = 0);
 	void BindConstantBuffer(D3D12_GPU_VIRTUAL_ADDRESS vaddr, size_t slot);
 	void BindShaderResource(D3D12_GPU_VIRTUAL_ADDRESS vaddr, size_t slot);
-	
+
 	//if some shader need main camera pass data.they can get it by binding it to any slot
 	void BindMainCameraPass(size_t slot = 1);
-	void BindDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle,size_t slot);
-	void BindDescriptorHeap(ID3D12DescriptorHeap* const * heap,size_t num = 1);
+	void BindDescriptorHandle(D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle, size_t slot);
+	void BindDescriptorHeap(ID3D12DescriptorHeap* const * heap, size_t num = 1);
 	void BindDescriptorHeap(ID3D12DescriptorHeap* heap);
 
-	void Draw(D3D12_VERTEX_BUFFER_VIEW* vbv,size_t start,size_t num,D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	void Draw(D3D12_VERTEX_BUFFER_VIEW* vbv,D3D12_INDEX_BUFFER_VIEW* ibv,size_t start,size_t num,D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	
+	void Draw(D3D12_VERTEX_BUFFER_VIEW* vbv, size_t start, size_t num, D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	void Draw(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_BUFFER_VIEW* ibv, size_t start, size_t num, D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	void DrawInstance(D3D12_VERTEX_BUFFER_VIEW* vbv, size_t start, size_t num, size_t instanceNum, D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	void DrawInstance(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_BUFFER_VIEW* ibv, size_t start, size_t num, size_t instanceNum, D3D_PRIMITIVE_TOPOLOGY topolgy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -69,9 +69,9 @@ public:
 	bool CreateComputePipelineStateObject(ComputeShader* shader, Game::ComputePSO* pso, const wchar_t* name = nullptr);
 
 	void ResourceTransition(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
-	void ResourceTransition(ID3D12Resource** resources,D3D12_RESOURCE_STATES* before,D3D12_RESOURCE_STATES* after,
+	void ResourceTransition(ID3D12Resource** resources, D3D12_RESOURCE_STATES* before, D3D12_RESOURCE_STATES* after,
 		size_t num);
-	
+
 	void ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source);
 	void ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source, D3D12_RESOURCE_STATES destInitState,
 		D3D12_RESOURCE_STATES sourceInitState, D3D12_RESOURCE_STATES destAfterState,
@@ -155,7 +155,7 @@ public:
 
 	bool    RegisterRenderPasses(RenderPass** RP, size_t num = 1);
 	inline  bool RegisterRenderPass(RenderPass* rp) {
-		RenderPass* rps[] = {rp};
+		RenderPass* rps[] = { rp };
 		return RegisterRenderPasses(rps);
 	}
 
@@ -173,13 +173,18 @@ public:
 		if (type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) {
 			return mDescriptorHandleSizeCBVSRVUAV;
 		}
-		else if(type == D3D12_DESCRIPTOR_HEAP_TYPE_DSV) {
+		else if (type == D3D12_DESCRIPTOR_HEAP_TYPE_DSV) {
 			return mDescriptorHandleSizeDSV;
 		}
-		else if(type == D3D12_DESCRIPTOR_HEAP_TYPE_RTV) {
+		else if (type == D3D12_DESCRIPTOR_HEAP_TYPE_RTV) {
 			return mDescriptorHandleSizeRTV;
 		}
+
+		return 0;
 	}
+
+	inline	DXGI_FORMAT	 GetRenderTargetFormat() { return mBackBufferFormat; }
+	inline  DXGI_FORMAT	 GetBackBufferDepthFormat() { return mBackBufferDepthFormat; }
 private:
 	void FindRPAndErase(RenderPass* rp);
 	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name, bool rp);
@@ -212,8 +217,11 @@ private:
 
 	size_t mCurrBackBuffer;
 	ComPtr<ID3D12Resource> mBackBuffers[Graphic_mBackBufferNum];
+	//ComPtr<ID3D12Resource> mRenderTargets[Graphic_mBackBufferNum];
 	ComPtr<ID3D12Resource> mDepthStencilBuffer;
 
+
+	//DXGI_FORMAT mRenderTargetFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT mBackBufferDepthFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 

@@ -5,6 +5,13 @@
 #include "Math.h"
 #include "CopyBatch.h"
 
+struct Mesh {
+	D3D12_VERTEX_BUFFER_VIEW* vbv;
+	D3D12_INDEX_BUFFER_VIEW* ibv;
+	size_t startIndex;
+	size_t indiceNum;
+};
+
 //Mesh's vertex data can be changed dynamicly
 template<typename T>
 class DynamicMesh {
@@ -117,6 +124,16 @@ public:
 	ID3D12Resource* GetVertexResource() { return vertexUploadBuffer.Get(); }
 	ID3D12Resource* GetIndexResource() { return indexBuffer.Get(); }
 
+	Mesh GetMesh() {
+		Mesh mesh;		
+		mesh.ibv = useIndex ? &ibv : nullptr;
+		mesh.vbv = &vbv;
+		mesh.indiceNum = useIndex ? GetIndexNum() : GetVertexNum();
+		mesh.startIndex = 0;
+
+		return mesh;
+	}
+
 	~DynamicMesh() {
 		vertexUploadBuffer->Unmap(0, nullptr);
 		vertexUploadBuffer = nullptr;
@@ -197,7 +214,7 @@ public:
 			}
 		}
 
-		useIndex = false;
+		useIndex = true;
 		isValid = true;
 
 		vbv.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
@@ -232,11 +249,20 @@ public:
 	ID3D12Resource* GetVertexResource() { return vertexBuffer.Get(); }
 	ID3D12Resource* GetIndexResource() { return indexBuffer.Get(); }
 
+	Mesh GetMesh() {
+		Mesh mesh;
+		mesh.ibv = useIndex ? &ibv : nullptr;
+		mesh.vbv = &vbv;
+		mesh.indiceNum = useIndex ? GetIndexNum() : GetVertexNum();
+		mesh.startIndex = 0;
+
+		return mesh;
+	}
+
 	~StaticMesh() {
 		vertexBuffer = nullptr;
 		indexBuffer = nullptr;
 	}
-
 private:
 	D3D12_VERTEX_BUFFER_VIEW vbv;
 	ComPtr<ID3D12Resource> vertexBuffer;
@@ -248,11 +274,4 @@ private:
 	size_t indexSize;
 
 	bool isValid;
-};
-
-struct Mesh {
-	D3D12_VERTEX_BUFFER_VIEW* vbv;
-	D3D12_INDEX_BUFFER_VIEW* ibv;
-	size_t startIndex;
-	size_t indiceNum;
 };
