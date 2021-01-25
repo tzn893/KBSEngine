@@ -3,6 +3,7 @@
 
 #include "DescriptorAllocator.h"
 #include "TextureManager.h"
+#include "GraphicUtil.h"
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -84,7 +85,7 @@ bool Graphic::createRTV_DSV() {
 	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvHeapDesc.NodeMask = 0;
-	rtvHeapDesc.NumDescriptors = Graphic_mBackBufferNum;
+	rtvHeapDesc.NumDescriptors = Graphic_mBackBufferNum * 2;
 
 	HRESULT hr = mDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&mBackBufferRTVHeap));
 	if (FAILED(hr)) {
@@ -92,13 +93,74 @@ bool Graphic::createRTV_DSV() {
 		return false;
 	}
 
+	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc;
+	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	srvHeapDesc.NodeMask = 0;
+	srvHeapDesc.NumDescriptors = Graphic_mBackBufferNum;
+
+	hr = mDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSRVHeap));
+	if (FAILED(hr)) {
+		OUTPUT_DEBUG_STRING("fail to create srv heap for tone mapping\n");
+		return false;
+	}
+
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mBackBufferRTVHeap->GetCPUDescriptorHandleForHeapStart());
-	mDescriptorHandleSizeRTV = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	for (size_t i = 0; i != 3; i++) {
 		mDxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(&mBackBuffers[i]));
 
 		mDevice->CreateRenderTargetView(mBackBuffers[i].Get(), nullptr, rtvHandle);
 		rtvHandle.Offset(1, mDescriptorHandleSizeRTV);
+	}
+	D3D12_RESOURCE_DESC rtvResDesc;
+	rtvResDesc.Alignment = 0;
+	rtvResDesc.DepthOrArraySize = 1;
+	rtvResDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	rtvResDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	rtvResDesc.Format = mRenderTargetFormat;
+	rtvResDesc.Width = GetScreenWidth();
+	rtvResDesc.Height = GetScreenHeight();
+	rtvResDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	rtvResDesc.MipLevels = 1;
+	rtvResDesc.SampleDesc.Count = 1;
+	rtvResDesc.SampleDesc.Quality = 0;
+
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
+	rtvDesc.Format = GetRenderTargetFormat();
+	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	rtvDesc.Texture2D = { 0,0 };
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	srvDesc.Format = GetRenderTargetFormat();
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.PlaneSlice = 0;
+	srvDesc.Texture2D.ResourceMinLODClamp = -1;
+
+	D3D12_CLEAR_VALUE cv;
+	cv.Format = mRenderTargetFormat;
+	memcpy(cv.Color, mRTVClearColor, sizeof(mRTVClearColor));
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(mSRVHeap->GetCPUDescriptorHandleForHeapStart());
+	rtvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mBackBufferRTVHeap->GetCPUDescriptorHandleForHeapStart());
+	rtvHandle.Offset(Graphic_mBackBufferNum, mDescriptorHandleSizeRTV);
+	for (size_t i = 0; i != 3;i++) {
+		hr = mDevice->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE,
+			&rtvResDesc,
+			D3D12_RESOURCE_STATE_COMMON,
+			&cv,
+			IID_PPV_ARGS(&mRenderTargets[i]));
+		if (FAILED(hr)) {
+			OUTPUT_DEBUG_STRING("fail to create render target buffers\n");
+			return false;
+		}
+
+		mDevice->CreateRenderTargetView(mRenderTargets[i].Get(),&rtvDesc,rtvHandle);
+		mDevice->CreateShaderResourceView(mRenderTargets[i].Get(), &srvDesc,srvHandle);
+		rtvHandle.Offset(1, mDescriptorHandleSizeRTV);
+		srvHandle.Offset(1, mDescriptorHandleSizeCBVSRVUAV);
 	}
 
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
@@ -142,6 +204,48 @@ bool Graphic::createRTV_DSV() {
 	}
 
 	mDevice->CreateDepthStencilView(mDepthStencilBuffer.Get(), nullptr, mBackBufferDSVhHeap->GetCPUDescriptorHandleForHeapStart());
+
+	Game::RootSignature rootSig(2,1);
+	rootSig[0].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSig[1].initAsConstants(0, 0, 1);
+	rootSig.InitializeSampler(0, CD3DX12_STATIC_SAMPLER_DESC(0));
+
+	if (!CreateRootSignature(L"HDR",&rootSig)) {
+		OUTPUT_DEBUG_STRING("fail to create root signature for hdr\n");
+		return false;
+	}
+
+	std::vector<D3D12_INPUT_ELEMENT_DESC> input{};
+	Shader* shader = gShaderManager.loadShader(L"../shader/ToneMap.hlsl",
+		"VS", "PS", L"HDR", input, L"HDR");
+	if (shader == nullptr) {
+		OUTPUT_DEBUG_STRING("fail to create shader for hdr\n");
+		return false;
+	}
+
+	Game::GraphicPSO pso;
+	pso.LazyBlendDepthRasterizeDefault();
+	
+	CD3DX12_DEPTH_STENCIL_DESC ds(D3D12_DEFAULT);
+	ds.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	ds.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	pso.SetDepthStencilState(ds);
+	CD3DX12_RASTERIZER_DESC rd(D3D12_DEFAULT);
+	rd.CullMode = D3D12_CULL_MODE_NONE;
+	pso.SetRasterizerState(rd);
+
+	pso.SetSampleMask(UINT_MAX);
+	pso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+	pso.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
+	pso.SetRenderTargetFormat(mBackBufferFormat);
+	pso.SetDepthStencilViewFomat(mBackBufferDepthFormat);
+
+	if (!CreatePipelineStateObject(shader,&pso,L"HDR")) {
+		OUTPUT_DEBUG_STRING("fail to create pso for hdr");
+		return false;
+	}
+	
+
 	return true;
 }
 
@@ -302,6 +406,10 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height){
 		return false;
 
 	}
+	mDescriptorHandleSizeCBVSRVUAV = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	mDescriptorHandleSizeRTV = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	mDescriptorHandleSizeDSV = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
 
 	if(!createCommandObject()){
 		OUTPUT_DEBUG_STRING("ERROR : fail to create command object");
@@ -317,19 +425,10 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height){
 		OUTPUT_DEBUG_STRING("ERROR : fail to create rtv dsv\n");
 		return false;
 	}
-
-	mDescriptorHandleSizeCBVSRVUAV = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
 	if (!createShaderAndRootSignatures()) {
 		OUTPUT_DEBUG_STRING("ERROR : fail to create shaders and root signatures\n");
 		return false;
 	}
-	/*
-	if (!createSpriteRenderingPipeline()) {
-		OUTPUT_DEBUG_STRING("ERROR : fail to create sprite renderer\n");
-		return false;
-	}
-	*/
 	if (!createRenderPasses()) {
 		OUTPUT_DEBUG_STRING("ERROR : fail to create default render passes\n");
 		return false;
@@ -353,6 +452,7 @@ bool Graphic::initialize(HWND winHnd, size_t width, size_t height){
 	cameraPassData->GetBufferPtr()->cameraPos = mainCamera.getPosition();
 	cameraPassData->GetBufferPtr()->viewMat = mainCamera.getViewMat().T();
 	cameraPassData->GetBufferPtr()->perspectMat = mainCamera.getPerspectMat().T();
+	cameraPassData->GetBufferPtr()->exposure = exposure;
 
 	state = READY;
 
@@ -434,10 +534,16 @@ void Graphic::begin() {
 	mDrawCmdAlloc->Reset();
 	mDrawCmdList->Reset(mDrawCmdAlloc.Get(),nullptr);
 
-	mDrawCmdList->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[mCurrBackBuffer].Get(),
-			D3D12_RESOURCE_STATE_PRESENT,
-			D3D12_RESOURCE_STATE_RENDER_TARGET));
+	D3D12_RESOURCE_BARRIER barriers[2] = {
+		CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[mCurrBackBuffer].Get(),
+		D3D12_RESOURCE_STATE_PRESENT,
+		D3D12_RESOURCE_STATE_RENDER_TARGET),
+		CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrBackBuffer].Get(),
+		D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_RENDER_TARGET)
+	};
+	mDrawCmdList->ResourceBarrier(2,barriers);
+
 
 	mDrawCmdList->RSSetScissorRects(1, &sissorRect);
 	mDrawCmdList->RSSetViewports(1, &viewPort);
@@ -445,7 +551,7 @@ void Graphic::begin() {
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtv(mBackBufferRTVHeap->GetCPUDescriptorHandleForHeapStart())
 		,dsv(mBackBufferDSVhHeap->GetCPUDescriptorHandleForHeapStart());
 
-	rtv.Offset(mCurrBackBuffer, mDescriptorHandleSizeRTV);
+	rtv.Offset(mCurrBackBuffer + Graphic_mBackBufferNum, mDescriptorHandleSizeRTV);
 	mDrawCmdList->OMSetRenderTargets(1,&rtv,true,&dsv);
 	mDrawCmdList->ClearRenderTargetView(rtv,mRTVClearColor,0,nullptr);
 	mDrawCmdList->ClearDepthStencilView(mBackBufferDSVhHeap->GetCPUDescriptorHandleForHeapStart(), 
@@ -478,10 +584,36 @@ void Graphic::end() {
 
 	for (auto& rps : RPQueue) {
 		for (auto& RP : rps.second) {
-			RP->PostProcess(mBackBuffers[mCurrBackBuffer].Get());
+			RP->PostProcess(mRenderTargets[mCurrBackBuffer].Get());
 		}
 	}
+	mDrawCmdList->ResourceBarrier(
+		1,&CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mCurrBackBuffer].Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_COMMON)
+	);
 
+	mDrawCmdList->SetPipelineState(mPsos[L"HDR"].Get());
+	mDrawCmdList->SetGraphicsRootSignature(mRootSignatures[L"HDR"].Get());
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE rtv(mBackBufferRTVHeap->GetCPUDescriptorHandleForHeapStart()),
+		dsv(mBackBufferDSVhHeap->GetCPUDescriptorHandleForHeapStart());
+	rtv.Offset(mCurrBackBuffer, mDescriptorHandleSizeRTV);
+	mDrawCmdList->OMSetRenderTargets(1,&rtv,false,&dsv);
+
+	ID3D12DescriptorHeap* heaps[] = {mSRVHeap.Get()};
+	mDrawCmdList->SetDescriptorHeaps(_countof(heaps), heaps);
+
+	mDrawCmdList->SetGraphicsRootDescriptorTable(0, 
+		CD3DX12_GPU_DESCRIPTOR_HANDLE(mSRVHeap->GetGPUDescriptorHandleForHeapStart()).Offset(mCurrBackBuffer,mDescriptorHandleSizeRTV)
+	);
+	mDrawCmdList->SetGraphicsRoot32BitConstant(1, Pack32bitNum(exposure), 0);
+
+	mDrawCmdList->IASetVertexBuffers(0, 0, nullptr);
+	mDrawCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	mDrawCmdList->DrawInstanced(6, 1, 0, 0);
+	
 	mDrawCmdList->ResourceBarrier(1,
 		&CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[mCurrBackBuffer].Get(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
@@ -602,7 +734,10 @@ void Graphic::Draw(D3D12_VERTEX_BUFFER_VIEW* vbv, size_t start, size_t num, D3D_
 	if (state != BEGIN_COMMAND_RECORDING) return;
 	
 	mDrawCmdList->IASetPrimitiveTopology(topolgy);
-	mDrawCmdList->IASetVertexBuffers(0, 1, vbv);
+	if (vbv != nullptr)
+		mDrawCmdList->IASetVertexBuffers(0, 1, vbv);
+	else
+		mDrawCmdList->IASetVertexBuffers(0, 0, nullptr);
 	mDrawCmdList->DrawInstanced(num, 1, start, 0);
 }
 
@@ -744,8 +879,8 @@ bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO,con
 	PSO->SetInputElementDesc(shader->inputLayout);
 	PSO->SetSampleMask(UINT_MAX);
 	if (rp) {
-		PSO->SetRenderTargetFormat(mBackBufferFormat);
-		PSO->SetDepthStencilViewFomat(mBackBufferDepthFormat);
+		PSO->SetRenderTargetFormat(GetRenderTargetFormat());
+		PSO->SetDepthStencilViewFomat(GetBackBufferDepthFormat());
 	}
 
 	if (!PSO->Create(mDevice.Get())) {
@@ -819,7 +954,6 @@ bool Graphic::RegisterRenderPasses(RenderPass** RP,size_t num) {
 
 bool Graphic::createRenderPasses() {
 	spriteRenderPass = std::make_unique<SpriteRenderPass>();
-	//phongRenderPass = std::make_unique<PhongRenderPass>();
 	debugRenderPass = std::make_unique<DebugRenderPass>();
 	skyboxRenderPass = std::make_unique<SkyboxRenderPass>();
 	postProcessRenderPass = std::make_unique<PostProcessRenderPass>();
@@ -909,7 +1043,7 @@ void Graphic::ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source,
 void Graphic::BindCurrentBackBufferAsRenderTarget(bool clear, float* clearValue){
 	if (state != BEGIN_COMMAND_RECORDING) return;
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtv(mBackBufferRTVHeap->GetCPUDescriptorHandleForHeapStart());
-	rtv.Offset(mCurrBackBuffer, mDescriptorHandleSizeRTV);
+	rtv.Offset(mCurrBackBuffer + Graphic_mBackBufferNum, mDescriptorHandleSizeRTV);
 	D3D12_CPU_DESCRIPTOR_HANDLE dsv = mBackBufferDSVhHeap->GetCPUDescriptorHandleForHeapStart();
 
 

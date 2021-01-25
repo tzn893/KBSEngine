@@ -9,5 +9,6 @@ cbuffer CameraPass : register(CAMERA_PASS_REGISTER){
     float4x4 view;
     float4x4 perspect;
     float3   cameraPos;
+    float    exposure;
 };
 #endif //_CAMERA_PASS_

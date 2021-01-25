@@ -29,10 +29,10 @@ namespace Game {
 			m_Param.ParameterType = ROOT_PARAM_TYPE_INVAILD;
 		}
 
-		void initAsConstants(size_t Slot,size_t Space,UINT Value) {
+		void initAsConstants(size_t Slot,size_t Space,UINT num) {
 			m_Param.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 			m_Param.Constants.RegisterSpace = Space;
-			m_Param.Constants.Num32BitValues = Value;
+			m_Param.Constants.Num32BitValues = num;
 			m_Param.Constants.ShaderRegister = Slot;
 		}
 

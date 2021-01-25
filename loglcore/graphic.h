@@ -183,8 +183,10 @@ public:
 		return 0;
 	}
 
-	inline	DXGI_FORMAT	 GetRenderTargetFormat() { return mBackBufferFormat; }
+	inline	DXGI_FORMAT	 GetRenderTargetFormat() { return mRenderTargetFormat; }
 	inline  DXGI_FORMAT	 GetBackBufferDepthFormat() { return mBackBufferDepthFormat; }
+
+	inline  void		 SetHDRExposure(float exposure) { this->exposure = exposure; }
 private:
 	void FindRPAndErase(RenderPass* rp);
 	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name, bool rp);
@@ -217,11 +219,13 @@ private:
 
 	size_t mCurrBackBuffer;
 	ComPtr<ID3D12Resource> mBackBuffers[Graphic_mBackBufferNum];
-	//ComPtr<ID3D12Resource> mRenderTargets[Graphic_mBackBufferNum];
+	ComPtr<ID3D12Resource> mRenderTargets[Graphic_mBackBufferNum];
 	ComPtr<ID3D12Resource> mDepthStencilBuffer;
 
+	ComPtr<ID3D12DescriptorHeap> mSRVHeap;
+	float exposure = 1.;
 
-	//DXGI_FORMAT mRenderTargetFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	DXGI_FORMAT mRenderTargetFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT mBackBufferDepthFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 

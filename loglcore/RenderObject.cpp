@@ -25,7 +25,7 @@ void RenderObject::RenderByPhongPass(PhongRenderPass* RenderPass) {
 			objPass->material.diffuse = Game::Vector4(material->diffuse,1.f);
 			objPass->material.FresnelR0 = material->specular;
 			objPass->material.Roughness = material->roughness;
-			objPass->material.SetMaterialTransform(Game::Vector2(0., 0.), Game::Vector2(1., 1.));
+			objPass->material.SetMaterialTransform(material->matTransformOffset,material->matTransformScale);
 
 			phongRPData.phongMaterialTextures[materialIndex].diffuseMap = material->textures[SUBMESH_MATERIAL_TYPE_DIFFUSE];
 			phongRPData.phongMaterialTextures[materialIndex].normalMap = material->textures[SUBMESH_MATERIAL_TYPE_BUMP];
@@ -72,7 +72,7 @@ void RenderObject::RenderByPhongPassMesh(PhongRenderPass* RenderPass) {
 		objPass->material.diffuse = Game::Vector4(material->diffuse, 1.f);
 		objPass->material.FresnelR0 = material->specular;
 		objPass->material.Roughness = material->roughness;
-		objPass->material.SetMaterialTransform(Game::Vector2(0., 0.), Game::Vector2(1., 1.));
+		objPass->material.SetMaterialTransform(material->matTransformOffset, material->matTransformScale);
 
 		phongRPData.phongMaterialTextures[0].diffuseMap = material->textures[SUBMESH_MATERIAL_TYPE_DIFFUSE];
 		phongRPData.phongMaterialTextures[0].normalMap = material->textures[SUBMESH_MATERIAL_TYPE_BUMP];
@@ -115,7 +115,7 @@ void RenderObject::RenderByDeferredPass(DeferredRenderPass* RP) {
 			objPass->material.diffuse = Game::Vector4(material->diffuse, 1.f);
 			objPass->material.FresnelR0 = material->specular;
 			objPass->material.Roughness = material->roughness;
-			objPass->material.SetMaterialTransform(Game::Vector2(0., 0.), Game::Vector2(1., 1.));
+			objPass->material.SetMaterialTransform(material->matTransformOffset, material->matTransformScale);
 
 			deferredRPData.deferredTextures[materialIndex].diffuse = material->textures[SUBMESH_MATERIAL_TYPE_DIFFUSE];
 			deferredRPData.deferredTextures[materialIndex].normal = material->textures[SUBMESH_MATERIAL_TYPE_BUMP];
@@ -170,7 +170,7 @@ void RenderObject::RenderByDeferredPassMesh(DeferredRenderPass* RP) {
 		objPass->material.diffuse = Game::Vector4(material->diffuse, 1.f);
 		objPass->material.FresnelR0 = material->specular;
 		objPass->material.Roughness = material->roughness;
-		objPass->material.SetMaterialTransform(Game::Vector2(0., 0.), Game::Vector2(1., 1.));
+		objPass->material.SetMaterialTransform(material->matTransformOffset, material->matTransformScale);
 
 		deferredRPData.deferredTextures[0].diffuse = material->textures[SUBMESH_MATERIAL_TYPE_DIFFUSE];
 		deferredRPData.deferredTextures[0].normal = material->textures[SUBMESH_MATERIAL_TYPE_BUMP];

@@ -17,6 +17,19 @@ struct SubMeshMaterial {
 	Game::Vector3 diffuse;
 	float roughness;
 	Game::Vector3 specular;
+	Game::Vector2 matTransformOffset;
+	Game::Vector2 matTransformScale;
+
+	SubMeshMaterial() {
+		for (int i = 0; i != _countof(textures); i++)
+			textures[i] = nullptr;
+		diffuse = Game::Vector2();
+		roughness = 1.;
+		specular = Game::Vector2();
+		matTransformOffset = Game::Vector2();
+		matTransformScale = Game::Vector2(1., 1.);
+	}
+
 };
 
 class SubMesh : public StaticMesh<MeshVertexNormal> {

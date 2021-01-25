@@ -116,7 +116,7 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 	GBufferShadingPSO.SetSampleMask(UINT_MAX);
 	GBufferShadingPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 	GBufferShadingPSO.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
-	GBufferShadingPSO.SetRenderTargetFormat(gGraphic.GetBackBufferFormat());
+	GBufferShadingPSO.SetRenderTargetFormat(gGraphic.GetRenderTargetFormat());
 	GBufferShadingPSO.SetDepthStencilViewFomat(gGraphic.GetBackBufferDepthFormat());
 
 	if (!gGraphic.CreatePipelineStateObject(shader,&GBufferShadingPSO,defShading)) {

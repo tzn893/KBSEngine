@@ -36,6 +36,11 @@ public:
 		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
 		UploadBatch* batch = nullptr);
 
+	Texture(size_t width, size_t height, size_t mipLevel, TEXTURE_FORMAT format,
+		void** data, TEXTURE_FLAG flag = TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,
+		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
+		UploadBatch* batch = nullptr);
+
 	Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 		TEXTURE_TYPE type, 
 		void** original_buffer,
@@ -73,15 +78,15 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDepthStencilViewCPU() { return mDSV.cpuHandle; }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDepthStencilViewGPU() { return mDSV.gpuHandle; }
 
-	void CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC* uav = nullptr);
-	D3D12_CPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewCPU() { return mUAV.cpuHandle; }
-	D3D12_GPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewGPU() { return mUAV.gpuHandle; }
+	void CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC* uav = nullptr,size_t mip = 0);
+	D3D12_CPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewCPU(size_t mip = 0) { return mip < mipnum ? mUAV[0].cpuHandle : D3D12_CPU_DESCRIPTOR_HANDLE{0}; }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewGPU(size_t mip = 0) { return mip < mipnum ? mUAV[0].gpuHandle : D3D12_GPU_DESCRIPTOR_HANDLE{0}; }
 
 protected:
 	TEXTURE_TYPE type;
 	TEXTURE_FLAG flag;
 	DXGI_FORMAT  format;
-	size_t width, height;
+	size_t width, height,mipnum;
 
 	ComPtr<ID3D12Resource> mRes;
 	bool isValid;
@@ -89,5 +94,5 @@ protected:
 	Descriptor mSRV;
 	Descriptor mRTV;
 	Descriptor mDSV;
-	Descriptor mUAV;
+	Descriptor mUAV[32];
 };

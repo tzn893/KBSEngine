@@ -97,6 +97,9 @@
     <ClCompile Include="DeferredRenderPass.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="GenerateMipmapBatch.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -205,6 +208,12 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="PostProcessRenderPass.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="GenerateMipmapBatch.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicUtil.h">
       <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>

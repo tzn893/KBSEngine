@@ -8,14 +8,14 @@ bool GraphicPSO::Create(ID3D12Device* device) {
 		printf("GraphicPSO::Create : rootsignature can't be a null when creating\n");
 		return false;
 	}
-	if (m_InputLayouts.empty()) {
+	/*if (m_InputLayouts.empty()) {
 		printf("GraphicPSO::Create : can't create pso with empty input layout");
 		return false;
-	}
+	}*/
 
 	D3D12_INPUT_LAYOUT_DESC layout;
 	layout.NumElements = m_InputLayouts.size();
-	layout.pInputElementDescs = m_InputLayouts.data();
+	layout.pInputElementDescs = m_InputLayouts.empty() ? nullptr : m_InputLayouts.data();
 
 	m_PSODesc.InputLayout = layout;
 	HRESULT hr = device->CreateGraphicsPipelineState(

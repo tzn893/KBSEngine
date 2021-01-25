@@ -25,6 +25,7 @@
     <ClCompile Include="DebugRenderPass.cpp" />
     <ClCompile Include="DeferredRenderPass.cpp" />
     <ClCompile Include="DescriptorAllocator.cpp" />
+    <ClCompile Include="GenerateMipmapBatch.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="graphic.cpp" />
     <ClCompile Include="LightManager.cpp" />
@@ -56,8 +57,10 @@
     <ClInclude Include="DebugRenderPass.h" />
     <ClInclude Include="DeferredRenderPass.h" />
     <ClInclude Include="DescriptorAllocator.h" />
+    <ClInclude Include="GenerateMipmapBatch.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="graphic.h" />
+    <ClInclude Include="GraphicUtil.h" />
     <ClInclude Include="LightManager.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="MathFunctions.h" />

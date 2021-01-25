@@ -6,6 +6,7 @@ struct CameraPass {
 	Game::Mat4x4  viewMat;
 	Game::Mat4x4  perspectMat;
 	Game::Vector3 cameraPos;
+	float exposure;
 };
 
 enum SHADER_LIGHT_TYPE {

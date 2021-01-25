@@ -1,5 +1,6 @@
 #define CAMERA_PASS_REGISTER b0
 #include "CameraPass.hlsli"
+#include "ToneMapUtil.hlsli"
 
 struct VertexIn{
     float3 Position : POSITION;
@@ -26,6 +27,8 @@ VertexOut VS(VertexIn input){
 
 float4 PS(VertexOut input) : SV_TARGET {
     float3 target = skyBox.Sample(skySampler,input.relaPos);
+
+    target = ITM_STANDERD(target,exposure);
 
     return float4(target,1.);
 }

@@ -60,6 +60,7 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	TEXTURE_FLAG flag , D3D12_RESOURCE_STATES initState,D3D12_CLEAR_VALUE* clearValue) {
 		this->width = width;
 		this->height = height;
+		this->mipnum = 1;
 		this->flag = flag;
 
 		this->format = getDXGIFormatFromTextureFormat(format);
@@ -100,6 +101,7 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	UploadBatch* batch) {
 	this->width = width;
 	this->height = height;
+	this->mipnum = 1;
 	this->flag = flag;
 	
 	this->format = getDXGIFormatFromTextureFormat(format);
@@ -161,6 +163,7 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	, UploadBatch* batch) {
 	this->width = width;
 	this->height = height;
+	this->mipnum = 1;
 	this->flag = flag;
 	this->type = type;
 
@@ -320,9 +323,9 @@ void Texture::CreateDepthStencilView(Descriptor descriptor,D3D12_DEPTH_STENCIL_V
 	mDSV = descriptor;
 }
 
-void Texture::CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC* uav) {
+void Texture::CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC* uav,size_t mipnum) {
 	ID3D12Device* device = gGraphic.GetDevice();
-	if (!(flag & TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS)) {
+	if (!(flag & TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS) || mipnum >= this->mipnum) {
 		return;
 	}
 	if (uav != nullptr) {
@@ -334,14 +337,14 @@ void Texture::CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_AC
 		uavDesc.Format = GetFormat();
 		switch (type) {
 		case TEXTURE_TYPE_2D:
-			uavDesc.Texture2D = { 0,0 };
+			uavDesc.Texture2D = { (UINT)mipnum,0 };
 		case TEXTURE_TYPE_2DCUBE:
 			uavDesc.Texture2DArray.ArraySize = 6;
 			uavDesc.Texture2DArray.FirstArraySlice = 0;
-			uavDesc.Texture2DArray.MipSlice = 0;
+			uavDesc.Texture2DArray.MipSlice = (UINT)mipnum;
 			uavDesc.Texture2DArray.PlaneSlice = 0;
 		}
 		device->CreateUnorderedAccessView(mRes.Get(), nullptr,&uavDesc, descriptor.cpuHandle);
 	}
-	mUAV = descriptor;
+	mUAV[mipnum] = descriptor;
 }
