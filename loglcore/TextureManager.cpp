@@ -76,13 +76,56 @@ ManagedTexture* TextureManager::loadTexture(const wchar_t* filepath,const wchar_
 	return nullptr;
 }
 
-ManagedTexture* TextureManager::loadTextureBySTB(const wchar_t* path, const wchar_t* name,bool filp_vertically,UploadBatch* batch) {
+ManagedTexture* TextureManager::loadTexture(const wchar_t* filepath,size_t mipnum,const wchar_t* name,bool filp_vertically) {
+	if (ManagedTexture* tex = getTextureByPath(filepath); tex != nullptr) {
+		return tex;
+	}
+	if (ManagedTexture* tex = getTextureByName(name); tex != nullptr) {
+		return nullptr;
+	}
+
+	std::filesystem::path ps(filepath);
+	if (!exists(ps) || !ps.has_extension()) {
+		OUTPUT_DEBUG_STRINGW((L"file " + ps.wstring() + L" doesn't exists or it is not supported\n").c_str());
+		return nullptr;
+	}
+
+	static size_t id = 0;
+	if (name == nullptr) {
+		static std::wstring nameBuffer;
+		nameBuffer = L"__unnamed_managed_texture_" + std::to_wstring(id++);
+		while (getTextureByName(nameBuffer.c_str()) != nullptr) {
+			nameBuffer = L"__unnamed_managed_texture_" + std::to_wstring(id++);
+		}
+		name = nameBuffer.c_str();
+	}
+
+	if (supportedBySTB(ps)) {
+		return loadTextureBySTB(filepath, name, filp_vertically, nullptr, mipnum);
+	}
+	return nullptr;
+}
+
+ManagedTexture* TextureManager::loadTextureBySTB(const wchar_t* path, const wchar_t* name,bool filp_vertically,UploadBatch* batch,size_t mipnum) {
 
 	auto[idata, iwidth, iheight] = loadRawDataBySTB(path, filp_vertically);
+	if (idata == nullptr) return nullptr;
+	if (mipnum == 0) {
+		size_t il = iwidth < iheight ? iwidth : iheight;
+		while (il != 0) {
+			mipnum++, il = il >> 1;
+		}
+	}
 	TEXTURE_FORMAT format = TEXTURE_FORMAT_RGBA;
-
-	std::unique_ptr<ManagedTexture> mtexture = std::make_unique<ManagedTexture>(name,path,iwidth,iheight,
-		format,&idata,D3D12_RESOURCE_STATE_COMMON,batch);
+	
+	std::unique_ptr<ManagedTexture> mtexture;
+	if(mipnum == 1)
+		mtexture = std::make_unique<ManagedTexture>(name,path,iwidth,iheight,
+			format,&idata,D3D12_RESOURCE_STATE_COMMON,batch);
+	else {
+		mtexture = std::make_unique<ManagedTexture>(name, path, iwidth, iheight, mipnum,
+			format, &idata, D3D12_RESOURCE_STATE_COMMON);
+	}
 	if (!mtexture->IsValid()) {
 		//fclose(target_file);
 		if(idata != nullptr) free(idata);

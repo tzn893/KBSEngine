@@ -26,14 +26,15 @@ void StoreColor(uint index,float4 color){
 }
 
 float4 LoadColor(uint index){
-    float4(gR[index],gG[index],gB[index],gA[index]);
+    return float4(gR[index],gG[index],gB[index],gA[index]);
 }
 
 
 [numthreads(8,8,1)]
-void GenerateMipmap(uint gid : SV_GROUPID,uint3 did : SV_DISPATCHTHREADID){
+void GenerateMipmap(uint gid : SV_GROUPINDEX,uint3 did : SV_DISPATCHTHREADID){
     float4 srcColor;
     uint2 tid = did.xy;
+	uint index = gid;
 
     if(TextureSize.x % 2 == 0 && TextureSize.y % 2 == 0){
         float2 uv = ((float2)tid + .5 )* TexelSize;
@@ -56,10 +57,14 @@ void GenerateMipmap(uint gid : SV_GROUPID,uint3 did : SV_DISPATCHTHREADID){
         srcColor += inputTex.SampleLevel(mipSampler,uv + float2(.5,.5),SrcMip);
         srcColor *= .25;
     }
+    
+    float2 uv = ((float2)tid + .5 )* TexelSize;
+    srcColor = inputTex.SampleLevel(mipSampler,uv,SrcMip); 
 
     outputTex0[tid] = srcColor;
     
     if(TarMipNum <= 1) return;
+
     StoreColor(index,srcColor);
     GroupMemoryBarrierWithGroupSync();
 
@@ -70,6 +75,7 @@ void GenerateMipmap(uint gid : SV_GROUPID,uint3 did : SV_DISPATCHTHREADID){
         outputTex1[tid / 2] = color;
         StoreColor(index,color);
     }
+
     if(TarMipNum <= 2) return;
     GroupMemoryBarrierWithGroupSync();
 

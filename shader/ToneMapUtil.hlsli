@@ -19,7 +19,7 @@ float3 ReinhardMapping(float3 color,float exposure){
 }
 
 float3 InvReinhardMapping(float3 color,float exposure){
-    return color / (-Luminance(color) + exposure) * exposure;
+    return color / (-Luminance(color) + 1.) * exposure;
 }
 
 

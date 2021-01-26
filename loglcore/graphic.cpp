@@ -976,11 +976,11 @@ void Graphic::ResourceTransition(ID3D12Resource* resource,D3D12_RESOURCE_STATES 
 
 void Graphic::ResourceTransition(ID3D12Resource** resource, D3D12_RESOURCE_STATES* initState, D3D12_RESOURCE_STATES* afterState,
 	size_t num) {
-	std::vector<D3D12_RESOURCE_BARRIER> barriers;
 	for (size_t i = 0; i != num; i++) {
 		barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(resource[i], initState[i], afterState[i]));
 	}
 	mDrawCmdList->ResourceBarrier(barriers.size(),barriers.data());
+	barriers.clear();
 }
 
 void Graphic::ResourceCopy(ID3D12Resource* Dest, ID3D12Resource* Source) {

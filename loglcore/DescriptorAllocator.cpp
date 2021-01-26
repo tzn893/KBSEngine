@@ -133,7 +133,7 @@ Descriptor DescriptorAllocator::AllocateDescriptor(size_t num) {
 	rv.Offset(handleSize, allocatedSize);
 	allocatedSize += num;
 
-	return Descriptor(rv);
+	return Descriptor(rv,num);
 }
 
 Descriptor Descriptor::Offset(D3D12_DESCRIPTOR_HEAP_TYPE type,size_t offset) {

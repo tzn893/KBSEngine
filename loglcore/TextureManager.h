@@ -13,6 +13,13 @@ public:
 	{}
 
 	ManagedTexture(const wchar_t* name, const wchar_t* path,
+		size_t width, size_t height,size_t mipnum,TEXTURE_FORMAT format,
+		void** data, D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON) : name(name), pathName(path),
+		Texture(width,height,mipnum,format,data,
+		TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,initState)
+	{}
+
+	ManagedTexture(const wchar_t* name, const wchar_t* path,
 		size_t width, size_t height, TEXTURE_FORMAT format,
 		TEXTURE_TYPE type,
 		void** original_data,
@@ -34,6 +41,7 @@ private:
 class TextureManager{
 public:
 	ManagedTexture* loadTexture(const wchar_t* path,const wchar_t* name = nullptr,bool filp_vertically = true,UploadBatch* batch = nullptr);
+	ManagedTexture* loadTexture(const wchar_t* path, size_t mipnum, const wchar_t* name = nullptr,bool filp_vertically = true);
 	ManagedTexture* getTextureByName(const wchar_t* name);
 	ManagedTexture* getTextureByPath(const wchar_t* path);
 
@@ -45,7 +53,7 @@ private:
 	std::map<std::wstring, std::unique_ptr<ManagedTexture>> texturesByPath;
 	std::map<std::wstring, ManagedTexture*> texturesByName;
 
-	ManagedTexture* loadTextureBySTB(const wchar_t* path,const wchar_t* name,bool filp_vertically,UploadBatch* batch);
+	ManagedTexture* loadTextureBySTB(const wchar_t* path,const wchar_t* name,bool filp_vertically,UploadBatch* batch,size_t mipnum = 1);
 	std::unique_ptr<Texture> white;
 };
 

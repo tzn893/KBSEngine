@@ -1,5 +1,6 @@
 #include "Texture.h"
 #include "graphic.h"
+#include "GenerateMipmapBatch.h"
 
 static size_t  getFormatElementSize(TEXTURE_FORMAT format) {
 	switch (format) {
@@ -93,6 +94,48 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 		}
 
 		isValid = true;
+
+		this->currState = initState;
+}
+
+Texture::Texture(size_t width, size_t height,size_t mipnum, TEXTURE_FORMAT format,
+	TEXTURE_FLAG flag, D3D12_RESOURCE_STATES initState, D3D12_CLEAR_VALUE* clearValue) {
+	this->width = width;
+	this->height = height;
+	this->mipnum = mipnum;
+	this->flag = flag;
+
+	this->format = getDXGIFormatFromTextureFormat(format);
+	this->type = TEXTURE_TYPE_2D;
+
+	D3D12_RESOURCE_DESC rDesc;
+	rDesc.Alignment = 0;
+	rDesc.DepthOrArraySize = 1;
+	rDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	rDesc.Flags = getResourceFlagFromTextureFlag(flag);
+	rDesc.Format = this->format;
+	rDesc.Height = height;
+	rDesc.Width = width;
+	rDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	rDesc.MipLevels = mipnum;
+	rDesc.SampleDesc.Count = 1;
+	rDesc.SampleDesc.Quality = 0;
+
+	ID3D12Device* device = gGraphic.GetDevice();
+
+	HRESULT hr = device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&rDesc, initState,
+		clearValue, IID_PPV_ARGS(&mRes)
+	);
+	if (FAILED(hr)) {
+		isValid = false;
+		return;
+	}
+
+	isValid = true;
+	this->currState = initState;
 }
 
 Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
@@ -149,7 +192,71 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 		}
 	}
 	isValid = true;
+	this->currState = initState;
 
+}
+
+Texture::Texture(size_t width, size_t height,size_t mipnum, TEXTURE_FORMAT format,
+	void** data, TEXTURE_FLAG flag,
+	D3D12_RESOURCE_STATES initState) {
+	this->width = width;
+	this->height = height;
+	this->mipnum = mipnum;
+	this->flag = flag;
+
+	this->format = getDXGIFormatFromTextureFormat(format);
+	D3D12_RESOURCE_DESC rDesc;
+	rDesc.Alignment = 0;
+	rDesc.DepthOrArraySize = 1;
+	rDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	rDesc.Flags = getResourceFlagFromTextureFlag(flag);
+	rDesc.Format = this->format;
+	rDesc.Height = height;
+	rDesc.Width = width;
+	rDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	rDesc.MipLevels = mipnum;
+	rDesc.SampleDesc.Count = 1;
+	rDesc.SampleDesc.Quality = 0;
+
+	if (data == nullptr) {
+		isValid = false;
+		return;
+	}
+	if (data != nullptr) {
+		size_t elementSize = getFormatElementSize(format);
+
+		UploadTextureResource resource;
+		resource.original_buffer.push_back(*data);
+
+		D3D12_SUBRESOURCE_DATA subData;
+		subData.pData = *data;
+		subData.RowPitch = width * elementSize;
+		subData.SlicePitch = height * subData.RowPitch;
+		*data = nullptr;
+
+		resource.subres.push_back(subData);
+
+		
+		UploadBatch mbatch = UploadBatch::Begin();
+		mRes = mbatch.UploadTexture(resource, rDesc, initState);
+		mbatch.End();
+		if (mRes == nullptr) {
+			isValid = false;
+			return;
+		}
+	}
+	isValid = true;
+	CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	for (size_t i = 0; i != mipnum;i++) {
+		CreateUnorderedAccessView(gDescriptorAllocator.AllocateDescriptor(), nullptr, i);
+	}
+
+	if (!GenerateMipmapBatch::Generate(mRes.Get(), initState,
+		width, height, mipnum, mUAV, &mSRV)) {
+		isValid = false;
+		mRes = nullptr;
+	}
+	this->currState = initState;
 }
 
 Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
@@ -203,7 +310,7 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 		return;
 	}
 	isValid = true;
-
+	this->currState = initState;
 }
 
 template<typename TARGET>
@@ -259,10 +366,12 @@ void Texture::CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOUR
 			srvDesc.Texture2D.MostDetailedMip = 0;
 			srvDesc.Texture2D.MipLevels = -1;
 			srvDesc.Texture2D.ResourceMinLODClamp = 0.f;
+			break;
 		case TEXTURE_TYPE_2DCUBE:
 			srvDesc.TextureCube.MipLevels = -1;
 			srvDesc.TextureCube.MostDetailedMip = 0;
 			srvDesc.TextureCube.ResourceMinLODClamp = 0.f;
+			break;
 		}
 		device->CreateShaderResourceView(mRes.Get(), &srvDesc, descriptor.cpuHandle);
 	}
@@ -284,11 +393,13 @@ void Texture::CreateRenderTargetView(Descriptor descriptor,D3D12_RENDER_TARGET_V
 		switch (type) {
 		case TEXTURE_TYPE_2D:
 			rtvDesc.Texture2D = { 0,0 };
+			break;
 		case TEXTURE_TYPE_2DCUBE:
 			rtvDesc.Texture2DArray.ArraySize = 6;
 			rtvDesc.Texture2DArray.FirstArraySlice = 0;
 			rtvDesc.Texture2DArray.MipSlice = 0;
 			rtvDesc.Texture2DArray.PlaneSlice = 0;
+			break;
 		}
 		device->CreateRenderTargetView(mRes.Get(), &rtvDesc, descriptor.cpuHandle);
 	}
@@ -312,10 +423,12 @@ void Texture::CreateDepthStencilView(Descriptor descriptor,D3D12_DEPTH_STENCIL_V
 		switch (type) {
 		case TEXTURE_TYPE_2D:
 			dsvDesc.Texture2D.MipSlice = 0;
+			break;
 		case TEXTURE_TYPE_2DCUBE:
 			dsvDesc.Texture2DArray.ArraySize = 6;
 			dsvDesc.Texture2DArray.FirstArraySlice = 0;
 			dsvDesc.Texture2DArray.MipSlice = 0;
+			break;
 		}
 		device->CreateDepthStencilView(mRes.Get(), &dsvDesc, descriptor.cpuHandle);
 	}
@@ -338,13 +451,27 @@ void Texture::CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_AC
 		switch (type) {
 		case TEXTURE_TYPE_2D:
 			uavDesc.Texture2D = { (UINT)mipnum,0 };
+			break;
 		case TEXTURE_TYPE_2DCUBE:
 			uavDesc.Texture2DArray.ArraySize = 6;
 			uavDesc.Texture2DArray.FirstArraySlice = 0;
 			uavDesc.Texture2DArray.MipSlice = (UINT)mipnum;
 			uavDesc.Texture2DArray.PlaneSlice = 0;
+			break;
 		}
 		device->CreateUnorderedAccessView(mRes.Get(), nullptr,&uavDesc, descriptor.cpuHandle);
 	}
 	mUAV[mipnum] = descriptor;
+}
+
+D3D12_RESOURCE_STATES Texture::StateTransition(D3D12_RESOURCE_STATES state,TransitionBatch* batch) {
+	if (state != currState) {
+		if(batch != nullptr)
+			batch->Transition(mRes.Get(), currState, state);
+		else {
+			gGraphic.ResourceTransition(mRes.Get(), currState, state);
+		}
+		std::swap(state, currState);
+	}
+	return state;
 }

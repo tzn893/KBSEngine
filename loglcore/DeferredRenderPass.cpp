@@ -135,10 +135,18 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[GBufferNum] = { GBuffer[0]->GetRenderTargetViewCPU(),
 		GBuffer[1]->GetRenderTargetViewCPU(),GBuffer[2]->GetRenderTargetViewCPU() };
 
+	/*
 	static D3D12_RESOURCE_STATES stateCommon[GBufferNum] = { D3D12_RESOURCE_STATE_COMMON,D3D12_RESOURCE_STATE_COMMON ,D3D12_RESOURCE_STATE_COMMON }
 	, stateRT[GBufferNum] = { D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RENDER_TARGET };
 	ID3D12Resource* resources[GBufferNum] = { GBuffer[0]->GetResource(),GBuffer[1]->GetResource(), GBuffer[2]->GetResource() };
 	graphic->ResourceTransition(resources, stateCommon, stateRT, GBufferNum);
+	*/
+	TransitionBatch tbatch = TransitionBatch::Begin();
+	D3D12_RESOURCE_STATES resLastState;
+	for (size_t i = 0; i != GBufferNum;i++) {
+		resLastState = GBuffer[i]->StateTransition(D3D12_RESOURCE_STATE_RENDER_TARGET, &tbatch);
+	}
+	tbatch.End();
 
 	Game::Vector4 ClearValue = Game::Vector4();
 	graphic->BindRenderTarget(rtvHandles, { 0 }, GBufferNum, true,
@@ -159,7 +167,12 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 		}
 		
 	}
-	graphic->ResourceTransition(resources, stateRT, stateCommon, GBufferNum);
+	tbatch = TransitionBatch::Begin();
+	for (size_t i = 0; i != GBufferNum; i++) {
+		GBuffer[i]->StateTransition(resLastState, &tbatch);
+	}
+	tbatch.End();
+	//graphic->ResourceTransition(resources, stateRT, stateCommon, GBufferNum);
 
 	graphic->BindCurrentBackBufferAsRenderTarget();
 

@@ -58,6 +58,10 @@ private:
 	std::vector<ObjectElement> objQueue;
 };
 
+//render pass for rendering emission objects
+class EmissionRenderPass : public RenderPass {
+
+};
 
 class LightManager {
 	friend class ShadowRenderPass;

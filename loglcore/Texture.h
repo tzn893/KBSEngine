@@ -1,6 +1,7 @@
 #pragma once
 #include "d3dcommon.h"
 #include "CopyBatch.h"
+#include "TransitionBatch.h"
 #include "DescriptorAllocator.h"
 
 enum TEXTURE_FORMAT {
@@ -31,6 +32,10 @@ public:
 		TEXTURE_FLAG flag = TEXTURE_FLAG_NONE,D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
 		D3D12_CLEAR_VALUE* clearValue = nullptr);
 
+	Texture(size_t width, size_t height, size_t mipnum, TEXTURE_FORMAT format,
+		TEXTURE_FLAG flag = TEXTURE_FLAG_NONE, D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
+		D3D12_CLEAR_VALUE* clearValue = nullptr);
+
 	Texture(size_t width,size_t height,TEXTURE_FORMAT format,
 		void** data,TEXTURE_FLAG flag  = TEXTURE_FLAG_NONE,
 		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
@@ -38,8 +43,7 @@ public:
 
 	Texture(size_t width, size_t height, size_t mipLevel, TEXTURE_FORMAT format,
 		void** data, TEXTURE_FLAG flag = TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,
-		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
-		UploadBatch* batch = nullptr);
+		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON);
 
 	Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 		TEXTURE_TYPE type, 
@@ -50,6 +54,8 @@ public:
 		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
 		TEXTURE_FLAG flag = TEXTURE_FLAG_NONE
 		, UploadBatch* batch = nullptr);
+
+
 
 	ID3D12Resource* GetResource() {
 		if (!isValid) return nullptr;
@@ -82,6 +88,8 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewCPU(size_t mip = 0) { return mip < mipnum ? mUAV[0].cpuHandle : D3D12_CPU_DESCRIPTOR_HANDLE{0}; }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewGPU(size_t mip = 0) { return mip < mipnum ? mUAV[0].gpuHandle : D3D12_GPU_DESCRIPTOR_HANDLE{0}; }
 
+	D3D12_RESOURCE_STATES StateTransition(D3D12_RESOURCE_STATES nextState,TransitionBatch* batch = nullptr);
+	D3D12_RESOURCE_STATES GetResourceState() { return currState; }
 protected:
 	TEXTURE_TYPE type;
 	TEXTURE_FLAG flag;
@@ -89,6 +97,7 @@ protected:
 	size_t width, height,mipnum;
 
 	ComPtr<ID3D12Resource> mRes;
+	D3D12_RESOURCE_STATES currState;
 	bool isValid;
 
 	Descriptor mSRV;

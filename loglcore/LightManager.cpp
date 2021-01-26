@@ -90,9 +90,11 @@ void   ShadowRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 	UpdateShadowLightView();
 	float clv[4] = { 1.,1.,1.,1. };
 	if (objQueue.empty()) return;
-	graphic->ResourceTransition(mDepthRTVTex->GetResource(),
+	/*graphic->ResourceTransition(mDepthRTVTex->GetResource(),
 		D3D12_RESOURCE_STATE_COMMON,
-		D3D12_RESOURCE_STATE_RENDER_TARGET);
+		D3D12_RESOURCE_STATE_RENDER_TARGET);*/
+
+	mDepthRTVTex->StateTransition(D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	graphic->BindRenderTarget(
 		&mDepthRTVTex->GetRenderTargetViewCPU(),
@@ -114,10 +116,10 @@ void   ShadowRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 		}
 	}
 
-	graphic->ResourceTransition(mDepthRTVTex->GetResource(),
+	/*graphic->ResourceTransition(mDepthRTVTex->GetResource(),
 		D3D12_RESOURCE_STATE_RENDER_TARGET,
-		D3D12_RESOURCE_STATE_COMMON);
-
+		D3D12_RESOURCE_STATE_COMMON);*/
+	mDepthRTVTex->StateTransition(D3D12_RESOURCE_STATE_COMMON);
 	graphic->BindCurrentBackBufferAsRenderTarget();
 
 	objQueue.clear();

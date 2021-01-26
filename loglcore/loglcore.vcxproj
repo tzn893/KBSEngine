@@ -28,6 +28,7 @@
     <ClCompile Include="GenerateMipmapBatch.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="graphic.cpp" />
+    <ClCompile Include="GraphicUtil.cpp" />
     <ClCompile Include="LightManager.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="ModelManager.cpp" />
@@ -43,6 +44,7 @@
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="ThridParty\stb\stb_image.cpp" />
     <ClCompile Include="tinyobjloader.cpp" />
+    <ClCompile Include="TransitionBatch.cpp" />
     <ClCompile Include="Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -83,6 +85,7 @@
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="ThridParty\stb\stb_image.h" />
     <ClInclude Include="tinyobjloader.h" />
+    <ClInclude Include="TransitionBatch.h" />
     <ClInclude Include="Vector.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

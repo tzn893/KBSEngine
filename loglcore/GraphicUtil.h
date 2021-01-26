@@ -11,3 +11,5 @@ UINT Pack32bitNum(T num) {
 	static_assert(sizeof(T) == sizeof(UINT),"Pack32bitNum:the size of the value to be pack should be 4");
 	return *reinterpret_cast<UINT*>(&num);
 }
+
+std::wstring String2WString(const std::string& s);

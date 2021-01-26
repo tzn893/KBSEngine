@@ -22,10 +22,13 @@
 #include "PostProcessRenderPass.h"
 #include "DeferredRenderPass.h"
 
+#include "TransitionBatch.h"
+
 constexpr int Graphic_mBackBufferNum = 3;
 
 class Graphic {
 	friend class ComputeCommand;
+	friend class TransitionBatch;
 public:
 	bool initialize(HWND winHnd, size_t width, size_t height);
 
@@ -187,6 +190,7 @@ public:
 	inline  DXGI_FORMAT	 GetBackBufferDepthFormat() { return mBackBufferDepthFormat; }
 
 	inline  void		 SetHDRExposure(float exposure) { this->exposure = exposure; }
+	
 private:
 	void FindRPAndErase(RenderPass* rp);
 	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name, bool rp);
@@ -265,6 +269,8 @@ private:
 	std::unique_ptr<SkyboxRenderPass> skyboxRenderPass;
 	std::unique_ptr<PostProcessRenderPass> postProcessRenderPass;
 	std::unique_ptr<DeferredRenderPass> deferredRenderPass;
+
+	std::vector<D3D12_RESOURCE_BARRIER> barriers;
 };
 
 inline Graphic gGraphic;

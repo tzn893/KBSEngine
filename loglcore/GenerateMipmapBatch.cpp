@@ -13,6 +13,7 @@ struct GenerateMipmapState {
 	Game::Vector2 TexelSize;
 	uint32_t TextureSize[2];
 };
+static std::unique_ptr<ConstantBuffer<GenerateMipmapState>> GMipmapState;
 static bool initialized = false;
 
 static ComPtr<ID3D12GraphicsCommandList> mipCmdList;
@@ -22,11 +23,15 @@ static size_t							 mFenceValue = 0;
 static HANDLE							 mEvent;
 static std::unique_ptr<DescriptorHeap>   heap;
 
+
 bool GenerateMipmapBatch::initialize() {
-	Game::RootSignature root(3, 1);
-	root[0].initAsDescriptorTable(0, 0, 4, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
-	root[1].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
-	root[2].initAsConstants(0, 0, 6);
+	Game::RootSignature root(6, 1);
+	root[0].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
+	root[1].initAsDescriptorTable(1, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
+	root[2].initAsDescriptorTable(2, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
+	root[3].initAsDescriptorTable(3, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
+	root[4].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	root[5].initAsConstantBuffer(0, 0);
 
 	CD3DX12_STATIC_SAMPLER_DESC ssDesc(0);
 	ssDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -76,6 +81,8 @@ bool GenerateMipmapBatch::initialize() {
 		return false;
 	}
 
+	GMipmapState = std::make_unique<ConstantBuffer<GenerateMipmapState>>(gGraphic.GetDevice(),10);
+
 	return true;
 }
 
@@ -83,8 +90,8 @@ bool GenerateMipmapBatch::initialize() {
 
 bool GenerateMipmapBatch::Generate(ID3D12Resource* res,D3D12_RESOURCE_STATES initState
 	,size_t width,size_t height,
-	size_t mipnum,D3D12_CPU_DESCRIPTOR_HANDLE* destHandles,
-	D3D12_CPU_DESCRIPTOR_HANDLE* srcHandle) {
+	size_t mipnum,Descriptor* destHandles,
+	Descriptor* srcHandle) {
 	if (!initialized) {
 		if (!initialize()) {
 			return false;
@@ -102,8 +109,8 @@ bool GenerateMipmapBatch::Generate(ID3D12Resource* res,D3D12_RESOURCE_STATES ini
 
 	ID3D12DescriptorHeap* heaps[] = {heap->GetHeap()};
 	mipCmdList->SetDescriptorHeaps(1, heaps);
-	mipCmdList->SetComputeRootDescriptorTable(1, heap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-		*srcHandle).gpuHandle);
+	mipCmdList->SetComputeRootDescriptorTable(4, heap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		srcHandle->cpuHandle).gpuHandle);
 	if(initState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 		mipCmdList->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(res, initState,
@@ -111,33 +118,33 @@ bool GenerateMipmapBatch::Generate(ID3D12Resource* res,D3D12_RESOURCE_STATES ini
 		);
 
 
-	UINT offset = 1;
+	UINT offset = 1,sIndex = 0;
 	while (offset < mipnum) {
 		UINT srcMip = offset - 1;
 		UINT numMip = Game::imin(4,mipnum - offset);
 		D3D12_GPU_DESCRIPTOR_HANDLE destDesc;
 		for (size_t i = 0; i != numMip;i++) {
-			if (i == 0)
-				destDesc = heap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, destHandles[i + offset]).gpuHandle;
-			else 
-				heap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, destHandles[i + offset]);
+			destDesc = heap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, destHandles[i + offset].cpuHandle).gpuHandle;
+			mipCmdList->SetComputeRootDescriptorTable(i, destDesc);
 		}
-		mipCmdList->SetComputeRootDescriptorTable(0, destDesc);
 		
 		UINT twidth = Game::imax(width >> offset, 1),
 			theight = Game::imax(height >> offset, 1);
 		Game::Vector2 texelSize = Game::Vector2(1. / (float)twidth, 1. / (float)theight);
 
-		mipCmdList->SetComputeRoot32BitConstant(0, srcMip, 0);
-		mipCmdList->SetComputeRoot32BitConstant(0, numMip, 1);
-		mipCmdList->SetComputeRoot32BitConstants(0, 2, &texelSize, 2);
-		mipCmdList->SetComputeRoot32BitConstant(0, twidth, 4);
-		mipCmdList->SetComputeRoot32BitConstant(0, theight, 5);
+		GenerateMipmapState* state = GMipmapState->GetBufferPtr(sIndex);
+		state->SrcMip = srcMip;
+		state->TarMipNum = numMip;
+		state->TexelSize = texelSize;
+		state->TextureSize[0] = twidth, state->TextureSize[1] = theight;
+
+		mipCmdList->SetComputeRootConstantBufferView(5,GMipmapState->GetADDR(sIndex));
 
 		size_t dispatchX = (twidth + 7) / 8 , dispatchY = (theight + 7) / 8;
 		mipCmdList->Dispatch(dispatchX, dispatchY, 1);
 
 		offset += numMip;
+		sIndex++;
 	}
 
 	if (initState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {

@@ -33,7 +33,7 @@ std::unique_ptr<StaticMesh<MeshVertexNormal>> planeMesh;
 PhongRenderPass* prp;
 DeferredRenderPass* drp;
 
-std::unique_ptr<RenderObject> fro;
+std::unique_ptr<RenderObject> fro,pro;
 
 std::vector<Game::Vector3> bullets;
 FPSCamera camera;
@@ -55,10 +55,10 @@ bool Application::initialize() {
 			reinterpret_cast<MeshVertexNormal*>(v.data()),
 			&up);
 
-		Texture* fdiff = gTextureManager.loadTexture(L"../asserts/brickwall.jpg", L"wall",
-			true, &up);
-		Texture* fnormal = gTextureManager.loadTexture(L"../asserts/brickwall_normal.jpg",
-			L"wall_normal", true, &up);
+		Texture* fdiff = gTextureManager.loadTexture(L"../asserts/brickwall.jpg",5,L"wall",
+			true);
+		Texture* fnormal = gTextureManager.loadTexture(L"../asserts/brickwall_normal.jpg",5,
+			L"wall_normal", true);
 
 		fdiff->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 		fnormal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
@@ -74,6 +74,9 @@ bool Application::initialize() {
 		mat.matTransformScale = Game::Vector2(20.,20.);
 
 		fro = std::make_unique<RenderObject>(planeMesh->GetMesh(), mat, Game::Vector3(0., -2., 5.), Game::Vector3(), Game::Vector3(1., 1., 1.), "floor");
+		Model* model = gModelManager.loadModel("../asserts/spaceship/spaceship.obj", "plane", &up);
+		pro = std::make_unique<RenderObject>(model, Game::Vector3(0., 1., 3.), Game::Vector3(0., 0., 0.), Game::Vector3(.1, .1, .1));
+		
 		up.End();
 	}
 
@@ -140,6 +143,7 @@ void Application::update() {
 	gLightManager.SetMainLightData(light);
 
 	fro->Render(drp);
+	pro->Render(drp);
 }
 
 void Application::finalize() {
