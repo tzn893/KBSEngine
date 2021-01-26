@@ -16,6 +16,8 @@
 #include "../loglcore/RenderObject.h"
 #include "../loglcore/LightManager.h"
 
+#include "../loglcore/AudioClipManager.h"
+
 #include "InputBuffer.h"
 #include "Timer.h"
 #include "FPSCamera.h"
@@ -37,6 +39,8 @@ std::unique_ptr<RenderObject> fro,pro;
 
 std::vector<Game::Vector3> bullets;
 FPSCamera camera;
+
+AudioClip* audio;
 
 #include "Config.h"
 
@@ -87,15 +91,18 @@ bool Application::initialize() {
 	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
 	gLightManager.SetMainLightData(light);
 
-
+	audio = gAudioClipManager.LoadAudioClip(L"../asserts/music/1.wav", "bgm");
 	camera.attach(gGraphic.GetMainCamera());
-	
+	audio->Play(true);
+
 	return true;
 }
 
 Game::Vector2 mousePos;
 
 void Application::update() {
+
+	
 
 	if (gInput.KeyDown(InputBuffer::MOUSE_LEFT)) {
 		mousePos = gInput.MousePosition();
