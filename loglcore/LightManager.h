@@ -58,29 +58,71 @@ private:
 	std::vector<ObjectElement> objQueue;
 };
 
-//render pass for rendering emission objects
-class EmissionRenderPass : public RenderPass {
+class LightSource {
+	friend class LightManager;
+public:
+	void SetLightIntensity(Game::Vector3 i) {
+		data.intensity.x = fmax(i.x, 0.);
+		data.intensity.y = fmax(i.y, 0.);
+		data.intensity.z = fmax(i.z, 0.);
+	}
+	void SetLightPosition(Game::Vector3 pos) {
+		data.position = pos;
+	}
+	void SetLightDirection(Game::Vector3 dir) {
+		data.direction = Game::normalize(dir);
+	}
 
+	void SetLightFallStart(float start) {
+		start = Game::fmin(start, data.fallEnd);
+		data.fallStart = start;
+	}
+
+	void SetLightFallEnd(float end) {
+		end = Game::fmax(end, data.fallStart);
+		data.fallEnd = end;
+	}
+
+	void SetLightFallout(float start,float end) {
+		end = Game::fmax(start, end);
+		data.fallEnd = end;
+		data.fallStart = start;
+	}
+
+	Game::Vector3 GetLightIntensity() { data.intensity; }
+	Game::Vector3 GetLightPosition() { return data.position; }
+	Game::Vector3 GetLightDirection() { return data.direction; }
+
+	Game::Vector3 GetLightFallStart() { return data.fallStart; }
+	Game::Vector3 GetLightFallEnd() { return data.fallEnd; }
+
+	SHADER_LIGHT_TYPE GetLightType() { return (SHADER_LIGHT_TYPE)data.type; }
+	LightSource(size_t index, SHADER_LIGHT_TYPE lightType);
+private:
+	LightData data;
+	size_t    index;
 };
+
+
 
 class LightManager {
 	friend class ShadowRenderPass;
 public:
 	void Initialize();
 
-	LightData GetLightData(size_t index) {
+	/*LightData GetLightData(LightID index) {
 		if (index < SHADER_MAX_LIGHT_STRUCT_NUM) {
 			return mLightPass->GetBufferPtr()->lights[index];
 		}
 		return LightData();
+	}*/
+	LightSource* GetMainLightData() {
+		return lightSources[mainLightIndex].get();
 	}
-	LightData GetMainLightData() {
-		return mLightPass->GetBufferPtr()->lights[mainLightIndex];
-	}
-	void SetLightData(size_t index,LightData& lp) {
+	/*void SetLightData(LightID index,LightData& lp) {
 		if (index == mainLightIndex) SetMainLightData(lp);
 		mLightPass->GetBufferPtr()->lights[index] = lp;
-	}
+	}*/
 	void SetAmbientLight(Game::Vector3 light) {
 		mLightPass->GetBufferPtr()->ambient = Game::Vector4(light,1.);
 	}
@@ -90,8 +132,12 @@ public:
 			lp.direction = Game::normalize(lp.direction);
 		}
 		mLightPass->GetBufferPtr()->lights[mainLightIndex] = lp;
+		lightSources[mainLightIndex]->data = lp;
 	}
 
+	LightSource* AllocateLightSource(SHADER_LIGHT_TYPE type);
+	void DeallocateLightSource(LightSource*& lightSource);
+	
 	void BindLightPass2ConstantBuffer(size_t slot);
 	bool EnableShadowRenderPass();
 
@@ -107,5 +153,7 @@ private:
 
 	std::unique_ptr<ShadowRenderPass> mShadowRenderPass;
 	bool shadowEnabled = false;
+
+	std::vector<std::unique_ptr<LightSource>> lightSources;
 };
 inline LightManager gLightManager;

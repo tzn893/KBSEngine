@@ -6,7 +6,7 @@
 #endif
 
 #ifndef MAX_LIGHT_STRUCT_NUM
-#define MAX_LIGHT_STRUCT_NUM 1
+#define MAX_LIGHT_STRUCT_NUM 8
 #endif
 
 #ifndef LIGHT_TYPE_POINT
@@ -24,13 +24,14 @@ struct Light{
     float  fallStart;
     float3 vec;
     float  fallEnd;
-    int    lightType;
+    uint    lightType;
     float3 padding;
 };
 
 cbuffer LightPass : register( LIGHT_PASS_REGISTER ){
     float4 ambient;
     Light lights[MAX_LIGHT_STRUCT_NUM];
+    uint  lightNum;
 };
 
 #endif //_LIGHT_PASS_

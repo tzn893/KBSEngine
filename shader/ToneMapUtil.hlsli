@@ -22,6 +22,10 @@ float3 InvReinhardMapping(float3 color,float exposure){
     return color / (-Luminance(color) + 1.) * exposure;
 }
 
-
-#define TM_STANDERD ReinhardMapping
-#define ITM_STANDERD InvReinhardMapping           
+#ifndef DISABLE_TONEMAPPING
+    #define TM_STANDERD ReinhardMapping
+    #define ITM_STANDERD InvReinhardMapping
+#else
+    #define TM_STANDERD
+    #define ITM_STANDERD
+#endif

@@ -37,7 +37,7 @@ void UnpackGBuffer(float2 uv,out float3 worldPos,out float3 worldNor,out float3 
 
 float CalcAttenuation(float d, float falloffStart, float falloffEnd)
 {
-    return saturate((falloffEnd-d) / (falloffEnd - falloffStart))  / (d * d + 1.f);
+    return saturate((falloffEnd-d) / (falloffEnd - falloffStart));
 }
 
 float4 PS(VertexOut vin) : SV_TARGET{
@@ -49,7 +49,7 @@ float4 PS(VertexOut vin) : SV_TARGET{
     float3 result = ambient.xyz * diffuse;
     float3 viewDir = normalize(cameraPos - worldPos);
 
-    for(int i = 0;i != MAX_LIGHT_STRUCT_NUM;i++){
+    for(int i = 0;i != lightNum;i++){
         float3 lightDir,lightIntensity;
         
         if(lights[i].lightType == LIGHT_TYPE_DIRECTIONAL){

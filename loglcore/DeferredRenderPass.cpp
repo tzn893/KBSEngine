@@ -94,7 +94,7 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 		{"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,8,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0}
 	};
 	D3D_SHADER_MACRO macros[] = {
-		{"MAX_LIGHT_STRUCT_NUM","1"},
+		{"MAX_LIGHT_STRUCT_NUM",getShaderMaxLightStructNumStr},
 		{nullptr,nullptr}
 	};
 

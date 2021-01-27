@@ -26,6 +26,12 @@ struct GBufferOut{
     float4 Buffer3 : SV_TARGET2;
 };
 
+/*
+GBuffer1 (worldpos    3,1.f      1)
+GBuffer2 (worldNormal 3,1.f      1)
+GBuffer3 (diffuse     3,specular 1)
+*/
+
 GBufferOut Pack2GBuffer(float3 worldPos,float3 worldNormal,float3 diffuse,float specular){
     GBufferOut output;
     output.Buffer1 = float4(worldPos,1.f);

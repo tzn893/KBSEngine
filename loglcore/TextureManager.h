@@ -48,13 +48,14 @@ public:
 	ManagedTexture* loadCubeTexture(const wchar_t* path,const wchar_t* name = nullptr,bool filp_vertically = true,UploadBatch* batch = nullptr);
 
 	Texture*        getWhiteTexture();
+	Texture*		getBlackTexture();
 private:
 	//the path is the main key
 	std::map<std::wstring, std::unique_ptr<ManagedTexture>> texturesByPath;
 	std::map<std::wstring, ManagedTexture*> texturesByName;
 
 	ManagedTexture* loadTextureBySTB(const wchar_t* path,const wchar_t* name,bool filp_vertically,UploadBatch* batch,size_t mipnum = 1);
-	std::unique_ptr<Texture> white;
+	std::unique_ptr<Texture> white,black;
 };
 
 inline TextureManager gTextureManager;

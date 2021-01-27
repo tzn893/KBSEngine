@@ -17,7 +17,7 @@ struct DeferredRenderPassTexture {
 
 class DeferredRenderPass : public RenderPass {
 public:
-	virtual size_t GetPriority() { return 5; }
+	virtual size_t GetPriority() { return 10; }
 
 	virtual void   PreProcess() {}
 	virtual bool   Initialize(UploadBatch* batch) override;

@@ -148,7 +148,7 @@ Texture* ShadowRenderPass::GetShadowMap() {
 void   ShadowRenderPass::UpdateShadowLightView() {
 	Camera* mainCamera = gGraphic.GetMainCamera();
 	Game::Vector3 Position = mainCamera->getPosition();
-	Game::Vector3 lightDir = gLightManager.GetMainLightData().direction;
+	Game::Vector3 lightDir = gLightManager.GetMainLightData()->GetLightDirection();
 	Game::Vector3 lightPosition = Position - lightDir * shadowDistance;
 
 	mDepthLightView->GetBufferPtr()->lightView = Game::mul(
@@ -158,6 +158,13 @@ void   ShadowRenderPass::UpdateShadowLightView() {
 }
 
 void   LightManager::BindLightPass2ConstantBuffer(size_t slot) {
+	size_t lightNum = Game::imin(lightSources.size(),SHADER_MAX_LIGHT_STRUCT_NUM);
+	LightPass* lp = mLightPass->GetBufferPtr();
+	lp->lightNum = lightNum;
+	for (size_t i = 0; i != lightNum;i++) {
+		lp->lights[i] = lightSources[i]->data;
+	}
+
 	gGraphic.BindConstantBuffer(mLightPass->GetADDR(), slot);
 }
 
@@ -179,4 +186,32 @@ void  LightManager::Initialize() {
 	mainLight.fallStart = 1.;
 	mainLight.fallEnd = 100.;
 	mainLight.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
+
+	auto mainLightSource = std::make_unique<LightSource>(0,SHADER_LIGHT_TYPE_DIRECTIONAL);
+	mainLightSource->data = mainLight;
+	lightSources.push_back(std::move(mainLightSource));
+}
+
+LightSource* LightManager::AllocateLightSource(SHADER_LIGHT_TYPE type) {
+	auto lightSource = std::make_unique<LightSource>(lightSources.size(),type);
+	LightSource* rv = lightSource.get();
+	lightSources.push_back(std::move(lightSource));
+	return rv;
+}
+
+void LightManager::DeallocateLightSource(LightSource*& lightSource) {
+	size_t targetIndex = lightSource->index;
+	if (targetIndex == mainLightIndex) {
+		lightSources[targetIndex]->SetLightIntensity(Game::Vector3());
+		return;
+	}
+	for (size_t i = targetIndex + 1; i < lightSources.size();i++) {
+		lightSources[i]->index--;
+	}
+	lightSources.erase(lightSources.begin() + targetIndex);
+	lightSource = nullptr;
+}
+
+LightSource::LightSource(size_t index, SHADER_LIGHT_TYPE lightType) :index(index) {
+	data.type = lightType;
 }

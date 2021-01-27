@@ -42,6 +42,9 @@ FPSCamera camera;
 
 AudioClip* audio;
 
+
+LightSource* mainLight,* pointLight;
+
 #include "Config.h"
 
 bool Application::initialize() {
@@ -79,21 +82,26 @@ bool Application::initialize() {
 
 		fro = std::make_unique<RenderObject>(planeMesh->GetMesh(), mat, Game::Vector3(0., -2., 5.), Game::Vector3(), Game::Vector3(1., 1., 1.), "floor");
 		Model* model = gModelManager.loadModel("../asserts/spaceship/spaceship.obj", "plane", &up);
-		pro = std::make_unique<RenderObject>(model, Game::Vector3(0., 1., 3.), Game::Vector3(0., 0., 0.), Game::Vector3(.1, .1, .1));
+		pro = std::make_unique<RenderObject>(model, Game::Vector3(0., -1., 3.), Game::Vector3(0., 0., 0.), Game::Vector3(.1, .1, .1));
 		
 		up.End();
 	}
 
 	gLightManager.SetAmbientLight(Game::Vector3(.1, .1, .1));
-	LightData light;
-	light.intensity = Game::Vector3(.3, .3, .3);
-	light.direction = Game::normalize(Game::Vector3(0., -1., 0.1));
-	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
-	gLightManager.SetMainLightData(light);
+
+	mainLight = gLightManager.GetMainLightData();
+	mainLight->SetLightDirection(Game::Vector3(0., -1., 0.1));
+	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3));
+
+	pointLight = gLightManager.AllocateLightSource(SHADER_LIGHT_TYPE_POINT);
+	pointLight->SetLightIntensity(Game::Vector3(20., 15., 10.));
+	pointLight->SetLightPosition(Game::Vector3(0., -1., 5.));
+	pointLight->SetLightFallout(0., 3.);
 
 	audio = gAudioClipManager.LoadAudioClip(L"../asserts/music/1.wav", "bgm");
-	camera.attach(gGraphic.GetMainCamera());
 	audio->Play(true);
+
+	camera.attach(gGraphic.GetMainCamera());
 
 	return true;
 }
@@ -101,8 +109,6 @@ bool Application::initialize() {
 Game::Vector2 mousePos;
 
 void Application::update() {
-
-	
 
 	if (gInput.KeyDown(InputBuffer::MOUSE_LEFT)) {
 		mousePos = gInput.MousePosition();
@@ -143,11 +149,7 @@ void Application::update() {
 		li = fmin(li + 1e-2,40.);
 	}
 
-	LightData light;
-	light.intensity = Game::Vector3(.3, .3, .3) * li;
-	light.direction = Game::normalize(Game::Vector3(0., -1., 0.1));
-	light.type = SHADER_LIGHT_TYPE_DIRECTIONAL;
-	gLightManager.SetMainLightData(light);
+	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3) * li);
 
 	fro->Render(drp);
 	pro->Render(drp);

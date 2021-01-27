@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Math.h"
+#include <stdint.h>
 
 struct CameraPass {
 	Game::Mat4x4  viewMat;
@@ -27,8 +28,8 @@ inline constexpr const char* getShaderLightTypeStr() {
 	}
 }
 
-constexpr size_t SHADER_MAX_LIGHT_STRUCT_NUM = 1;
-constexpr const char* getShaderMaxLightStructNumStr = "1";
+constexpr size_t SHADER_MAX_LIGHT_STRUCT_NUM = 8;
+constexpr const char* getShaderMaxLightStructNumStr = "8";
 
 struct LightData {
 	Game::Vector3 intensity;
@@ -38,7 +39,7 @@ struct LightData {
 		Game::Vector3 position;
 	};
 	float  fallEnd;
-	int type;
+	uint32_t type;
 	Game::Vector3 trash;
 
 	LightData() {
@@ -51,6 +52,7 @@ struct LightData {
 struct LightPass {
 	Game::Vector4 ambient;
 	LightData lights[SHADER_MAX_LIGHT_STRUCT_NUM];
+	uint32_t  lightNum;
 };
 
 struct Material {
