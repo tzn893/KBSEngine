@@ -20,31 +20,13 @@ struct VertexOut{
     float3 Bitangent : TEXCOORD1;
 };
 
-struct GBufferOut{
-    float4 Buffer1 : SV_TARGET0;
-    float4 Buffer2 : SV_TARGET1;
-    float4 Buffer3 : SV_TARGET2;
-};
-
-/*
-GBuffer1 (worldpos    3,1.f      1)
-GBuffer2 (worldNormal 3,1.f      1)
-GBuffer3 (diffuse     3,specular 1)
-*/
-
-GBufferOut Pack2GBuffer(float3 worldPos,float3 worldNormal,float3 diffuse,float specular){
-    GBufferOut output;
-    output.Buffer1 = float4(worldPos,1.f);
-    output.Buffer2.xyz = worldNormal;
-    output.Buffer3.xyz = diffuse;
-    output.Buffer3.w   = specular;
-
-    return output;
-}
+#define  GBUFFER_OUTPUT
+#include "GBufferUtil.hlsli"
 
 Texture2D normalMap : register(t0);
 Texture2D diffuseMap : register(t1);
-Texture2D specularMap : register(t2);
+Texture2D roughnessMap : register(t2);
+Texture2D metallicMap  : register(t3);
 
 SamplerState sp : register(s0);
 
@@ -78,7 +60,16 @@ GBufferOut PS(VertexOut vin){
 
     float3 worldNormal = SampleNormalMap(normalMap,sp,vin.Uv,tNormal,tTangent,tBitangent);
     float3 diffuse     = diffuseMap.Sample(sp,vin.Uv).rgb * mat.diffuse.xyz;
-    float  specular    = specularMap.Sample(sp,vin.Uv).r;
+    //float  specular    = specularMap.Sample(sp,vin.Uv).r;
+    float  metallic    = metallicMap.Sample(sp,vin.Uv).r * mat.Metallic;
+    float  roughness   = roughnessMap.Sample(sp,vin.Uv).r * mat.Roughness;
 
-    return Pack2GBuffer(vin.WorldPos,worldNormal,diffuse,specular);
+    GBufferData data;
+    data.worldPos = float4(vin.WorldPos,1.);
+    data.worldNormal = worldNormal;
+    data.diffuse = diffuse;
+    data.metallic = metallic;
+    data.roughness = roughness; 
+
+    return Pack2GBuffer(data);
 }

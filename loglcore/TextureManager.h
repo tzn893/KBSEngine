@@ -49,13 +49,17 @@ public:
 
 	Texture*        getWhiteTexture();
 	Texture*		getBlackTexture();
+	Texture*		getBlueTexture();
+	inline Texture* getNormalMapDefaultTexture() {
+		return getBlueTexture();
+	}
 private:
 	//the path is the main key
 	std::map<std::wstring, std::unique_ptr<ManagedTexture>> texturesByPath;
 	std::map<std::wstring, ManagedTexture*> texturesByName;
 
 	ManagedTexture* loadTextureBySTB(const wchar_t* path,const wchar_t* name,bool filp_vertically,UploadBatch* batch,size_t mipnum = 1);
-	std::unique_ptr<Texture> white,black;
+	std::unique_ptr<Texture> white,black,blue;
 };
 
 inline TextureManager gTextureManager;

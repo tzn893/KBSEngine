@@ -31,17 +31,17 @@ struct BoxConstantBuffer {
 
 Texture* face;
 std::unique_ptr<StaticMesh<MeshVertexNormal>> planeMesh;
+std::unique_ptr<StaticMesh<MeshVertexNormal>> sphereMesh;
 
 PhongRenderPass* prp;
 DeferredRenderPass* drp;
 
-std::unique_ptr<RenderObject> fro,pro;
+std::unique_ptr<RenderObject> fro,spro1,spro2;
 
 std::vector<Game::Vector3> bullets;
 FPSCamera camera;
 
 AudioClip* audio;
-
 
 LightSource* mainLight,* pointLight;
 
@@ -53,53 +53,85 @@ bool Application::initialize() {
 
 	{
 		UploadBatch up = UploadBatch::Begin();
-		
-		auto[v, i] = GeometryGenerator::Square(20., 20., GEOMETRY_FLAG_NONE);
-		planeMesh = std::make_unique<StaticMesh<MeshVertexNormal>>(gGraphic.GetDevice(),
-			i.size(),
-			i.data(),
-			v.size() / getVertexStrideByFloat<MeshVertexNormal>(),
-			reinterpret_cast<MeshVertexNormal*>(v.data()),
-			&up);
+		{
+			auto[v, i] = GeometryGenerator::Square(20., 20., GEOMETRY_FLAG_NONE);
+			planeMesh = std::make_unique<StaticMesh<MeshVertexNormal>>(gGraphic.GetDevice(),
+				i.size(),
+				i.data(),
+				v.size() / getVertexStrideByFloat<MeshVertexNormal>(),
+				reinterpret_cast<MeshVertexNormal*>(v.data()),
+				&up);
+				
+				Texture* fdiff = gTextureManager.loadTexture(L"../asserts/brickwall.jpg", 5, L"wall",
+					true);
+				Texture* fnormal = gTextureManager.loadTexture(L"../asserts/brickwall_normal.jpg", 5,
+					L"wall_normal", true);
 
-		Texture* fdiff = gTextureManager.loadTexture(L"../asserts/brickwall.jpg",5,L"wall",
-			true);
-		Texture* fnormal = gTextureManager.loadTexture(L"../asserts/brickwall_normal.jpg",5,
-			L"wall_normal", true);
+				fdiff->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+				fnormal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+				SubMeshMaterial mat;
+				mat.diffuse = Game::Vector3(1., 1., 1.);
+				mat.roughness = .3;
+				mat.metallic = .4;
 
-		fdiff->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
-		fnormal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
-		SubMeshMaterial mat;
-		mat.diffuse = Game::Vector3(1., 1., 1.);
-		mat.roughness = 1.;
-		mat.specular = Game::Vector3(.3, .3, .3);
+				mat.textures[SUBMESH_MATERIAL_TYPE_BUMP] = fnormal;
+				mat.textures[SUBMESH_MATERIAL_TYPE_DIFFUSE] = fdiff;
 
-		mat.textures[SUBMESH_MATERIAL_TYPE_BUMP] = fnormal;
-		mat.textures[SUBMESH_MATERIAL_TYPE_DIFFUSE] = fdiff;
-		mat.textures[SUBMESH_MATERIAL_TYPE_SPECULAR] = nullptr;
+				mat.matTransformScale = Game::Vector2(20., 20.);
 
-		mat.matTransformScale = Game::Vector2(20.,20.);
+				fro = std::make_unique<RenderObject>(planeMesh->GetMesh(), mat, Game::Vector3(0., -2., 5.), Game::Vector3(), Game::Vector3(1., 1., 1.), "floor");
+		}
+		{
+			auto[v, i] = GeometryGenerator::Sphere(1., 20, GEOMETRY_FLAG_NONE);
+			sphereMesh = std::make_unique<StaticMesh<MeshVertexNormal>>(
+					gGraphic.GetDevice(), i.size(), i.data(),
+					v.size() / getVertexStrideByFloat<MeshVertexNormal>(),
+					reinterpret_cast<MeshVertexNormal*>(v.data()),
+					&up);
+			Texture* rust_roughness = gTextureManager.loadTexture(L"../asserts/pbr/rust_textures/roughness.png", L"rr", true, &up);
+			Texture* rust_metallic	= gTextureManager.loadTexture(L"../asserts/pbr/rust_textures/metallic.png",L"rm", true, &up);
+			Texture* rust_normal	= gTextureManager.loadTexture(L"../asserts/pbr/rust_textures/normal.png", L"rn", true, &up);
+			Texture* rust_diffuse	= gTextureManager.loadTexture(L"../asserts/pbr/rust_textures/color.png", L"rd", true, &up);
 
-		fro = std::make_unique<RenderObject>(planeMesh->GetMesh(), mat, Game::Vector3(0., -2., 5.), Game::Vector3(), Game::Vector3(1., 1., 1.), "floor");
-		Model* model = gModelManager.loadModel("../asserts/spaceship/spaceship.obj", "plane", &up);
-		pro = std::make_unique<RenderObject>(model, Game::Vector3(0., -1., 3.), Game::Vector3(0., 0., 0.), Game::Vector3(.1, .1, .1));
+			rust_roughness->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+			rust_metallic->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+			rust_normal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+			rust_diffuse->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+
+			SubMeshMaterial  m1,m2;
+			m1.diffuse = Game::ConstColor::White;
+			m1.metallic = .3f;
+			m1.roughness = .1f;
+			
+			m2.diffuse = Game::ConstColor::White;
+			m2.metallic = 1.f;
+			m2.roughness = .5f;
+			m2.textures[SUBMESH_MATERIAL_TYPE_BUMP] = rust_normal;
+			m2.textures[SUBMESH_MATERIAL_TYPE_DIFFUSE] = rust_diffuse;
+			m2.textures[SUBMESH_MATERIAL_TYPE_METALNESS] = rust_metallic;
+			m2.textures[SUBEMSH_MATERIAL_TYPE_ROUGHNESS] = rust_roughness;
+			
+			spro1 = std::make_unique<RenderObject>(sphereMesh->GetMesh(),m1, Game::Vector3( 1., -1.5, 3.), Game::Vector3(), Game::Vector3(.2, .2, .2));
+			spro2 = std::make_unique<RenderObject>(sphereMesh->GetMesh(),m2, Game::Vector3(-1., -1.5, 3.), Game::Vector3(), Game::Vector3(.2, .2, .2));
+		}
 		
 		up.End();
 	}
 
-	gLightManager.SetAmbientLight(Game::Vector3(.1, .1, .1));
+	gLightManager.SetAmbientLight(Game::Vector3(.7, .7, .7));
 
 	mainLight = gLightManager.GetMainLightData();
 	mainLight->SetLightDirection(Game::Vector3(0., -1., 0.1));
-	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3));
-
+	
 	pointLight = gLightManager.AllocateLightSource(SHADER_LIGHT_TYPE_POINT);
-	pointLight->SetLightIntensity(Game::Vector3(20., 15., 10.));
-	pointLight->SetLightPosition(Game::Vector3(0., -1., 5.));
-	pointLight->SetLightFallout(0., 3.);
+	pointLight->SetLightIntensity(Game::Vector3(50., 50., 50.));
+	pointLight->SetLightPosition(Game::Vector3(0., -1., 3.));
+	pointLight->SetLightFallout(0., 5.);
 
-	audio = gAudioClipManager.LoadAudioClip(L"../asserts/music/1.wav", "bgm");
-	audio->Play(true);
+	auto l2 = gLightManager.AllocateLightSource(SHADER_LIGHT_TYPE_POINT);
+	l2->SetLightIntensity(Game::Vector3(5., 4., 3.));
+	l2->SetLightPosition(Game::Vector3(3., -1.5, 5.));
+	l2->SetLightFallout(0., 5.);
 
 	camera.attach(gGraphic.GetMainCamera());
 
@@ -152,12 +184,10 @@ void Application::update() {
 	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3) * li);
 
 	fro->Render(drp);
-	pro->Render(drp);
+	spro1->Render(drp);
+	spro2->Render(drp);
 }
 
-void Application::finalize() {
-}
+void Application::finalize() {}
 
-void Application::Quit() {
-	
-}
+void Application::Quit() {}

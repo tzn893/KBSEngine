@@ -4,12 +4,13 @@
 #include "LightManager.h"
 
 bool DeferredRenderPass::Initialize(UploadBatch* batch) {
-	Game::RootSignature rootSig(5,1);
+	Game::RootSignature rootSig(6,1);
 	rootSig[0].initAsConstantBuffer(0, 0);
 	rootSig[1].initAsConstantBuffer(1, 0);
 	rootSig[2].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
 	rootSig[3].initAsDescriptorTable(1, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
 	rootSig[4].initAsDescriptorTable(2, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSig[5].initAsDescriptorTable(3, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
 	rootSig.InitializeSampler(0, CD3DX12_STATIC_SAMPLER_DESC(0));
 
 	if (!gGraphic.CreateRootSignature(defPreproc,&rootSig)) {
@@ -135,12 +136,6 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[GBufferNum] = { GBuffer[0]->GetRenderTargetViewCPU(),
 		GBuffer[1]->GetRenderTargetViewCPU(),GBuffer[2]->GetRenderTargetViewCPU() };
 
-	/*
-	static D3D12_RESOURCE_STATES stateCommon[GBufferNum] = { D3D12_RESOURCE_STATE_COMMON,D3D12_RESOURCE_STATE_COMMON ,D3D12_RESOURCE_STATE_COMMON }
-	, stateRT[GBufferNum] = { D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RENDER_TARGET };
-	ID3D12Resource* resources[GBufferNum] = { GBuffer[0]->GetResource(),GBuffer[1]->GetResource(), GBuffer[2]->GetResource() };
-	graphic->ResourceTransition(resources, stateCommon, stateRT, GBufferNum);
-	*/
 	TransitionBatch tbatch = TransitionBatch::Begin();
 	D3D12_RESOURCE_STATES resLastState;
 	for (size_t i = 0; i != GBufferNum;i++) {
@@ -158,7 +153,8 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 		graphic->BindConstantBuffer(objConstants->GetADDR(ele.objectID), 0);
 		graphic->BindDescriptorHandle(ele.normalMap, 2);
 		graphic->BindDescriptorHandle(ele.diffuseMap, 3);
-		graphic->BindDescriptorHandle(ele.specularMap, 4);
+		graphic->BindDescriptorHandle(ele.roughnessMap, 4);
+		graphic->BindDescriptorHandle(ele.metallicMap, 5);
 		if (ele.ibv == nullptr) {
 			graphic->Draw(ele.vbv, ele.start, ele.num);
 		}
@@ -172,7 +168,6 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 		GBuffer[i]->StateTransition(resLastState, &tbatch);
 	}
 	tbatch.End();
-	//graphic->ResourceTransition(resources, stateRT, stateCommon, GBufferNum);
 
 	graphic->BindCurrentBackBufferAsRenderTarget();
 
@@ -220,13 +215,23 @@ void DeferredRenderPass::DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_B
 	if (id < 0 || id >= defaultConstantBufferSize) {return;}
 	
 	Texture* white = gTextureManager.getWhiteTexture();
-	D3D12_GPU_DESCRIPTOR_HANDLE whiteHandle;
-	if (tex->diffuse == nullptr || tex->normal == nullptr || tex->specular == nullptr) {
+	D3D12_GPU_DESCRIPTOR_HANDLE whiteHandle{0};
+	if (tex->diffuse == nullptr  || tex->metallic == nullptr
+		 || tex->roughness == nullptr) {
 		whiteHandle = descriptorHeap->UploadDescriptors(
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 
 			white->GetShaderResourceViewCPU()
 		).gpuHandle;
 	}
+
+	D3D12_GPU_DESCRIPTOR_HANDLE normalHandle{0};
+	if (tex->normal == nullptr) {
+		normalHandle = descriptorHeap->UploadDescriptors(
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+			gTextureManager.getBlueTexture()->GetShaderResourceViewCPU()
+		).gpuHandle;
+	}
+	
 	ObjectElement oe;
 	oe.ibv = ibv;
 	oe.vbv = vbv;
@@ -234,17 +239,18 @@ void DeferredRenderPass::DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_B
 	oe.num = num;
 	oe.objectID = id;
 
-	auto uploadTexture2CurrentHeap = [&](Texture* tex) {
-		if (tex == nullptr) return whiteHandle;
+	auto uploadTexture2CurrentHeap = [&](Texture* tex,D3D12_GPU_DESCRIPTOR_HANDLE spare) {
+		if (tex == nullptr) return spare;
 		if (tex->GetShaderResourceViewCPU().ptr == 0) {
 			tex->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 		}
 		return descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, tex->GetShaderResourceViewCPU()).gpuHandle;
 	};
 
-	oe.diffuseMap = uploadTexture2CurrentHeap(tex->diffuse);
-	oe.normalMap = uploadTexture2CurrentHeap(tex->normal);
-	oe.specularMap = uploadTexture2CurrentHeap(tex->specular);
+	oe.diffuseMap = uploadTexture2CurrentHeap(tex->diffuse,whiteHandle);
+	oe.normalMap = uploadTexture2CurrentHeap(tex->normal,normalHandle);
+	oe.roughnessMap = uploadTexture2CurrentHeap(tex->roughness,whiteHandle);
+	oe.metallicMap = uploadTexture2CurrentHeap(tex->metallic,whiteHandle);
 
 	objQueue.push_back(oe);
 }

@@ -12,7 +12,9 @@ using DeferredRenderPassID = int64_t;
 struct DeferredRenderPassTexture {
 	Texture* normal;
 	Texture* diffuse;
-	Texture* specular;
+	//Texture* specular;
+	Texture* metallic;
+	Texture* roughness;
 };
 
 class DeferredRenderPass : public RenderPass {
@@ -52,7 +54,10 @@ private:
 
 		D3D12_GPU_DESCRIPTOR_HANDLE diffuseMap;
 		D3D12_GPU_DESCRIPTOR_HANDLE normalMap;
-		D3D12_GPU_DESCRIPTOR_HANDLE specularMap;
+		//D3D12_GPU_DESCRIPTOR_HANDLE specularMap;
+		D3D12_GPU_DESCRIPTOR_HANDLE metallicMap;
+		D3D12_GPU_DESCRIPTOR_HANDLE roughnessMap;
+
 	};
 	std::vector<ObjectElement> objQueue;
 
@@ -61,7 +66,7 @@ private:
 	size_t allocatedConstantBuffers;
 	static constexpr size_t defaultConstantBufferSize = 1024;
 
-	static constexpr size_t defaultDescriptorHeapSize = defaultConstantBufferSize * 3;
+	static constexpr size_t defaultDescriptorHeapSize = defaultConstantBufferSize * 4;
 	std::unique_ptr<DescriptorHeap> descriptorHeap;
 
 	const wchar_t* defPreproc = L"deferred_preprocess";

@@ -21,11 +21,12 @@ VertexOut VS(VertexIn vin){
     return vout;
 }
 
+/*
 Texture2D GBuffer[3] : register(t0);
 SamplerState sp : register(s0);
 
 
-void UnpackGBuffer(float2 uv,out float3 worldPos,out float3 worldNor,out float3 worldDif,out float worldSpecular){
+void UnpackGBuffer(float2 uv,out float3 worldPos,out float3 worldNor,out float3 worldDif,out float metallic,out float roughness){
     float4 pos = GBuffer[0].Sample(sp,uv);
     if(pos.w < 1e-4f) discard;
     worldPos = pos.xyz;
@@ -33,19 +34,29 @@ void UnpackGBuffer(float2 uv,out float3 worldPos,out float3 worldNor,out float3 
     float4 gdata2 = GBuffer[2].Sample(sp,uv);
     worldDif = gdata2.xyz;
     worldSpecular = gdata2.w;
-}
+}*/
+
+#include "GBufferUtil.hlsli"
+#include "PBRLightingUtil.hlsli"
 
 float CalcAttenuation(float d, float falloffStart, float falloffEnd)
 {
-    return saturate((falloffEnd-d) / (falloffEnd - falloffStart));
+    return 1. / (1. + d * d);//return saturate((falloffEnd-d) / (falloffEnd - falloffStart));
 }
+
+static const float3 F0 = float3(.04,.04,.04);
 
 float4 PS(VertexOut vin) : SV_TARGET{
     float3 worldPos,normal,diffuse;
-    float specular;
+    float metallic,roughness;
 
-    UnpackGBuffer(vin.Texcoord,worldPos,normal,diffuse,specular);
-    
+    GBufferData data = UnpackGBuffer(vin.Texcoord);
+    GBufferDiscard(data.worldPos);
+
+    worldPos = data.worldPos.xyz,normal = data.worldNormal,
+    diffuse = data.diffuse;
+    metallic = data.metallic,roughness = data.roughness;
+
     float3 result = ambient.xyz * diffuse;
     float3 viewDir = normalize(cameraPos - worldPos);
 
@@ -61,11 +72,10 @@ float4 PS(VertexOut vin) : SV_TARGET{
                 * lights[i].intensity;
         }
 
-        float3 dif = max(dot(lightDir,normal),0.) * diffuse * lightIntensity;
-        float3 halfV = normalize(viewDir + lightDir);
-        float3 spec = pow(max(dot(halfV,normal),0.) , 16.) * specular * lightIntensity;
+        float3 Lo = BRDF(normal,lightDir,viewDir,diffuse,
+            roughness,metallic,lightIntensity,F0);
 
-        result += spec + dif;
+        result += Lo;
     }
 
     return float4(result,1.);

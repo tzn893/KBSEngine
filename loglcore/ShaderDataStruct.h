@@ -58,8 +58,9 @@ struct LightPass {
 struct Material {
 	Game::Vector4 diffuse;
 	Game::Vector3 FresnelR0;
-	float  Roughness;
+	float Roughness;
 	Game::Mat4x4 matTransform;
+	float Metallic;
 
 	void SetMaterialTransform(Game::Vector2 offset,Game::Vector2 Scale) {
 		float buffer[] = {

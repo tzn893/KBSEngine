@@ -10,6 +10,7 @@ struct Material{
     float3 FresnelR0;
     float  Roughness;
     float4x4 matTransform;
+    float  Metallic;
 };
 
 cbuffer ObjectPass : register(OBJECT_PASS_REGISTER){

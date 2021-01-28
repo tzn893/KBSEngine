@@ -19,6 +19,8 @@ struct SubMeshMaterial {
 	Texture* textures[SUBMESH_MATERIAL_TYPE_NUM];
 	Game::Vector3 diffuse;
 	float roughness;
+	float metallic;
+	Game::Vector3 emissionScale;
 	Game::Vector3 specular;
 	Game::Vector2 matTransformOffset;
 	Game::Vector2 matTransformScale;
@@ -28,7 +30,7 @@ struct SubMeshMaterial {
 			textures[i] = nullptr;
 		diffuse = Game::Vector2();
 		roughness = 1.;
-		specular = Game::Vector2();
+		specular = Game::Vector3();
 		matTransformOffset = Game::Vector2();
 		matTransformScale = Game::Vector2(1., 1.);
 	}

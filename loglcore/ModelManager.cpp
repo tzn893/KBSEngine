@@ -103,7 +103,8 @@ Model* ModelManager::loadInOBJFormat(const char* pathName,const char* name,Uploa
 	}
 	for (auto& material : materials) {
 		SubMeshMaterial sbMaterial;
-		Texture* bumpMap = nullptr, *diffuseMap = nullptr, *specularMap = nullptr;
+		Texture* bumpMap = nullptr, *diffuseMap = nullptr, *specularMap = nullptr,
+			* metalicMap = nullptr,* roughnessMap = nullptr,* emissionMap = nullptr;
 		
 		if (!material.bump_texname.empty()) {
 			std::wstring fullname = String2WString(dirName + "/" + material.bump_texname);
@@ -120,13 +121,33 @@ Model* ModelManager::loadInOBJFormat(const char* pathName,const char* name,Uploa
 			specularMap = gTextureManager.loadTexture(fullname.c_str(), fullname.c_str(), true, batch);
 			specularMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 		}
+		if (!material.metallic_texname.empty()) {
+			std::wstring fullname = String2WString(dirName + "/" + material.metallic_texname);
+			metalicMap = gTextureManager.loadTexture(fullname.c_str(), fullname.c_str(), true, batch);
+			metalicMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+		}
+		if (!material.roughness_texname.empty()) {
+			std::wstring fullname = String2WString(dirName + "/" + material.roughness_texname);
+			roughnessMap = gTextureManager.loadTexture(fullname.c_str(), fullname.c_str(), true, batch);
+			roughnessMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+		}
+		if (!material.emissive_texname.empty()) {
+			std::wstring fullname = String2WString(dirName + "/" + material.emissive_texname);
+			emissionMap = gTextureManager.loadTexture(fullname.c_str(), fullname.c_str(), true, batch);
+			emissionMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+		}
 		sbMaterial.diffuse = Game::Vector3(material.diffuse);
 		sbMaterial.specular = Game::Vector3(material.specular);
 		sbMaterial.roughness = 1. - material.shininess / 70.;
+		sbMaterial.metallic = material.metallic;
+		sbMaterial.emissionScale = Game::Vector3(material.emission);
 
 		sbMaterial.textures[SUBMESH_MATERIAL_TYPE_BUMP] = bumpMap;
 		sbMaterial.textures[SUBMESH_MATERIAL_TYPE_DIFFUSE] = diffuseMap;
 		sbMaterial.textures[SUBMESH_MATERIAL_TYPE_SPECULAR] = specularMap;
+		sbMaterial.textures[SUBMESH_MATERIAL_TYPE_METALNESS] = metalicMap;
+		sbMaterial.textures[SUBEMSH_MATERIAL_TYPE_ROUGHNESS] = roughnessMap;
+		sbMaterial.textures[SUBMESH_MATERIAL_TYPE_EMISSION] = emissionMap;
 
 		model->PushBackSubMeshMaterial(sbMaterial);
 	}

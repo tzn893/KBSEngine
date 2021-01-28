@@ -279,3 +279,14 @@ Texture* TextureManager::getBlackTexture() {
 	}
 	return black.get();
 }
+
+Texture* TextureManager::getBlueTexture() {
+	if (blue == nullptr) {
+		char* data = (char*)malloc(4);
+		data[0] = 0x7f, data[1] = 0x7f, data[2] = 0xff, data[3] = 0xff;
+		blue = std::make_unique<Texture>(1,1,TEXTURE_FORMAT_RGBA,reinterpret_cast<void**>(&data),
+			TEXTURE_FLAG_NONE);
+		blue->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	}
+	return blue.get();
+}
