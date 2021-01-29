@@ -283,10 +283,21 @@ Texture* TextureManager::getBlackTexture() {
 Texture* TextureManager::getBlueTexture() {
 	if (blue == nullptr) {
 		char* data = (char*)malloc(4);
-		data[0] = 0x7f, data[1] = 0x7f, data[2] = 0xff, data[3] = 0xff;
+		data[0] = 0, data[1] = 0, data[2] = 0xff, data[3] = 0xff;
 		blue = std::make_unique<Texture>(1,1,TEXTURE_FORMAT_RGBA,reinterpret_cast<void**>(&data),
 			TEXTURE_FLAG_NONE);
 		blue->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 	}
 	return blue.get();
+}
+
+Texture* TextureManager::getNormalMapDefaultTexture() {
+	if (normal == nullptr) {
+		char* data = (char*)malloc(4);
+		data[0] = 0x7f, data[1] = 0x7f, data[2] = 0xff, data[3] = 0xff;
+		normal = std::make_unique<Texture>(1, 1, TEXTURE_FORMAT_RGBA, reinterpret_cast<void**>(&data),
+			TEXTURE_FLAG_NONE);
+		normal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	}
+	return normal.get();
 }

@@ -18,6 +18,8 @@
 
 #include "../loglcore/AudioClipManager.h"
 
+#include  "../loglcore/GenerateMipmapBatch.h"
+
 #include "InputBuffer.h"
 #include "Timer.h"
 #include "FPSCamera.h"
@@ -118,10 +120,10 @@ bool Application::initialize() {
 		up.End();
 	}
 
-	gLightManager.SetAmbientLight(Game::Vector3(.7, .7, .7));
+	gLightManager.SetAmbientLight(Game::Vector3(.3, .3, .3));
 
 	mainLight = gLightManager.GetMainLightData();
-	mainLight->SetLightDirection(Game::Vector3(0., -1., 0.1));
+	mainLight->SetLightDirection(Game::Vector3(0., -1., 1.));
 	
 	pointLight = gLightManager.AllocateLightSource(SHADER_LIGHT_TYPE_POINT);
 	pointLight->SetLightIntensity(Game::Vector3(50., 50., 50.));

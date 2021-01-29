@@ -8,6 +8,10 @@ public:
 		size_t width,size_t height,
 		size_t mipnum,Descriptor* destHandles,
 		Descriptor* srcHandle);
+
+	static bool GenerateIBLIrradience(ID3D12Resource* source,ID3D12Resource* target,
+		Descriptor srcSrvHandle,
+		D3D12_RESOURCE_STATES tarInitState);
 private:
 	static bool initialize();
 };

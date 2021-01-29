@@ -1,4 +1,4 @@
-#define COMERA_PASS_REGISTER b1
+#define CAMERA_PASS_REGISTER b1
 #define LIGHT_PASS_REGISTER b0
 
 #include "LightPass.hlsli"
@@ -21,27 +21,16 @@ VertexOut VS(VertexIn vin){
     return vout;
 }
 
-/*
-Texture2D GBuffer[3] : register(t0);
-SamplerState sp : register(s0);
-
-
-void UnpackGBuffer(float2 uv,out float3 worldPos,out float3 worldNor,out float3 worldDif,out float metallic,out float roughness){
-    float4 pos = GBuffer[0].Sample(sp,uv);
-    if(pos.w < 1e-4f) discard;
-    worldPos = pos.xyz;
-    worldNor = GBuffer[1].Sample(sp,uv).xyz;
-    float4 gdata2 = GBuffer[2].Sample(sp,uv);
-    worldDif = gdata2.xyz;
-    worldSpecular = gdata2.w;
-}*/
-
 #include "GBufferUtil.hlsli"
 #include "PBRLightingUtil.hlsli"
+#include "ToneMapUtil.hlsli"
+
+TextureCube gIrradianceMap : register(t3);
+SamplerState irrSp         : register(s1);
 
 float CalcAttenuation(float d, float falloffStart, float falloffEnd)
 {
-    return 1. / (1. + d * d);//return saturate((falloffEnd-d) / (falloffEnd - falloffStart));
+    return 1. / (1. + d * d) * step(d,falloffEnd);//return saturate((falloffEnd-d) / (falloffEnd - falloffStart));
 }
 
 static const float3 F0 = float3(.04,.04,.04);
@@ -57,8 +46,9 @@ float4 PS(VertexOut vin) : SV_TARGET{
     diffuse = data.diffuse;
     metallic = data.metallic,roughness = data.roughness;
 
-    float3 result = ambient.xyz * diffuse;
     float3 viewDir = normalize(cameraPos - worldPos);
+    float3 refViewDir = reflect(viewDir,normal);
+    float3 result = ambient.xyz * diffuse * ITM_STANDERD(gIrradianceMap.Sample(irrSp,refViewDir).rgb,exposure);
 
     for(int i = 0;i != lightNum;i++){
         float3 lightDir,lightIntensity;

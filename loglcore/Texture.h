@@ -36,6 +36,11 @@ public:
 		TEXTURE_FLAG flag = TEXTURE_FLAG_NONE, D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
 		D3D12_CLEAR_VALUE* clearValue = nullptr);
 
+	Texture(size_t width, size_t height, TEXTURE_FORMAT format,
+		TEXTURE_TYPE type,TEXTURE_FLAG flag = TEXTURE_FLAG_NONE,
+		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
+		D3D12_CLEAR_VALUE* cv = nullptr);
+
 	Texture(size_t width,size_t height,TEXTURE_FORMAT format,
 		void** data,TEXTURE_FLAG flag  = TEXTURE_FLAG_NONE,
 		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,

@@ -77,13 +77,15 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 
 	mImageVert = std::make_unique<StaticMesh<Game::Vector4>>(device, _countof(rect), rect, batch);
 
-	Game::RootSignature rootSigShading(3, 1);
+	Game::RootSignature rootSigShading(4, 2);
 	rootSigShading[0].initAsConstantBuffer(0, 0);
 	rootSigShading[1].initAsConstantBuffer(1, 0);
 	rootSigShading[2].initAsDescriptorTable(0, 0, 3, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSigShading[3].initAsDescriptorTable(3, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
 	D3D12_SAMPLER_DESC sd;
 	sd.AddressV = D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
 	rootSigShading.InitializeSampler(0, CD3DX12_STATIC_SAMPLER_DESC(0));
+	rootSigShading.InitializeSampler(1, CD3DX12_STATIC_SAMPLER_DESC(1));
 
 	if (!gGraphic.CreateRootSignature(defShading,&rootSigShading)) {
 		OUTPUT_DEBUG_STRING("fail to create root signature for deferred render pass\n");
@@ -125,6 +127,7 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 		return false;
 	}
 
+
 	return true;
 }
 
@@ -148,6 +151,7 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 		ClearValue.raw, nullptr, nullptr);
 	graphic->BindDescriptorHeap(descriptorHeap->GetHeap());
 	graphic->BindMainCameraPass(1);
+	
 
 	for (auto& ele : objQueue) {
 		graphic->BindConstantBuffer(objConstants->GetADDR(ele.objectID), 0);
@@ -171,9 +175,16 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 
 	graphic->BindCurrentBackBufferAsRenderTarget();
 
+	SkyboxRenderPass* sbrp = gGraphic.GetRenderPass<SkyboxRenderPass>();
+	Texture* irrMap = sbrp->GetIrradianceMap();
+	D3D12_GPU_DESCRIPTOR_HANDLE irrDescHandle = descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		irrMap->GetShaderResourceViewCPU()).gpuHandle;
+
 	graphic->BindPSOAndRootSignature(defShading, defShading);
 	gLightManager.BindLightPass2ConstantBuffer(0);
+	graphic->BindMainCameraPass(1);
 	graphic->BindDescriptorHandle(GBuffer[0]->GetShaderResourceViewGPU(),2);
+	graphic->BindDescriptorHandle(irrDescHandle, 3);
 	graphic->Draw(mImageVert->GetVBV(), 0, mImageVert->GetVertexNum());
 
 	descriptorHeap->ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -228,7 +239,7 @@ void DeferredRenderPass::DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_B
 	if (tex->normal == nullptr) {
 		normalHandle = descriptorHeap->UploadDescriptors(
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-			gTextureManager.getBlueTexture()->GetShaderResourceViewCPU()
+			gTextureManager.getNormalMapDefaultTexture()->GetShaderResourceViewCPU()
 		).gpuHandle;
 	}
 	

@@ -4,6 +4,8 @@
 #include "GeometryGenerator.h"
 #include "TextureManager.h"
 
+#include "GenerateMipmapBatch.h"
+
 bool SkyboxRenderPass::Initialize(UploadBatch* batch) {
 	Game::RootSignature rootSig(2, 1);
 	rootSig[0].initAsConstantBuffer(0, 0);
@@ -76,8 +78,21 @@ void   SkyboxRenderPass::SetSkyBox(Texture* tex) {
 	}
 	mHeap->ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	skyboxDesc = mHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, tex->GetShaderResourceViewCPU());
-	
+
 	skybox = tex;
+	irradianceMap = nullptr;
+}
+
+Texture* SkyboxRenderPass::GetIrradianceMap() {
+	if (irradianceMap == nullptr) {
+		irradianceMap = std::make_unique<Texture>(skybox->GetWidth(), skybox->GetHeight(), TEXTURE_FORMAT_RGBA,
+			TEXTURE_TYPE_2DCUBE, TEXTURE_FLAG_ALLOW_RENDER_TARGET);
+		irradianceMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+		GenerateMipmapBatch::GenerateIBLIrradience(skybox->GetResource(),
+			irradianceMap->GetResource(), skybox->GetShaderResourceViewCPU(),
+			D3D12_RESOURCE_STATE_COMMON);
+	}
+	return irradianceMap.get();
 }
 
 void   SkyboxRenderPass::finalize() {
