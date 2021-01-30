@@ -26,9 +26,6 @@
     <Filter Include="Audio">
       <UniqueIdentifier>{c335b060-53c2-469a-9e2f-4ec5b790bde6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ThridParty\irrKlang">
-      <UniqueIdentifier>{32d8e54d-0de3-4bef-88c4-99922f4d19e9}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Color.cpp">
@@ -57,9 +54,6 @@
     </ClCompile>
     <ClCompile Include="GeometryGenerator.cpp">
       <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="ThridParty\stb\stb_image.cpp">
-      <Filter>ThridParty\stb_image</Filter>
     </ClCompile>
     <ClCompile Include="Texture.cpp">
       <Filter>Core</Filter>
@@ -117,6 +111,9 @@
     </ClCompile>
     <ClCompile Include="AudioClipManager.cpp">
       <Filter>Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="stb_image.cpp">
+      <Filter>ThridParty\stb_image</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -183,9 +180,6 @@
     <ClInclude Include="ConstantBuffer.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="ThridParty\stb\stb_image.h">
-      <Filter>ThridParty\stb_image</Filter>
-    </ClInclude>
     <ClInclude Include="DescriptorAllocator.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -246,68 +240,8 @@
     <ClInclude Include="irrKCommon.hpp">
       <Filter>Audio</Filter>
     </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_ESoundEngineOptions.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_ESoundOutputDrivers.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_EStreamModes.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_IAudioRecorder.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_IAudioStream.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_IAudioStreamLoader.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_IFileFactory.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_IFileReader.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_IRefCounted.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_irrKlangTypes.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_ISound.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundDeviceList.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundEffectControl.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundEngine.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundMixedOutputReceiver.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundSource.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundStopEventReceiver.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_IVirtualRefCounted.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_SAudioStreamFormat.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\ik_vec3d.h">
-      <Filter>ThridParty\irrKlang</Filter>
-    </ClInclude>
-    <ClInclude Include="ThridParty\irrK\include\irrKlang.h">
-      <Filter>ThridParty\irrKlang</Filter>
+    <ClInclude Include="stb_image.h">
+      <Filter>ThridParty\stb_image</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

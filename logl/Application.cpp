@@ -120,7 +120,7 @@ bool Application::initialize() {
 		up.End();
 	}
 
-	gLightManager.SetAmbientLight(Game::Vector3(.3, .3, .3));
+	gLightManager.SetAmbientLight(Game::Vector3(.4, .4, .4));
 
 	mainLight = gLightManager.GetMainLightData();
 	mainLight->SetLightDirection(Game::Vector3(0., -1., 1.));

@@ -1,5 +1,5 @@
 #include "TextureManager.h"
-#include "ThridParty/stb/stb_image.h"
+#include "stb_image.h"
 #include <filesystem>
 #include <algorithm>
 using namespace std::filesystem;

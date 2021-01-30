@@ -1,5 +1,5 @@
 #pragma once
-#include <irrKlang.h>
+#include <irrK/irrKlang.h>
 
 #ifndef _IRRK_LINKED
 #define _IRRK_LINKED

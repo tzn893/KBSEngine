@@ -30,7 +30,7 @@ SamplerState irrSp         : register(s1);
 
 float CalcAttenuation(float d, float falloffStart, float falloffEnd)
 {
-    return 1. / (1. + d * d) * step(d,falloffEnd);//return saturate((falloffEnd-d) / (falloffEnd - falloffStart));
+    return 1. / (1. + d * d) * smoothstep(d - 1e-1,d,falloffEnd);
 }
 
 static const float3 F0 = float3(.04,.04,.04);

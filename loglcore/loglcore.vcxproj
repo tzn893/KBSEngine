@@ -42,9 +42,9 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="SkyboxRenderPass.cpp" />
     <ClCompile Include="SpriteRenderPass.cpp" />
+    <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureManager.cpp" />
-    <ClCompile Include="ThridParty\stb\stb_image.cpp" />
     <ClCompile Include="tinyobjloader.cpp" />
     <ClCompile Include="TransitionBatch.cpp" />
     <ClCompile Include="Vector.cpp" />
@@ -86,30 +86,9 @@
     <ClInclude Include="ShaderDataStruct.h" />
     <ClInclude Include="SkyboxRenderPass.h" />
     <ClInclude Include="SpriteRenderPass.h" />
+    <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_ESoundEngineOptions.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_ESoundOutputDrivers.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_EStreamModes.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_IAudioRecorder.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_IAudioStream.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_IAudioStreamLoader.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_IFileFactory.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_IFileReader.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_IRefCounted.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_irrKlangTypes.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_ISound.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundDeviceList.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundEffectControl.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundEngine.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundMixedOutputReceiver.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundSource.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_ISoundStopEventReceiver.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_IVirtualRefCounted.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_SAudioStreamFormat.h" />
-    <ClInclude Include="ThridParty\irrK\include\ik_vec3d.h" />
-    <ClInclude Include="ThridParty\irrK\include\irrKlang.h" />
-    <ClInclude Include="ThridParty\stb\stb_image.h" />
     <ClInclude Include="tinyobjloader.h" />
     <ClInclude Include="TransitionBatch.h" />
     <ClInclude Include="Vector.h" />
@@ -166,8 +145,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)ThridParty\irrK\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\CG\logl\loglcore\ThridParty\irrK\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)ThridParty\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)ThridParty\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
