@@ -15,6 +15,7 @@ struct DeferredRenderPassTexture {
 	//Texture* specular;
 	Texture* metallic;
 	Texture* roughness;
+	Texture* emission;
 };
 
 class DeferredRenderPass : public RenderPass {
@@ -40,8 +41,12 @@ public:
 	void		   DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_BUFFER_VIEW* ibv,
 		size_t start, size_t num, DeferredRenderPassID id, DeferredRenderPassTexture* tex = nullptr);
 
+	D3D12_CPU_DESCRIPTOR_HANDLE GetGBufferHandle(size_t offset) {
+		if (offset < GBufferNum) return GBuffer[offset]->GetShaderResourceViewCPU();
+		return { 0 };
+	}
 private:
-	static constexpr size_t GBufferNum = 3;
+	static constexpr size_t GBufferNum = 4;
 	std::unique_ptr<Texture> GBuffer[GBufferNum];
 
 	struct ObjectElement {
@@ -57,7 +62,7 @@ private:
 		//D3D12_GPU_DESCRIPTOR_HANDLE specularMap;
 		D3D12_GPU_DESCRIPTOR_HANDLE metallicMap;
 		D3D12_GPU_DESCRIPTOR_HANDLE roughnessMap;
-
+		D3D12_GPU_DESCRIPTOR_HANDLE emissionMap;
 	};
 	std::vector<ObjectElement> objQueue;
 
@@ -66,7 +71,7 @@ private:
 	size_t allocatedConstantBuffers;
 	static constexpr size_t defaultConstantBufferSize = 1024;
 
-	static constexpr size_t defaultDescriptorHeapSize = defaultConstantBufferSize * 4;
+	static constexpr size_t defaultDescriptorHeapSize = defaultConstantBufferSize * 5;
 	std::unique_ptr<DescriptorHeap> descriptorHeap;
 
 	const wchar_t* defPreproc = L"deferred_preprocess";
@@ -75,4 +80,21 @@ private:
 
 	std::unique_ptr<StaticMesh<Game::Vector4>> mImageVert;
 	Texture* lutTex;
+
+
+	class DeferredShadingPass : public RenderPass {
+	public:
+		DeferredShadingPass(DeferredRenderPass* drp) :drp(drp) {}
+
+		virtual size_t GetPriority() { return 200; }
+
+		virtual bool   Initialize(UploadBatch* batch = nullptr) { return true; }
+		virtual void   Render(Graphic* graphic, RENDER_PASS_LAYER layer) override;
+
+		virtual void   finalize() {};
+	private:
+		DeferredRenderPass* drp;
+	};
+	bool activated = false;
+	std::unique_ptr<DeferredShadingPass> shadingPass;
 };

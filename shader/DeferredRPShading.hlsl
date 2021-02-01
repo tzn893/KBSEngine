@@ -25,11 +25,11 @@ VertexOut VS(VertexIn vin){
 #include "PBRLightingUtil.hlsli"
 #include "ToneMapUtil.hlsli"
 
-TextureCube gIrradianceMap : register(t3);
+TextureCube gIrradianceMap : register(t4);
 SamplerState irrSp         : register(s1);
 
-TextureCube gSpecularMap   : register(t4);
-Texture2D   gLutMap        : register(t5);
+TextureCube gSpecularMap   : register(t5);
+Texture2D   gLutMap        : register(t6);
 
 #ifndef MAX_SPECULAR_LOD 
 #define MAX_SPECULAR_LOD 4
@@ -43,17 +43,19 @@ float CalcAttenuation(float d, float falloffStart, float falloffEnd)
 static const float3 F0 = float3(.04,.04,.04);
 
 float4 PS(VertexOut vin) : SV_TARGET{
-    float3 worldPos,normal,diffuse;
+    float3 worldPos,normal,diffuse,emission;
     float metallic,roughness;
 
     GBufferData data = UnpackGBuffer(vin.Texcoord);
     GBufferDiscard(data.worldPos);
 
     worldPos = data.worldPos.xyz,normal = data.worldNormal,
-    diffuse = data.diffuse;
+    diffuse = data.diffuse,emission = data.emission;
     metallic = data.metallic,roughness = data.roughness;
 
     float3 result = 0.;
+    result += emission;
+
     //compute the result from environment
     float3 irradiance =  diffuse * gIrradianceMap.Sample(irrSp,normal).rgb;
     float3 F1 = lerp(F0,diffuse,metallic);

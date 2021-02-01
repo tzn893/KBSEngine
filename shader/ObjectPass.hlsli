@@ -11,6 +11,7 @@ struct Material{
     float  Roughness;
     float4x4 matTransform;
     float  Metallic;
+    float3 emission;
 };
 
 cbuffer ObjectPass : register(OBJECT_PASS_REGISTER){

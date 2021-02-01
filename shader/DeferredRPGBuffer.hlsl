@@ -27,6 +27,7 @@ Texture2D normalMap : register(t0);
 Texture2D diffuseMap : register(t1);
 Texture2D roughnessMap : register(t2);
 Texture2D metallicMap  : register(t3);
+Texture2D emissionMap  : register(t4);
 
 SamplerState sp : register(s0);
 
@@ -63,6 +64,7 @@ GBufferOut PS(VertexOut vin){
     //float  specular    = specularMap.Sample(sp,vin.Uv).r;
     float  metallic    = metallicMap.Sample(sp,vin.Uv).r * mat.Metallic;
     float  roughness   = roughnessMap.Sample(sp,vin.Uv).r * mat.Roughness;
+    float3 emission    = emissionMap.Sample(sp,vin.Uv).rgb * mat.emission;
 
     GBufferData data;
     data.worldPos = float4(vin.WorldPos,1.);
@@ -70,6 +72,7 @@ GBufferOut PS(VertexOut vin){
     data.diffuse = diffuse;
     data.metallic = metallic;
     data.roughness = roughness; 
+    data.emission = emission;
 
     return Pack2GBuffer(data);
 }

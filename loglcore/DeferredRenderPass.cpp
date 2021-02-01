@@ -4,13 +4,14 @@
 #include "LightManager.h"
 
 bool DeferredRenderPass::Initialize(UploadBatch* batch) {
-	Game::RootSignature rootSig(6,1);
+	Game::RootSignature rootSig(7,1);
 	rootSig[0].initAsConstantBuffer(0, 0);
 	rootSig[1].initAsConstantBuffer(1, 0);
 	rootSig[2].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
 	rootSig[3].initAsDescriptorTable(1, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
 	rootSig[4].initAsDescriptorTable(2, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
 	rootSig[5].initAsDescriptorTable(3, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSig[6].initAsDescriptorTable(4, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
 	rootSig.InitializeSampler(0, CD3DX12_STATIC_SAMPLER_DESC(0));
 
 	if (!gGraphic.CreateRootSignature(defPreproc,&rootSig)) {
@@ -36,7 +37,8 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 	GBufferPSO.SetSampleMask(UINT_MAX);
 	GBufferPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 	GBufferPSO.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
-	DXGI_FORMAT rtvFormats[GBufferNum] = { DXGI_FORMAT_R32G32B32A32_FLOAT ,DXGI_FORMAT_R32G32B32A32_FLOAT ,DXGI_FORMAT_R32G32B32A32_FLOAT };
+	DXGI_FORMAT rtvFormats[GBufferNum] = { DXGI_FORMAT_R32G32B32A32_FLOAT ,DXGI_FORMAT_R32G32B32A32_FLOAT 
+		,DXGI_FORMAT_R32G32B32A32_FLOAT,DXGI_FORMAT_R32G32B32A32_FLOAT};
 	GBufferPSO.SetRenderTargetFormat(GBufferNum, rtvFormats);
 	GBufferPSO.SetDepthStencilViewFomat(DXGI_FORMAT_D24_UNORM_S8_UINT);
 
@@ -48,7 +50,7 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 	descriptorHeap = std::make_unique<DescriptorHeap>(defaultDescriptorHeapSize);
 	descriptorHeap->ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	Descriptor desc = descriptorHeap->Allocate(3, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	Descriptor desc = descriptorHeap->Allocate(GBufferNum, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	D3D12_CLEAR_VALUE cv;
 	cv.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -80,10 +82,10 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 	Game::RootSignature rootSigShading(6, 2);
 	rootSigShading[0].initAsConstantBuffer(0, 0);
 	rootSigShading[1].initAsConstantBuffer(1, 0);
-	rootSigShading[2].initAsDescriptorTable(0, 0, 3, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
-	rootSigShading[3].initAsDescriptorTable(3, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
-	rootSigShading[4].initAsDescriptorTable(4, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
-	rootSigShading[5].initAsDescriptorTable(5, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSigShading[2].initAsDescriptorTable(0, 0, GBufferNum, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSigShading[3].initAsDescriptorTable(4, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSigShading[4].initAsDescriptorTable(5, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSigShading[5].initAsDescriptorTable(6, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
 	D3D12_SAMPLER_DESC sd;
 	sd.AddressV = D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
 	rootSigShading.InitializeSampler(0, CD3DX12_STATIC_SAMPLER_DESC(0));
@@ -137,6 +139,9 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 	Descriptor lutDesc = descriptorHeap->Allocate(1);
 	lutTex->CreateShaderResourceView(lutDesc);
 
+	shadingPass = std::make_unique<DeferredShadingPass>(this);
+	gGraphic.RegisterRenderPass(shadingPass.get());
+
 	return true;
 }
 
@@ -144,9 +149,12 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 	if (layer != RENDER_PASS_LAYER_OPAQUE) return;
 	if (objQueue.empty()) return;
 	graphic->BindPSOAndRootSignature(defPreproc, defPreproc);
+	activated = true;
 	
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[GBufferNum] = { GBuffer[0]->GetRenderTargetViewCPU(),
-		GBuffer[1]->GetRenderTargetViewCPU(),GBuffer[2]->GetRenderTargetViewCPU() };
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[GBufferNum];
+	for (size_t i = 0; i != GBufferNum;i++) {
+		rtvHandles[i] = GBuffer[i]->GetRenderTargetViewCPU();
+	}
 
 	TransitionBatch tbatch = TransitionBatch::Begin();
 	D3D12_RESOURCE_STATES resLastState;
@@ -168,6 +176,7 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 		graphic->BindDescriptorHandle(ele.diffuseMap, 3);
 		graphic->BindDescriptorHandle(ele.roughnessMap, 4);
 		graphic->BindDescriptorHandle(ele.metallicMap, 5);
+		graphic->BindDescriptorHandle(ele.emissionMap, 6);
 		if (ele.ibv == nullptr) {
 			graphic->Draw(ele.vbv, ele.start, ele.num);
 		}
@@ -184,7 +193,7 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 
 	graphic->BindCurrentBackBufferAsRenderTarget();
 
-	SkyboxRenderPass* sbrp = gGraphic.GetRenderPass<SkyboxRenderPass>();
+	/*SkyboxRenderPass* sbrp = gGraphic.GetRenderPass<SkyboxRenderPass>();
 	Texture* irrMap = sbrp->GetIrradianceMap();
 	D3D12_GPU_DESCRIPTOR_HANDLE irrDescHandle = descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 		irrMap->GetShaderResourceViewCPU()).gpuHandle;
@@ -203,8 +212,33 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 
 	graphic->Draw(mImageVert->GetVBV(), 0, mImageVert->GetVertexNum());
 
-	descriptorHeap->ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	descriptorHeap->ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);*/
 	objQueue.clear();
+}
+
+void DeferredRenderPass::DeferredShadingPass::Render(Graphic* graphic,RENDER_PASS_LAYER layer) {
+	if (layer != RENDER_PASS_LAYER_OPAQUE || !drp->activated) return;
+	SkyboxRenderPass* sbrp = gGraphic.GetRenderPass<SkyboxRenderPass>();
+	Texture* irrMap = sbrp->GetIrradianceMap();
+	D3D12_GPU_DESCRIPTOR_HANDLE irrDescHandle = drp->descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		irrMap->GetShaderResourceViewCPU()).gpuHandle;
+	Texture* specMap = sbrp->GetSpecularIBLMap();
+	D3D12_GPU_DESCRIPTOR_HANDLE specDescHandle = drp->descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		specMap->GetShaderResourceViewCPU()).gpuHandle;
+
+
+	graphic->BindPSOAndRootSignature(drp->defShading, drp->defShading);
+	gLightManager.BindLightPass2ConstantBuffer(0);
+	graphic->BindMainCameraPass(1);
+	graphic->BindDescriptorHandle(drp->GBuffer[0]->GetShaderResourceViewGPU(), 2);
+	graphic->BindDescriptorHandle(irrDescHandle, 3);
+	graphic->BindDescriptorHandle(specDescHandle, 4);
+	graphic->BindDescriptorHandle(drp->lutTex->GetShaderResourceViewGPU(), 5);
+
+	graphic->Draw(drp->mImageVert->GetVBV(), 0, drp->mImageVert->GetVertexNum());
+
+	drp->descriptorHeap->ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	drp->activated = false;
 }
 
 void DeferredRenderPass::finalize() {
@@ -258,6 +292,13 @@ void DeferredRenderPass::DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_B
 			gTextureManager.getNormalMapDefaultTexture()->GetShaderResourceViewCPU()
 		).gpuHandle;
 	}
+
+	D3D12_GPU_DESCRIPTOR_HANDLE emissionHandle{ 0 };
+	if (tex->emission == nullptr) {
+		emissionHandle = descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+			gTextureManager.getBlackTexture()->GetShaderResourceViewCPU()
+		).gpuHandle;
+	}
 	
 	ObjectElement oe;
 	oe.ibv = ibv;
@@ -278,6 +319,7 @@ void DeferredRenderPass::DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_B
 	oe.normalMap = uploadTexture2CurrentHeap(tex->normal,normalHandle);
 	oe.roughnessMap = uploadTexture2CurrentHeap(tex->roughness,whiteHandle);
 	oe.metallicMap = uploadTexture2CurrentHeap(tex->metallic,whiteHandle);
+	oe.emissionMap = uploadTexture2CurrentHeap(tex->emission, emissionHandle);
 
 	objQueue.push_back(oe);
 }

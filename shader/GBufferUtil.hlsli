@@ -5,6 +5,7 @@ struct GBufferData{
     float metallic;
     float3 diffuse;
     float roughness;
+    float3 emission;
 };
 
 
@@ -13,12 +14,14 @@ struct GBufferData{
         float4 Buffer1 : SV_TARGET0;
         float4 Buffer2 : SV_TARGET1;
         float4 Buffer3 : SV_TARGET2;
+        float4 Buffer4 : SV_TARGET3;
     };
 
     /*
     GBuffer1 (worldpos    3,exists    1)
     GBuffer2 (worldNormal 3,metallic  1)
     GBuffer3 (diffuse     3,roughness 1)
+    GBuffer4 (emission    3,spare     1)
     */
 
     GBufferOut Pack2GBuffer(GBufferData data){
@@ -28,6 +31,7 @@ struct GBufferData{
         output.Buffer3.xyz = data.diffuse;
         output.Buffer3.w = data.roughness;
         output.Buffer2.w = data.metallic;
+        output.Buffer4.xyz = data.emission;
 
         return output;
     }
@@ -41,7 +45,7 @@ struct GBufferData{
         #define GBUFFER_SAMPLER_REGISTER s0
     #endif
 
-    Texture2D GBuffer[3] : register(t0);
+    Texture2D GBuffer[4] : register(t0);
     SamplerState gsp : register(s0);
 
 
@@ -55,6 +59,8 @@ struct GBufferData{
         float4 gdata2 = GBuffer[2].Sample(gsp,uv);
         data.diffuse = gdata2.xyz;
         data.roughness = gdata2.w;
+        data.emission = GBuffer[3].Sample(gsp,uv).xyz;
+
         return data;
     }
 

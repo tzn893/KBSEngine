@@ -106,6 +106,9 @@ bool Application::initialize() {
 			m1.diffuse = Game::ConstColor::White;
 			m1.metallic = 1.f;
 			m1.roughness = .05f;
+			m1.emissionScale = Game::Vector3(1., 1., 1.);
+
+			m1.textures[SUBMESH_MATERIAL_TYPE_EMISSION] = gTextureManager.getWhiteTexture();
 			
 			m2.diffuse = Game::ConstColor::White;
 			m2.metallic = 1.f;

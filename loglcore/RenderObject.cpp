@@ -117,11 +117,13 @@ void RenderObject::RenderByDeferredPass(DeferredRenderPass* RP) {
 			objPass->material.Roughness = material->roughness;
 			objPass->material.Metallic = material->metallic;
 			objPass->material.SetMaterialTransform(material->matTransformOffset, material->matTransformScale);
+			objPass->material.emission = material->emissionScale;
 
 			deferredRPData.deferredTextures[materialIndex].diffuse = material->textures[SUBMESH_MATERIAL_TYPE_DIFFUSE];
 			deferredRPData.deferredTextures[materialIndex].normal = material->textures[SUBMESH_MATERIAL_TYPE_BUMP];
 			deferredRPData.deferredTextures[materialIndex].metallic = material->textures[SUBMESH_MATERIAL_TYPE_METALNESS];
 			deferredRPData.deferredTextures[materialIndex].roughness = material->textures[SUBEMSH_MATERIAL_TYPE_ROUGHNESS];
+			deferredRPData.deferredTextures[materialIndex].emission = material->textures[SUBMESH_MATERIAL_TYPE_EMISSION];
 		});
 		deferredRPData.initialized = true;
 	}
@@ -174,11 +176,13 @@ void RenderObject::RenderByDeferredPassMesh(DeferredRenderPass* RP) {
 		objPass->material.Roughness = material->roughness;
 		objPass->material.Metallic = material->metallic;
 		objPass->material.SetMaterialTransform(material->matTransformOffset, material->matTransformScale);
+		objPass->material.emission = material->emissionScale;
 
 		deferredRPData.deferredTextures[0].diffuse = material->textures[SUBMESH_MATERIAL_TYPE_DIFFUSE];
 		deferredRPData.deferredTextures[0].normal = material->textures[SUBMESH_MATERIAL_TYPE_BUMP];
 		deferredRPData.deferredTextures[0].metallic = material->textures[SUBMESH_MATERIAL_TYPE_METALNESS];
 		deferredRPData.deferredTextures[0].roughness = material->textures[SUBEMSH_MATERIAL_TYPE_ROUGHNESS];
+		deferredRPData.deferredTextures[0].emission = material->textures[SUBMESH_MATERIAL_TYPE_EMISSION];
 
 		deferredRPData.initialized = true;
 	}
@@ -206,6 +210,9 @@ RenderObject::~RenderObject() {
 		}
 	}
 	if (deferredRPData.initialized) {
-
+		auto drp = gGraphic.GetRenderPass<DeferredRenderPass>();
+		for (auto& i : deferredRPData.deferredObjectID) {
+			drp->DeallocateObjectPass(i);
+		}
 	}
 }

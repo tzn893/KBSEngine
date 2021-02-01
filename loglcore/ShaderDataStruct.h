@@ -61,6 +61,7 @@ struct Material {
 	float Roughness;
 	Game::Mat4x4 matTransform;
 	float Metallic;
+	Game::Vector3 emission;
 
 	void SetMaterialTransform(Game::Vector2 offset,Game::Vector2 Scale) {
 		float buffer[] = {
