@@ -12,6 +12,15 @@ public:
 	static bool GenerateIBLIrradience(ID3D12Resource* source,ID3D12Resource* target,
 		Descriptor srcSrvHandle,
 		D3D12_RESOURCE_STATES tarInitState);
+
+	static bool PrefilterEnvironment(ID3D12Resource* source,ID3D12Resource* target,
+		size_t mipnum,Descriptor srcSrvHandle,
+		D3D12_RESOURCE_STATES tarInitState);
+
 private:
+	//we will read the lut directly from disk rather than compute them in realtime
+	static bool GenerateEnvLUT(ID3D12Resource* target, D3D12_RESOURCE_STATES tarInitState,
+		DXGI_FORMAT targetFormat);
+
 	static bool initialize();
 };

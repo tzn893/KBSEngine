@@ -5,7 +5,7 @@
 using namespace std::filesystem;
 
 ManagedTexture* TextureManager::getTextureByName(const wchar_t* name) {
-
+	if (name == nullptr) return nullptr;
 	auto query = texturesByName.find(name);
 	if (query == texturesByName.end()) {
 		return nullptr;

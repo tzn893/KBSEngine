@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="assimp_model_loader.cpp" />
     <ClCompile Include="AudioClip.cpp" />
     <ClCompile Include="AudioClipManager.cpp" />
     <ClCompile Include="Color.cpp" />
@@ -43,6 +44,7 @@
     <ClCompile Include="SkyboxRenderPass.cpp" />
     <ClCompile Include="SpriteRenderPass.cpp" />
     <ClCompile Include="stb_image.cpp" />
+    <ClCompile Include="stb_image_write.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="tinyobjloader.cpp" />
@@ -87,6 +89,7 @@
     <ClInclude Include="SkyboxRenderPass.h" />
     <ClInclude Include="SpriteRenderPass.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="stb_image_write.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="tinyobjloader.h" />
@@ -145,6 +148,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(SolutionDir)ThridParty\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)ThridParty\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(SolutionDir)ThridParty\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)ThridParty\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>

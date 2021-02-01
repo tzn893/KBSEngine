@@ -26,6 +26,9 @@
     <Filter Include="Audio">
       <UniqueIdentifier>{c335b060-53c2-469a-9e2f-4ec5b790bde6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThridParty\assimp">
+      <UniqueIdentifier>{cfda2271-71c5-47f1-8f6f-b8e988a045bf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Color.cpp">
@@ -113,6 +116,12 @@
       <Filter>Audio</Filter>
     </ClCompile>
     <ClCompile Include="stb_image.cpp">
+      <Filter>ThridParty\stb_image</Filter>
+    </ClCompile>
+    <ClCompile Include="assimp_model_loader.cpp">
+      <Filter>ThridParty\assimp</Filter>
+    </ClCompile>
+    <ClCompile Include="stb_image_write.cpp">
       <Filter>ThridParty\stb_image</Filter>
     </ClCompile>
   </ItemGroup>
@@ -241,6 +250,9 @@
       <Filter>Audio</Filter>
     </ClInclude>
     <ClInclude Include="stb_image.h">
+      <Filter>ThridParty\stb_image</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image_write.h">
       <Filter>ThridParty\stb_image</Filter>
     </ClInclude>
   </ItemGroup>

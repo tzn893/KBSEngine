@@ -28,9 +28,16 @@ VertexOut VS(VertexIn vin){
 TextureCube gIrradianceMap : register(t3);
 SamplerState irrSp         : register(s1);
 
+TextureCube gSpecularMap   : register(t4);
+Texture2D   gLutMap        : register(t5);
+
+#ifndef MAX_SPECULAR_LOD 
+#define MAX_SPECULAR_LOD 4
+#endif
+
 float CalcAttenuation(float d, float falloffStart, float falloffEnd)
 {
-    return 1. / (1. + d * d) * smoothstep(d - 1e-1,d,falloffEnd);
+    return 1. / (1. + d * d);//* smoothstep(d - 1e-1,d,falloffEnd);
 }
 
 static const float3 F0 = float3(.04,.04,.04);
@@ -46,10 +53,25 @@ float4 PS(VertexOut vin) : SV_TARGET{
     diffuse = data.diffuse;
     metallic = data.metallic,roughness = data.roughness;
 
+    float3 result = 0.;
+    //compute the result from environment
+    float3 irradiance =  diffuse * gIrradianceMap.Sample(irrSp,normal).rgb;
+    float3 F1 = lerp(F0,diffuse,metallic);
+    float3 kD = (1. - F1) * (1. - metallic);
+
     float3 viewDir = normalize(cameraPos - worldPos);
     float3 refViewDir = reflect(viewDir,normal);
-    float3 result = ambient.xyz * diffuse * ITM_STANDERD(gIrradianceMap.Sample(irrSp,refViewDir).rgb,exposure);
 
+    float3 F = FresnelSchlickRoughness(max(dot(normal,viewDir),0.),F1,roughness);
+
+    float3 prefilteredColor = gSpecularMap.SampleLevel(irrSp,refViewDir,roughness * MAX_SPECULAR_LOD);
+    float2 brdfLut = gLutMap.Sample(irrSp,float2(max(dot(normal,viewDir),0.),roughness));
+    float3 ambientSpec = prefilteredColor * (F * brdfLut.x + brdfLut.y);
+
+    float3 ambientBrdf = ambient.xyz * ITM_STANDERD(kD * irradiance + ambientSpec,exposure);
+
+    result += ambientBrdf;
+    //compute the result of direct light
     for(int i = 0;i != lightNum;i++){
         float3 lightDir,lightIntensity;
         

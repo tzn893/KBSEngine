@@ -90,9 +90,25 @@ Texture* SkyboxRenderPass::GetIrradianceMap() {
 		irradianceMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 		GenerateMipmapBatch::GenerateIBLIrradience(skybox->GetResource(),
 			irradianceMap->GetResource(), skybox->GetShaderResourceViewCPU(),
-			D3D12_RESOURCE_STATE_COMMON);
+			D3D12_RESOURCE_STATE_COMMON
+		);
 	}
 	return irradianceMap.get();
+}
+
+Texture* SkyboxRenderPass::GetSpecularIBLMap() {
+	if (specularMap == nullptr) {
+		specularMap = std::make_unique<Texture>(skybox->GetWidth(), skybox->GetHeight(),
+			5, TEXTURE_FORMAT_RGBA, TEXTURE_TYPE_2DCUBE,
+			TEXTURE_FLAG_ALLOW_RENDER_TARGET);
+		specularMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+		GenerateMipmapBatch::PrefilterEnvironment(
+			skybox->GetResource(),specularMap->GetResource(),
+			specularMapMipNum,skybox->GetShaderResourceViewCPU(),
+			D3D12_RESOURCE_STATE_COMMON
+		);
+	}
+	return specularMap.get();
 }
 
 void   SkyboxRenderPass::finalize() {

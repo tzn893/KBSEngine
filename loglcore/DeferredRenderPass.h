@@ -71,6 +71,8 @@ private:
 
 	const wchar_t* defPreproc = L"deferred_preprocess";
 	const wchar_t* defShading = L"defferred_shading";
+	const wchar_t* lutMapPath = L"../asserts/pbr/BrdfLut.png";
 
 	std::unique_ptr<StaticMesh<Game::Vector4>> mImageVert;
+	Texture* lutTex;
 };

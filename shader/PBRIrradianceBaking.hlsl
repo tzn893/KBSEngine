@@ -1,5 +1,5 @@
 #ifndef SAMPLE_NUM
-#define SAMPLE_NUM 100
+#define SAMPLE_NUM 20
 #endif
 
 #define PI 3.1415926

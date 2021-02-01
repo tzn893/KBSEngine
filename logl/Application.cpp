@@ -47,6 +47,8 @@ AudioClip* audio;
 
 LightSource* mainLight,* pointLight;
 
+std::unique_ptr<Texture> tex;
+
 #include "Config.h"
 
 bool Application::initialize() {
@@ -73,8 +75,8 @@ bool Application::initialize() {
 				fnormal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 				SubMeshMaterial mat;
 				mat.diffuse = Game::Vector3(1., 1., 1.);
-				mat.roughness = .3;
-				mat.metallic = .4;
+				mat.roughness = .2;
+				mat.metallic = .3;
 
 				mat.textures[SUBMESH_MATERIAL_TYPE_BUMP] = fnormal;
 				mat.textures[SUBMESH_MATERIAL_TYPE_DIFFUSE] = fdiff;
@@ -102,8 +104,8 @@ bool Application::initialize() {
 
 			SubMeshMaterial  m1,m2;
 			m1.diffuse = Game::ConstColor::White;
-			m1.metallic = .3f;
-			m1.roughness = .1f;
+			m1.metallic = 1.f;
+			m1.roughness = .05f;
 			
 			m2.diffuse = Game::ConstColor::White;
 			m2.metallic = 1.f;
@@ -116,11 +118,12 @@ bool Application::initialize() {
 			spro1 = std::make_unique<RenderObject>(sphereMesh->GetMesh(),m1, Game::Vector3( 1., -1.5, 3.), Game::Vector3(), Game::Vector3(.2, .2, .2));
 			spro2 = std::make_unique<RenderObject>(sphereMesh->GetMesh(),m2, Game::Vector3(-1., -1.5, 3.), Game::Vector3(), Game::Vector3(.2, .2, .2));
 		}
-		
+
 		up.End();
 	}
 
-	gLightManager.SetAmbientLight(Game::Vector3(.4, .4, .4));
+
+	gLightManager.SetAmbientLight(Game::Vector3(.3, .3, .3));
 
 	mainLight = gLightManager.GetMainLightData();
 	mainLight->SetLightDirection(Game::Vector3(0., -1., 1.));

@@ -8,6 +8,7 @@ static size_t  getFormatElementSize(TEXTURE_FORMAT format) {
 	case TEXTURE_FORMAT_FLOAT4:
 		return 4;
 	case TEXTURE_FORMAT_FLOAT2:
+	case TEXTURE_FORMAT_RG:
 		return 2;
 	case TEXTURE_FORMAT_RGBA:
 		return 4;
@@ -29,6 +30,8 @@ static DXGI_FORMAT getDXGIFormatFromTextureFormat(TEXTURE_FORMAT format) {
 		return DXGI_FORMAT_R32_FLOAT;
 	case TEXTURE_FORMAT_DEPTH_STENCIL:
 		return DXGI_FORMAT_D24_UNORM_S8_UINT;
+	case TEXTURE_FORMAT_RG:
+		return DXGI_FORMAT_R8G8_UNORM;
 	}
 	return DXGI_FORMAT(0);
 }
@@ -184,6 +187,52 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,TEXTURE_TYPE
 	this->currState = initState;
 }
 
+Texture::Texture(size_t width, size_t height, size_t mipnum, TEXTURE_FORMAT format,
+	TEXTURE_TYPE type, TEXTURE_FLAG flag, D3D12_RESOURCE_STATES initState, 
+	D3D12_CLEAR_VALUE* cv ) {
+	this->width = width;
+	this->height = height;
+	this->mipnum = mipnum;
+	this->flag = flag;
+
+	this->format = getDXGIFormatFromTextureFormat(format);
+	this->type = type;
+
+	size_t arrSize = 1;
+	if (type = TEXTURE_TYPE_2DCUBE) {
+		arrSize = 6;
+	}
+
+	D3D12_RESOURCE_DESC rDesc;
+	rDesc.Alignment = 0;
+	rDesc.DepthOrArraySize = arrSize;
+	rDesc.Dimension = getResourceDimensionFromResourceType(type);
+	rDesc.Flags = getResourceFlagFromTextureFlag(flag);
+	rDesc.Format = this->format;
+	rDesc.Height = height;
+	rDesc.Width = width;
+	rDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	rDesc.MipLevels = mipnum;
+	rDesc.SampleDesc.Count = 1;
+	rDesc.SampleDesc.Quality = 0;
+
+	ID3D12Device* device = gGraphic.GetDevice();
+
+	HRESULT hr = device->CreateCommittedResource(
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+		D3D12_HEAP_FLAG_NONE,
+		&rDesc, initState,
+		cv, IID_PPV_ARGS(&mRes)
+	);
+	if (FAILED(hr)) {
+		isValid = false;
+		return;
+	}
+
+	isValid = true;
+
+	this->currState = initState;
+}
 
 Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	void** data, TEXTURE_FLAG flag,

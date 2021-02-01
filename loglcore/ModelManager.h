@@ -22,6 +22,7 @@ public:
 
 private:
 	Model* loadInOBJFormat(const char* pathname,const char* name,UploadBatch* batch);
+	Model* loadByAssimp(const char* pathname,const char* name,UploadBatch* batch);
 
 	std::map<std::string, std::unique_ptr<Model>> modelsByPath;
 	std::map<std::string, Model*> modelsByName;

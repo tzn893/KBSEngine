@@ -15,11 +15,11 @@ float3 ACESMapping(float3 color,float lum){
 }
 
 float3 ReinhardMapping(float3 color,float exposure){
-    return color / (Luminance(color) + exposure);
+    return color / max(Luminance(color) + exposure,1e-3);
 }
 
 float3 InvReinhardMapping(float3 color,float exposure){
-    return color / (-Luminance(color) + 1.) * exposure;
+    return color /max(-Luminance(color) + 1.,1e-3) * exposure;
 }
 
 #ifndef DISABLE_TONEMAPPING

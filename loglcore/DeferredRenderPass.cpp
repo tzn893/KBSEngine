@@ -77,11 +77,13 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 
 	mImageVert = std::make_unique<StaticMesh<Game::Vector4>>(device, _countof(rect), rect, batch);
 
-	Game::RootSignature rootSigShading(4, 2);
+	Game::RootSignature rootSigShading(6, 2);
 	rootSigShading[0].initAsConstantBuffer(0, 0);
 	rootSigShading[1].initAsConstantBuffer(1, 0);
 	rootSigShading[2].initAsDescriptorTable(0, 0, 3, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
 	rootSigShading[3].initAsDescriptorTable(3, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSigShading[4].initAsDescriptorTable(4, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSigShading[5].initAsDescriptorTable(5, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
 	D3D12_SAMPLER_DESC sd;
 	sd.AddressV = D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
 	rootSigShading.InitializeSampler(0, CD3DX12_STATIC_SAMPLER_DESC(0));
@@ -126,7 +128,14 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 		OUTPUT_DEBUG_STRING("fail to create pso for deferred render pass");
 		return false;
 	}
-
+	lutTex = gTextureManager.loadTexture(lutMapPath,L"_pbr_rendering_util_lut",
+		true, batch);
+	if (lutTex == nullptr) {
+		OUTPUT_DEBUG_STRING("fail to load lut table\n");
+		return false;
+	}
+	Descriptor lutDesc = descriptorHeap->Allocate(1);
+	lutTex->CreateShaderResourceView(lutDesc);
 
 	return true;
 }
@@ -179,12 +188,19 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 	Texture* irrMap = sbrp->GetIrradianceMap();
 	D3D12_GPU_DESCRIPTOR_HANDLE irrDescHandle = descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 		irrMap->GetShaderResourceViewCPU()).gpuHandle;
+	Texture* specMap = sbrp->GetSpecularIBLMap();
+	D3D12_GPU_DESCRIPTOR_HANDLE specDescHandle = descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		specMap->GetShaderResourceViewCPU()).gpuHandle;
+
 
 	graphic->BindPSOAndRootSignature(defShading, defShading);
 	gLightManager.BindLightPass2ConstantBuffer(0);
 	graphic->BindMainCameraPass(1);
 	graphic->BindDescriptorHandle(GBuffer[0]->GetShaderResourceViewGPU(),2);
 	graphic->BindDescriptorHandle(irrDescHandle, 3);
+	graphic->BindDescriptorHandle(specDescHandle, 4);
+	graphic->BindDescriptorHandle(lutTex->GetShaderResourceViewGPU(), 5);
+
 	graphic->Draw(mImageVert->GetVBV(), 0, mImageVert->GetVertexNum());
 
 	descriptorHeap->ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);

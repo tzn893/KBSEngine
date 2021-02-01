@@ -15,6 +15,7 @@ public:
 
 	Texture* GetSkyBox() { return skybox; }
 	Texture* GetIrradianceMap();
+	Texture* GetSpecularIBLMap();
 	void     SetSkyBox(Texture* tex);
 private:
 	const wchar_t* default_skybox_path = L"../asserts/skybox/clear";
@@ -27,4 +28,6 @@ private:
 	const wchar_t* rootSigName = L"skybox";
 	const wchar_t* psoName = L"skybox";
 	std::unique_ptr<Texture> irradianceMap;
+	std::unique_ptr<Texture> specularMap;
+	static constexpr size_t specularMapMipNum = 5;
 };

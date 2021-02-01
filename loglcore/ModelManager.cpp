@@ -159,6 +159,26 @@ Model* ModelManager::loadInOBJFormat(const char* pathName,const char* name,Uploa
 	return modelPtr;
 }
 
+#include <unordered_set>
+
+static bool supportedByAssimp(const char* extName) {
+	static std::unordered_set<std::string> extNames = {
+		".dae",".xml",".blend",".bvh",".3ds",".ase",
+		".glFT",".ply",".dxf",".ifc",".nff",".smd",
+		".vta",".mdl",".md2",".md3",".pk3",".mdc",".md5anim",
+		".md5camera",".x",".q3o",".q3s",".raw",".ac",".stl",
+		".dxf",".irrmesh",".irr",".off",".ter",".mdl",".hmp",
+		".mesh.xml",".skeleton.xml",".material",".ms3d",".lwo",
+		".lws",".lxo",".csm",".cob",".scn"
+	};
+
+	if (extNames.find(extName) == extNames.end()) {
+		return true;
+	}
+	return false;
+}
+
+
 Model* ModelManager::loadModel(const char* pathName, const char* name,UploadBatch* batch) {
 	if (auto model = getModelByPath(pathName);model != nullptr) {
 		return model;
@@ -185,5 +205,136 @@ Model* ModelManager::loadModel(const char* pathName, const char* name,UploadBatc
 			return model;
 		}
 	}
+	if (supportedByAssimp(pathExtName.c_str())) {
+		if (batch != nullptr) {
+			return loadByAssimp(pathName, name, batch);
+		}
+		else {
+			UploadBatch mbatch = UploadBatch::Begin();
+			Model* model = loadByAssimp(pathName, name, &mbatch);
+			mbatch.End();
+			return model;
+		}
+	}
 	return nullptr;
 }
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+
+void processAiNode(Model* model,aiNode* node,const aiScene* scene,
+		UploadBatch* batch) {
+	for (size_t i = 0; i != node->mNumMeshes;i++) {
+		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+
+		std::vector<MeshVertexNormal> vertices;
+		std::vector<uint16_t>		  indices;
+		SubMeshMaterial			      material;
+
+		vertices.resize(mesh->mNumVertices);
+		for (size_t j = 0; j != mesh->mNumVertices;j++) {
+			MeshVertexNormal v;
+			v.Position = Game::Vector3(mesh->mVertices[j].x,mesh->mVertices[j].y,
+				mesh->mVertices[j].z);
+			v.Normal = Game::Vector3(mesh->mNormals[j].x, mesh->mNormals[j].y,
+				mesh->mNormals[j].z);
+			if (mesh->mTangents == nullptr) {
+				v.Tangent = Game::Vector3(0., 1., 0.);
+			}
+			else {
+				v.Tangent = Game::Vector3(mesh->mTangents[j].x, mesh->mTangents[j].y, 
+					mesh->mTangents[j].z );
+			}
+			if (mesh->mTextureCoords[0] == nullptr) {
+				v.TexCoord = Game::Vector2(0., 0.);
+			}
+			else {
+				v.TexCoord = Game::Vector2(mesh->mTextureCoords[0][j].x
+				,mesh->mTextureCoords[0][j].y);
+			}
+			vertices[j] = v;
+		}
+
+		for (size_t j = 0; j != mesh->mNumFaces;j++) {
+			aiFace face = mesh->mFaces[j];
+			for (size_t k = 0; k != face.mNumIndices;k++) {
+				indices.push_back(face.mIndices[k]);
+			}
+		}
+		
+		SubMesh* submesh = new SubMesh(mesh->mName.C_Str(), mesh->mMaterialIndex,
+			gGraphic.GetDevice(), indices.size(), indices.data(), vertices.size(),
+			vertices.data(), batch);
+
+		model->PushBackSubMesh(submesh);
+	}
+	for (size_t i = 0; i != node->mNumChildren;i++) {
+		processAiNode(model, node->mChildren[i], scene,
+			batch);
+	}
+}
+
+
+Model* ModelManager::loadByAssimp(const char* pathName, const char* name, UploadBatch* batch) {
+	Assimp::Importer imp;
+	const aiScene* scene = imp.ReadFile(pathName,
+		aiProcess_GenNormals |
+		aiProcess_Triangulate |
+		aiProcess_CalcTangentSpace
+	);
+
+	std::string pathNameStr = std::string(pathName);
+	size_t dir_index = pathNameStr.find_last_of('/');
+	std::string dirName = pathNameStr.substr(0, dir_index);
+
+	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr) {
+		std::string msg = "fail to load model file " + std::string(pathName) + "reason : " + 
+			imp.GetErrorString();
+		OUTPUT_DEBUG_STRING(msg.c_str());
+		return nullptr;
+	}
+	
+	std::unique_ptr<Model> model = std::make_unique<Model>(name);
+	
+	for (size_t i = 0; i != scene->mNumMaterials;i++) {
+
+		aiMaterial* mat = scene->mMaterials[i];
+		SubMeshMaterial material;
+
+		auto loadTexture = [&](aiTextureType type, SUBMESH_MATERIAL_TYPE smType) {
+			if (mat->GetTextureCount(type) != 0) {
+				aiString str;
+				mat->GetTexture(type, 0, &str);
+				std::wstring texPath = String2WString(dirName) + String2WString(str.C_Str());
+				Texture* tex = gTextureManager.loadTexture(texPath.c_str(), texPath.c_str(),
+					true, batch);
+				if (tex == nullptr || !tex->IsValid()) {
+					std::wstring msg = L"fail to load texture " + texPath;
+					OUTPUT_DEBUG_STRINGW(msg.c_str());
+					material.textures[smType] = nullptr;
+				}
+				else {
+					material.textures[smType] = tex;
+				}
+			}
+		};
+		loadTexture(aiTextureType_DIFFUSE, SUBMESH_MATERIAL_TYPE_DIFFUSE);
+		loadTexture(aiTextureType_NORMALS, SUBMESH_MATERIAL_TYPE_BUMP);
+		loadTexture(aiTextureType_SPECULAR, SUBMESH_MATERIAL_TYPE_SPECULAR);
+		loadTexture(aiTextureType_SHININESS, SUBEMSH_MATERIAL_TYPE_ROUGHNESS);
+		loadTexture(aiTextureType_UNKNOWN, SUBMESH_MATERIAL_TYPE_METALNESS);
+		loadTexture(aiTextureType_DIFFUSE, SUBMESH_MATERIAL_TYPE_DIFFUSE);
+
+		model->PushBackSubMeshMaterial(material);
+	}
+
+	Model* modelPtr = model.get();
+	modelsByName[name] = modelPtr;
+	modelsByPath[pathName] = std::move(model);
+
+	return modelPtr;
+}
+
+
