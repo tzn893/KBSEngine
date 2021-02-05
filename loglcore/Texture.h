@@ -96,8 +96,8 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDepthStencilViewGPU() { return mDSV.gpuHandle; }
 
 	void CreateUnorderedAccessView(Descriptor descriptor,D3D12_UNORDERED_ACCESS_VIEW_DESC* uav = nullptr,size_t mip = 0);
-	D3D12_CPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewCPU(size_t mip = 0) { return mip < mipnum ? mUAV[0].cpuHandle : D3D12_CPU_DESCRIPTOR_HANDLE{0}; }
-	D3D12_GPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewGPU(size_t mip = 0) { return mip < mipnum ? mUAV[0].gpuHandle : D3D12_GPU_DESCRIPTOR_HANDLE{0}; }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewCPU(size_t mip = 0) { return mip < mipnum ? mUAV[mip].cpuHandle : D3D12_CPU_DESCRIPTOR_HANDLE{0}; }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetUnorderedAccessViewGPU(size_t mip = 0) { return mip < mipnum ? mUAV[mip].gpuHandle : D3D12_GPU_DESCRIPTOR_HANDLE{0}; }
 
 	D3D12_RESOURCE_STATES StateTransition(D3D12_RESOURCE_STATES nextState,TransitionBatch* batch = nullptr);
 	D3D12_RESOURCE_STATES GetResourceState() { return currState; }

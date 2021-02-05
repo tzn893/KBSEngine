@@ -161,7 +161,7 @@ Model* ModelManager::loadInOBJFormat(const char* pathName,const char* name,Uploa
 
 #include <unordered_set>
 
-static bool supportedByAssimp(const char* extName) {
+/*static bool supportedByAssimp(const char* extName) {
 	static std::unordered_set<std::string> extNames = {
 		".dae",".xml",".blend",".bvh",".3ds",".ase",
 		".glFT",".ply",".dxf",".ifc",".nff",".smd",
@@ -176,7 +176,7 @@ static bool supportedByAssimp(const char* extName) {
 		return true;
 	}
 	return false;
-}
+}*/
 
 
 Model* ModelManager::loadModel(const char* pathName, const char* name,UploadBatch* batch) {
@@ -205,7 +205,7 @@ Model* ModelManager::loadModel(const char* pathName, const char* name,UploadBatc
 			return model;
 		}
 	}
-	if (supportedByAssimp(pathExtName.c_str())) {
+	/*if (supportedByAssimp(pathExtName.c_str())) {
 		if (batch != nullptr) {
 			return loadByAssimp(pathName, name, batch);
 		}
@@ -215,13 +215,15 @@ Model* ModelManager::loadModel(const char* pathName, const char* name,UploadBatc
 			mbatch.End();
 			return model;
 		}
-	}
+	}*/
 	return nullptr;
 }
-
+/*
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+
+#pragma comment(lib,"assimp-vc140-mt.lib")
 
 
 void processAiNode(Model* model,aiNode* node,const aiScene* scene,
@@ -336,5 +338,5 @@ Model* ModelManager::loadByAssimp(const char* pathName, const char* name, Upload
 
 	return modelPtr;
 }
-
+*/
 

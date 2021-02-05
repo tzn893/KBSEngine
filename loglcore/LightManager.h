@@ -123,6 +123,7 @@ public:
 		if (index == mainLightIndex) SetMainLightData(lp);
 		mLightPass->GetBufferPtr()->lights[index] = lp;
 	}*/
+	Game::Vector3 GetAmbientLight() { return mLightPass->GetBufferPtr()->ambient; }
 	void SetAmbientLight(Game::Vector3 light) {
 		mLightPass->GetBufferPtr()->ambient = Game::Vector4(light,1.);
 	}

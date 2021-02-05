@@ -16,6 +16,21 @@ public:
 	inline void BindDescriptorHeap(ID3D12DescriptorHeap* const * heaps, size_t heapNum) {
 		graphic->BindDescriptorHeap(heaps, heapNum);
 	}
+	inline void BindDescriptorHeap(ID3D12DescriptorHeap* heap) {
+		ID3D12DescriptorHeap* heaps[] = {heap};
+		BindDescriptorHeap(heaps, 1);
+	}
+
+	template<typename T>
+	inline void Bind32bitConstant(size_t slot,T value,size_t offset = 0) {
+		static_assert(!std::is_pointer<T>::value,"Bind data will be passed by value rather than reference");
+		if constexpr (sizeof(T) <= 4) {
+			graphic->mDrawCmdList->SetComputeRoot32BitConstant(slot, Pack32bitNum(value), offset);
+		}
+		else {
+			graphic->mDrawCmdList->SetComputeRoot32BitConstants(slot,sizeof(T) / 4, &value, offset);
+		}
+	}
 
 	inline void ResourceTrasition(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after) {
 		graphic->ResourceTransition(resource, before, after);
@@ -40,6 +55,8 @@ public:
 
 	void End();
 private:
+	
+
 	Graphic* graphic;
 	bool valid;
 };

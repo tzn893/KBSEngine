@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -22,12 +22,14 @@
     <ClCompile Include="assimp_model_loader.cpp" />
     <ClCompile Include="AudioClip.cpp" />
     <ClCompile Include="AudioClipManager.cpp" />
+    <ClCompile Include="BloomingFilter.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="ComputeCommand.cpp" />
     <ClCompile Include="CopyBatch.cpp" />
     <ClCompile Include="DebugRenderPass.cpp" />
     <ClCompile Include="DeferredRenderPass.cpp" />
     <ClCompile Include="DescriptorAllocator.cpp" />
+    <ClCompile Include="FXAAFilterPass.cpp" />
     <ClCompile Include="GenerateMipmapBatch.cpp" />
     <ClCompile Include="GeometryGenerator.cpp" />
     <ClCompile Include="graphic.cpp" />
@@ -40,6 +42,7 @@
     <ClCompile Include="PostProcessRenderPass.cpp" />
     <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="RootSignature.cpp" />
+    <ClCompile Include="SampleSquence.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="SkyboxRenderPass.cpp" />
     <ClCompile Include="SpriteRenderPass.cpp" />
@@ -54,6 +57,7 @@
   <ItemGroup>
     <ClInclude Include="AudioClip.h" />
     <ClInclude Include="AudioClipManager.h" />
+    <ClInclude Include="BloomingFilter.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="Complex.h" />
@@ -65,6 +69,7 @@
     <ClInclude Include="DebugRenderPass.h" />
     <ClInclude Include="DeferredRenderPass.h" />
     <ClInclude Include="DescriptorAllocator.h" />
+    <ClInclude Include="FXAAFilterPass.h" />
     <ClInclude Include="GenerateMipmapBatch.h" />
     <ClInclude Include="GeometryGenerator.h" />
     <ClInclude Include="graphic.h" />
@@ -80,10 +85,12 @@
     <ClInclude Include="PhongRenderPass.h" />
     <ClInclude Include="PipelineStateObject.h" />
     <ClInclude Include="PostProcessRenderPass.h" />
+    <ClInclude Include="RandomGenerator.h" />
     <ClInclude Include="Reflect_Registry.h" />
     <ClInclude Include="RenderObject.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="RootSignature.h" />
+    <ClInclude Include="SampleSquence.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderDataStruct.h" />
     <ClInclude Include="SkyboxRenderPass.h" />

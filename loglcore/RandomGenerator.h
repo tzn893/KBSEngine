@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <functional>
 #include <time.h>
-#include "../loglcore/Math.h"
+#include "Math.h"
 
 template<size_t Dim>
 struct RandomValue {
@@ -42,12 +42,12 @@ template<size_t Dim>
 class UniformDistribution :public RandomValueDistribution<Dim> {
 public:
 	virtual typename RandomValue<Dim>::type Transform(
-			typename RandomValue<Dim>::type value) const override {
-		return (value  - .5) * range  + center;
+		typename RandomValue<Dim>::type value) const override {
+		return (value - .5) * range + center;
 	}
 
-	UniformDistribution(typename RandomValue<Dim>::type lower, typename RandomValue<Dim>::type upper):
-		center((upper + lower) * .5),range((upper - lower)){}
+	UniformDistribution(typename RandomValue<Dim>::type lower, typename RandomValue<Dim>::type upper) :
+		center((upper + lower) * .5), range((upper - lower)) {}
 private:
 	typename RandomValue<Dim>::type center, range;
 };
@@ -70,8 +70,8 @@ public:
 		this->beta[0] = beta, this->beta[1] = beta;
 	}
 
-	NormalDistribution(float theta1,float beta1,
-		 float theta2,float beta2) {
+	NormalDistribution(float theta1, float beta1,
+		float theta2, float beta2) {
 		theta[0] = theta1, theta[1] = theta2;
 		beta[0] = beta1, beta[1] = beta2;
 	}
@@ -94,12 +94,12 @@ public:
 	float Rand(const RandomValueDistribution<1>& dis = UniformDistribution<1>(0, 1)) {
 		return dis.Transform(Lehmer32<1>());
 	}
-	float Rand(uint32_t seed,const RandomValueDistribution<1>& dis = UniformDistribution<1>(0,1)) {
+	float Rand(uint32_t seed, const RandomValueDistribution<1>& dis = UniformDistribution<1>(0, 1)) {
 		nLehmer[0] = seed;
 		return Rand(dis);
 	}
-	template<typename T,size_t Dim>
-	float Rand(const T& seed,std::function<void(const T&,uint32_t*)> seeder,const RandomValueDistribution<Dim>& dis) {
+	template<typename T, size_t Dim>
+	float Rand(const T& seed, std::function<void(const T&, uint32_t*)> seeder, const RandomValueDistribution<Dim>& dis) {
 		seeder(seed, nLehmer);
 		return Rand(dis);
 	}
@@ -108,19 +108,19 @@ public:
 		return dis.Transform(Lehmer32<2>());
 	}
 
-	Game::Vector2 Rand2(uint32_t* seeds,const RandomValueDistribution<2>& dis = 
-						UniformDistribution<2>(Game::Vector2(0.,0.),Game::Vector2(1.,1.))) {
+	Game::Vector2 Rand2(uint32_t* seeds, const RandomValueDistribution<2>& dis =
+		UniformDistribution<2>(Game::Vector2(0., 0.), Game::Vector2(1., 1.))) {
 		nLehmer[0] = seeds[0], nLehmer[1] = seeds[1];
 		return dis.Transform(Lehmer32<2>());
 	}
-	
+
 private:
 	static constexpr uint32_t rand_cycle = 1 << 24;
 	uint32_t nLehmer[4];
 
 	template<size_t Dim>
 	typename RandomValue<Dim>::type Lehmer32() {
-		
+
 		typename RandomValue<Dim>::type rv;
 
 		for (size_t i = 0; i != Dim; i++) {
@@ -145,9 +145,10 @@ private:
 		uint32_t m1 = (tmp >> 32) ^ tmp;
 		tmp = (uint64_t)m1 * 0x12fad5c9;
 		uint32_t m2 = (tmp >> 32) ^ tmp;
-		
+
 		return static_cast<float>(m2 % rand_cycle) / static_cast<float>(rand_cycle);
 	}
 };
 
 inline RandomGenerator gRandomGenerator;
+

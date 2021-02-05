@@ -66,7 +66,7 @@ public:
 			return subMeshs[index].get(); 
 		return nullptr;
 	}
-	SubMesh* GetSubMesh(const char* name) {
+	SubMesh* GetSubMesh(const std::string& name) {
 		for (auto& item : subMeshs) {
 			if (std::string(item->GetName()) == name) {
 				return item.get();

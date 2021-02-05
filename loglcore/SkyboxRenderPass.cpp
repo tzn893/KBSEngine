@@ -5,11 +5,13 @@
 #include "TextureManager.h"
 
 #include "GenerateMipmapBatch.h"
+#include "LightManager.h"
 
 bool SkyboxRenderPass::Initialize(UploadBatch* batch) {
-	Game::RootSignature rootSig(2, 1);
+	Game::RootSignature rootSig(3, 1);
 	rootSig[0].initAsConstantBuffer(0, 0);
 	rootSig[1].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSig[2].initAsConstants(1, 0, 3);
 	rootSig.InitializeSampler(0, CD3DX12_STATIC_SAMPLER_DESC(0));
 
 	if (!gGraphic.CreateRootSignature(rootSigName,&rootSig)) {
@@ -62,11 +64,14 @@ bool SkyboxRenderPass::Initialize(UploadBatch* batch) {
 void   SkyboxRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 	if (layer != RENDER_PASS_LAYER_BEFORE_ALL)  return;
 
+	auto ambient = gLightManager.GetAmbientLight();
+
 	graphic->BindPSOAndRootSignature(psoName, rootSigName);
 	graphic->BindDescriptorHeap(mHeap->GetHeap());
 
 	graphic->BindMainCameraPass(0);
 	graphic->BindDescriptorHandle(skyboxDesc.gpuHandle,1);
+	graphic->Bind32bitConstant(2, ambient, 0);
 
 	graphic->Draw(mBox->GetVBV(), 0, mBox->GetVertexNum());
 }

@@ -124,6 +124,15 @@
     <ClCompile Include="stb_image_write.cpp">
       <Filter>ThridParty\stb_image</Filter>
     </ClCompile>
+    <ClCompile Include="SampleSquence.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="FXAAFilterPass.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="BloomingFilter.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -254,6 +263,18 @@
     </ClInclude>
     <ClInclude Include="stb_image_write.h">
       <Filter>ThridParty\stb_image</Filter>
+    </ClInclude>
+    <ClInclude Include="RandomGenerator.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="SampleSquence.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="FXAAFilterPass.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="BloomingFilter.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

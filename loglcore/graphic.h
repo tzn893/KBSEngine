@@ -23,6 +23,7 @@
 #include "DeferredRenderPass.h"
 
 #include "TransitionBatch.h"
+#include "GraphicUtil.h"
 
 constexpr int Graphic_mBackBufferNum = 3;
 
@@ -48,6 +49,17 @@ public:
 	void BindShaderResource(ID3D12Resource* res, size_t slot, size_t offset = 0);
 	void BindConstantBuffer(D3D12_GPU_VIRTUAL_ADDRESS vaddr, size_t slot);
 	void BindShaderResource(D3D12_GPU_VIRTUAL_ADDRESS vaddr, size_t slot);
+	
+	template<typename T>
+	void Bind32bitConstant(size_t slot,T value, size_t offset = 0) {
+		static_assert(!std::is_pointer<T>::value, "value will be passed by value rather than reference");
+		if constexpr (sizeof(T) <= 4) {
+			mDrawCmdList->SetGraphicsRoot32BitConstant(slot, Pack32bitNum(value), offset);
+		}
+		else {
+			mDrawCmdList->SetGraphicsRoot32BitConstants(slot, sizeof(T) / 4, &value, offset);
+		}
+	}
 
 	//if some shader need main camera pass data.they can get it by binding it to any slot
 	void BindMainCameraPass(size_t slot = 1);
@@ -116,6 +128,9 @@ public:
 				RegisterRenderPass(deferredRenderPass.get());
 			}
 			return deferredRenderPass.get();
+		}
+		else  if constexpr (std::is_same<RPType,PostProcessRenderPass>::value) {
+			return postProcessRenderPass.get();
 		}
 		else {
 			return nullptr;

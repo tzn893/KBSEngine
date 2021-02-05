@@ -1,6 +1,6 @@
 
 float Luminance(float3 color){
-    return dot(color,float3(0.25f, 0.50f, 0.25f));
+    return dot(color,float3(0.21f, 0.71f, 0.08f));
 }
 
 float3 ACESMapping(float3 color,float lum){

@@ -32,10 +32,12 @@ public:
 	virtual void   finalize() override;
 
 	void RegisterPostProcessPass(PostProcessPass* pass);
+
+	Descriptor AllocateDescriptor(size_t num = 1);
 private:
 	std::unique_ptr<Texture> mTex;
 	std::unique_ptr<DescriptorHeap> mHeap;
 
 	std::map<size_t, std::vector<PostProcessPass*>> PPPQueue;
-	static constexpr size_t heapDefaultCapacity = 16;
+	static constexpr size_t heapDefaultCapacity = 64;
 };

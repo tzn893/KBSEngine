@@ -1,6 +1,8 @@
 #include "PostProcessRenderPass.h"
 #include "ComputeCommand.h"
 #include "graphic.h"
+#include "MathFunctions.h"
+
 
 bool PostProcessRenderPass::Initialize(UploadBatch* batch) {
 	size_t winHeight = gGraphic.GetScreenHeight(), winWidth = gGraphic.GetScreenWidth();
@@ -9,10 +11,14 @@ bool PostProcessRenderPass::Initialize(UploadBatch* batch) {
 
 	mHeap = std::make_unique<DescriptorHeap>(heapDefaultCapacity);
 	mTex->CreateUnorderedAccessView(mHeap->Allocate());
+	mTex->CreateShaderResourceView(mHeap->Allocate());
 	return true;
 }
 
 void PostProcessRenderPass::RegisterPostProcessPass(PostProcessPass* pass) {
+	if (!pass->Initialize(this)) {
+		return;
+	}
 	size_t priority = pass->GetPriority();
 	if (auto res = PPPQueue.find(priority);res != PPPQueue.end()) {
 		res->second.push_back(pass);
@@ -29,9 +35,11 @@ void PostProcessRenderPass::PostProcess(ID3D12Resource* renderTarget) {
 	{
 		ComputeCommand cc = ComputeCommand::Begin();
 		cc.ResourceTrasition(renderTarget, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
-		cc.ResourceTrasition(mTex->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+		//cc.ResourceTrasition(mTex->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+		mTex->StateTransition(D3D12_RESOURCE_STATE_COPY_DEST);
 		cc.ResourceCopy(mTex->GetResource(), renderTarget);
-		cc.ResourceTrasition(mTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		//cc.ResourceTrasition(mTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		cc.BindDescriptorHeap(mHeap->GetHeap());
 
 		for (auto ppps : PPPQueue) {
 			for (auto* ppp : ppps.second) {
@@ -39,7 +47,8 @@ void PostProcessRenderPass::PostProcess(ID3D12Resource* renderTarget) {
 			}
 		}
 
-		cc.ResourceTrasition(mTex->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE);
+		//cc.ResourceTrasition(mTex->GetResource(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE);
+		mTex->StateTransition(D3D12_RESOURCE_STATE_COPY_SOURCE);
 		cc.ResourceTrasition(renderTarget, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
 		cc.ResourceCopy(renderTarget, mTex->GetResource());
 		cc.ResourceTrasition(renderTarget, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -57,4 +66,8 @@ void PostProcessRenderPass::finalize() {
 	PPPQueue.clear();
 	mTex.release();
 	mHeap.release();
+}
+
+Descriptor PostProcessRenderPass::AllocateDescriptor(size_t num) {
+	{ return mHeap->Allocate(Game::imax(num, 1)); }
 }
