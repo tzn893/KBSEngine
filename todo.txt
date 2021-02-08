@@ -1,1 +1,2 @@
-FXAA Occlusion Query Blooming 
+Occlusion Query （Blooming）
+Animation 

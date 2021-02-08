@@ -1,15 +1,17 @@
 Texture2D<float4> renderTarget : register(t0);
 RWTexture2D<float4> tempTexture0  : register(u0);
+/*
 RWTexture2D<float4> tempTexture1  : register(u1);
 RWTexture2D<float4> tempTexture2  : register(u2);
 RWTexture2D<float4> tempTexture3  : register(u3);
+*/
 SamplerState sp : register(s0);
 
 cbuffer State : register(b0){
     float threshold;
     uint  width,height;
 };
-
+/*
 groupshared float gR[64];
 groupshared float gG[64];
 groupshared float gB[64];
@@ -20,7 +22,7 @@ void PackColor(uint index,float3 color){
 float3 UnpackColor(uint index){
     return float3(gR[index],gG[index],gB[index]);
 }
-
+*/
 float2 GetUv(uint2 xy){
     return (float2)xy / float2(width,height);
 }
@@ -59,10 +61,10 @@ void DownSample(uint gid : SV_GROUPINDEX,uint3 did : SV_DISPATCHTHREADID){
 	uint index = gid;
     float3 srcColor = SampleColor(tid);
     
-    PackColor(index,srcColor);
+    //PackColor(index,srcColor);
     tempTexture0[tid] = float4(srcColor, 1.);
 
-	float3 color = 0.;
+	/*float3 color = 0.;
 	if ((index & 0x9) == 0) {
 		color = UnpackColor(index) + UnpackColor(index + 0x1)
 			+ UnpackColor(index + 0x8) + UnpackColor(index + 0x9);
@@ -88,6 +90,6 @@ void DownSample(uint gid : SV_GROUPINDEX,uint3 did : SV_DISPATCHTHREADID){
         color *= .25;
 		GroupMemoryBarrierWithGroupSync();
 		tempTexture3[tid / 8] = float4(color,1.);
-    }
+    }*/
 }
 

@@ -152,6 +152,8 @@ bool Application::initialize() {
 			mat->textures[SUBMESH_MATERIAL_TYPE_EMISSION] = emission;
 
 			mat->emissionScale = Game::Vector3(50., 50., 50.);
+			mat->roughness = 1.5f;
+			mat->metallic = 2.f;
 
 			pro = std::make_unique<RenderObject>(model, Game::Vector3(.5, -1., 2.5), Game::Vector3(0., 0., 0.), Game::Vector3(.1, .1, .1));
 		}
@@ -166,7 +168,7 @@ bool Application::initialize() {
 	mainLight->SetLightDirection(Game::Vector3(0., -1., 1.));
 	
 	pointLight = gLightManager.AllocateLightSource(SHADER_LIGHT_TYPE_POINT);
-	pointLight->SetLightIntensity(Game::Vector3(9., 8., 3.));
+	pointLight->SetLightIntensity(Game::Vector3(4.5, 4., 1.5));
 	pointLight->SetLightPosition(Game::Vector3(0., -1.5, 3.));
 	pointLight->SetLightFallout(0., 5.);
 

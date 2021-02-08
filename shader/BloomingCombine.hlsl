@@ -16,9 +16,9 @@ void Combine(uint3 id : SV_DISPATCHTHREADID){
     float2 uv = (float2)id.xy / float2(width,height);
 
     result += Tex.SampleLevel(sp,uv,0.) * weights0;
-    result += Tex.SampleLevel(sp,uv,1.) * weights1;
-    result += Tex.SampleLevel(sp,uv,2.) * weights2;
-    result += Tex.SampleLevel(sp,uv,3.) * weights3;
+    //result += Tex.SampleLevel(sp,uv,1.) * weights1;
+    //result += Tex.SampleLevel(sp,uv,2.) * weights2;
+    //result += Tex.SampleLevel(sp,uv,3.) * weights3;
 
     RT[id.xy] = float4(result,1.);
 }

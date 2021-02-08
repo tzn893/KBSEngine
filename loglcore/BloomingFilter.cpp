@@ -5,7 +5,7 @@
 bool BloomingFilter::Initialize(PostProcessRenderPass* pPPRP) {
 	Game::RootSignature clipRootSig(3,1);
 	clipRootSig[0].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
-	clipRootSig[1].initAsDescriptorTable(0, 0, 4, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
+	clipRootSig[1].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
 	clipRootSig[2].initAsConstants(0, 0, 3);
 	D3D12_STATIC_SAMPLER_DESC ssd = CD3DX12_STATIC_SAMPLER_DESC(0);
 	ssd.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
@@ -76,21 +76,21 @@ bool BloomingFilter::Initialize(PostProcessRenderPass* pPPRP) {
 		return false;
 	}
 	bloom_width = 1024, bloom_height = 1024;
-	helper[0] = std::make_unique<Texture>(bloom_width, bloom_height, 4, TEXTURE_FORMAT_FLOAT4, TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,
+	helper[0] = std::make_unique<Texture>(bloom_width, bloom_height,  TEXTURE_FORMAT_FLOAT4, TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	helper[1] = std::make_unique<Texture>(bloom_width, bloom_height, 4, TEXTURE_FORMAT_FLOAT4, TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,
+	helper[1] = std::make_unique<Texture>(bloom_width, bloom_height,  TEXTURE_FORMAT_FLOAT4, TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS,
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	helper[0]->CreateShaderResourceView(pPPRP->AllocateDescriptor());
 	helper[1]->CreateShaderResourceView(pPPRP->AllocateDescriptor());
 	Descriptor d1 = pPPRP->AllocateDescriptor(4), d2 = pPPRP->AllocateDescriptor(4);
-	for (size_t i = 0; i != 4;i++) {
+	for (size_t i = 0; i != 1;i++) {
 		helper[0]->CreateUnorderedAccessView(d1, nullptr, i);
 		helper[1]->CreateUnorderedAccessView(d2, nullptr, i);
 		d1 = d1.Offset(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1),
 		d2 = d2.Offset(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1);
 	}
 
-	weights = { 1.,.75,.5,.5 };
+	weights = { 3.,.75,.5,.5 };
 
 	return true;
 }
@@ -116,16 +116,16 @@ void BloomingFilter::PostProcess(Texture* RT, ComputeCommand* cc) {
 	size_t input = 0, output = 1;
 
 	for (size_t i = 0; i != 4; i++) {
-		cc->BindDescriptorHandle(0, helper[output]->GetUnorderedAccessViewGPU(i));
-		cc->BindDescriptorHandle(1, helper[input]->GetUnorderedAccessViewGPU(i));
+		cc->BindDescriptorHandle(0, helper[output]->GetUnorderedAccessViewGPU(0));
+		cc->BindDescriptorHandle(1, helper[input]->GetUnorderedAccessViewGPU(0));
 
 
-		UINT width = bloom_width >> i, height = bloom_height >> i;
+		UINT width = bloom_width, height = bloom_height;
 		cc->Bind32bitConstant(2, width, 0);
 		cc->Bind32bitConstant(2, height, 1);
 		cc->Dispatch(width / 8, height / 8, 1);
+		std::swap(output, input);
 	}
-	std::swap(output, input);
 
 	helper[input]->StateTransition(D3D12_RESOURCE_STATE_COMMON);
 
