@@ -55,6 +55,7 @@
     <ClCompile Include="Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="SkinnedSubMesh.h" />
     <ClInclude Include="AudioClip.h" />
     <ClInclude Include="AudioClipManager.h" />
     <ClInclude Include="BloomingFilter.h" />
@@ -97,6 +98,8 @@
     <ClInclude Include="SpriteRenderPass.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="stb_image_write.h" />
+    <ClInclude Include="SubMesh.h" />
+    <ClInclude Include="SubMeshMaterial.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="tinyobjloader.h" />

@@ -169,10 +169,10 @@ static bool supportedByAssimp(const char* extName) {
 		".md5camera",".x",".q3o",".q3s",".raw",".ac",".stl",
 		".dxf",".irrmesh",".irr",".off",".ter",".mdl",".hmp",
 		".mesh.xml",".skeleton.xml",".material",".ms3d",".lwo",
-		".lws",".lxo",".csm",".cob",".scn"
+		".lws",".lxo",".csm",".cob",".scn",".fbx"
 	};
 
-	if (extNames.find(extName) == extNames.end()) {
+	if (extNames.find(extName) != extNames.end()) {
 		return true;
 	}
 	return false;
@@ -309,7 +309,11 @@ Model* ModelManager::loadByAssimp(const char* pathName, const char* name, Upload
 			if (mat->GetTextureCount(type) != 0) {
 				aiString str;
 				mat->GetTexture(type, 0, &str);
-				std::wstring texPath = String2WString(dirName) + String2WString(str.C_Str());
+				std::wstring texPath =String2WString(str.C_Str());
+				//if it's not a absolute path
+				if (texPath.find_first_of(L':') == texPath.size()) {
+					texPath = String2WString(dirName) + texPath;
+				}
 				Texture* tex = gTextureManager.loadTexture(texPath.c_str(), texPath.c_str(),
 					true, batch);
 				if (tex == nullptr || !tex->IsValid()) {
@@ -327,10 +331,22 @@ Model* ModelManager::loadByAssimp(const char* pathName, const char* name, Upload
 		loadTexture(aiTextureType_SPECULAR, SUBMESH_MATERIAL_TYPE_SPECULAR);
 		loadTexture(aiTextureType_SHININESS, SUBEMSH_MATERIAL_TYPE_ROUGHNESS);
 		loadTexture(aiTextureType_UNKNOWN, SUBMESH_MATERIAL_TYPE_METALNESS);
-		loadTexture(aiTextureType_DIFFUSE, SUBMESH_MATERIAL_TYPE_DIFFUSE);
+		loadTexture(aiTextureType_EMISSIVE, SUBMESH_MATERIAL_TYPE_EMISSION);
+		for (size_t i = 0; i != mat->mNumProperties;i++) {
+			auto prop = mat->mProperties[i];
+			if (strstr(prop->mKey.C_Str(), "diffuse")) {
+				material.diffuse = Game::Vector3(reinterpret_cast<float*>(prop->mData));
+			}
+			else if (strstr(prop->mKey.C_Str(),"specular")) {
+				material.specular = Game::Vector3(reinterpret_cast<float*>(prop->mData));
+			}
+		}
+
 
 		model->PushBackSubMeshMaterial(material);
 	}
+
+	processAiNode(model.get(), scene->mRootNode, scene, batch);
 
 	Model* modelPtr = model.get();
 	modelsByName[name] = modelPtr;

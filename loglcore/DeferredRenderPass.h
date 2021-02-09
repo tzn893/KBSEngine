@@ -86,7 +86,7 @@ private:
 	public:
 		DeferredShadingPass(DeferredRenderPass* drp) :drp(drp) {}
 
-		virtual size_t GetPriority() { return 200; }
+		virtual size_t GetPriority() { return 20; }
 
 		virtual bool   Initialize(UploadBatch* batch = nullptr) { return true; }
 		virtual void   Render(Graphic* graphic, RENDER_PASS_LAYER layer) override;

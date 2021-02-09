@@ -42,7 +42,7 @@ std::unique_ptr<StaticMesh<MeshVertexNormal>> sphereMesh;
 PhongRenderPass* prp;
 DeferredRenderPass* drp;
 
-std::unique_ptr<RenderObject> fro,spro1,spro2,spro3,pro;
+std::unique_ptr<RenderObject> fro,spro1,spro2,spro3,mkro;
 
 std::vector<Game::Vector3> bullets;
 FPSCamera camera;
@@ -133,7 +133,7 @@ bool Application::initialize() {
 			spro3 = std::make_unique<RenderObject>(sphereMesh->GetMesh(), m3, Game::Vector3(0., -1.5,  3.), Game::Vector3(), Game::Vector3(.1, .1, .1));
 		}
 		{
-			Model* model = gModelManager.loadModel("../asserts/spaceship/spaceship.obj",
+			/*Model* model = gModelManager.loadModel("../asserts/spaceship/spaceship.obj",
 				"plane", &up);
 			SubMeshMaterial* mat = model->GetMaterial(model->GetSubMesh(0));
 			Texture* roughness = gTextureManager.loadTexture(L"../asserts/spaceship/textures/Intergalactic Spaceship_rough.jpg",
@@ -147,8 +147,6 @@ bool Application::initialize() {
 			metal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 			emission->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 
-			mat->textures[SUBEMSH_MATERIAL_TYPE_ROUGHNESS] = roughness;
-			mat->textures[SUBMESH_MATERIAL_TYPE_METALNESS] = metal;
 			mat->textures[SUBMESH_MATERIAL_TYPE_EMISSION] = emission;
 
 			mat->emissionScale = Game::Vector3(50., 50., 50.);
@@ -156,6 +154,9 @@ bool Application::initialize() {
 			mat->metallic = 2.f;
 
 			pro = std::make_unique<RenderObject>(model, Game::Vector3(.5, -1., 2.5), Game::Vector3(0., 0., 0.), Game::Vector3(.1, .1, .1));
+			*/
+			Model* miku = gModelManager.loadModel("../asserts/miku/model.fbx", "test", &up);
+			mkro = std::make_unique<RenderObject>(miku,Game::Vector3(.5,-2.,3.),Game::Vector3(-90.,0.,0.),Game::Vector3(.03,.03,.03));
 		}
 
 		up.End();
@@ -168,7 +169,7 @@ bool Application::initialize() {
 	mainLight->SetLightDirection(Game::Vector3(0., -1., 1.));
 	
 	pointLight = gLightManager.AllocateLightSource(SHADER_LIGHT_TYPE_POINT);
-	pointLight->SetLightIntensity(Game::Vector3(4.5, 4., 1.5));
+	pointLight->SetLightIntensity(Game::Vector3(45, 40., 15.));
 	pointLight->SetLightPosition(Game::Vector3(0., -1.5, 3.));
 	pointLight->SetLightFallout(0., 5.);
 
@@ -179,10 +180,13 @@ bool Application::initialize() {
 
 	camera.attach(gGraphic.GetMainCamera());
 
-	static std::unique_ptr<FXAAFilterPass> fxaa = std::make_unique<FXAAFilterPass>();
+	//static std::unique_ptr<FXAAFilterPass> fxaa = std::make_unique<FXAAFilterPass>();
 	//gGraphic.GetRenderPass<PostProcessRenderPass>()->RegisterPostProcessPass(fxaa.get());
 	static std::unique_ptr<BloomingFilter> bloom = std::make_unique<BloomingFilter>();
 	gGraphic.GetRenderPass<PostProcessRenderPass>()->RegisterPostProcessPass(bloom.get());
+
+	AudioClip* audio = gAudioClipManager.LoadAudioClip(L"../asserts/music/nk.wav","nk");
+	audio->Play(true);
 
 	return true;
 }
@@ -234,8 +238,9 @@ void Application::update() {
 	gLightManager.SetAmbientLight(ambient * li);
 	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3) * li);
 
+	mkro->Render(drp);
 	fro->Render(drp);
-	pro->Render(drp);
+	//pro->Render(drp);
 	spro1->Render(drp);
 	spro2->Render(drp);
 	spro3->Render(drp);

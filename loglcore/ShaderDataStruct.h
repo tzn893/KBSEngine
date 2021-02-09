@@ -94,6 +94,12 @@ struct MeshVertexNormal {
 	Game::Vector3 Tangent;
 };
 
+struct SkinnedNormalVertex {
+	MeshVertexNormal data;
+	uint32_t  boneIndices[4];
+	Game::Vector3   boneWeights;
+};
+
 
 template<typename T>
 inline constexpr size_t getVertexStrideByFloat() {

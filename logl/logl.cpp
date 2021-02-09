@@ -72,18 +72,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}else{
 			gTimer.tick();
 
-			static uint32_t frameCounter = 0;
-			static float timer = 0.;
-			timer += gTimer.DeltaTime();
-			frameCounter++;
-			if (timer > .5) {
-				std::wstring fpsStr = L"fps : " + std::to_wstring(frameCounter * 2);
-				SetWindowText(winHnd, fpsStr.c_str());
-				frameCounter = 0;
-				timer = 0;
-			}
-
-
 			gGraphic.begin();
 			gApp.update();
 			gGraphic.end();
@@ -151,7 +139,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	auto ws = WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME);
 
-	HWND hWnd = CreateWindowW(szWindowClass, L"Linux 作业",ws,//WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME),
+	HWND hWnd = CreateWindowW(szWindowClass, L"KBS",ws,//WS_OVERLAPPEDWINDOW & (~WS_THICKFRAME),
 	100,100, width, height, nullptr, nullptr, hInstance, nullptr);
 	winHnd = hWnd;
 

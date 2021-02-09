@@ -29,6 +29,9 @@
     <Filter Include="ThridParty\assimp">
       <UniqueIdentifier>{cfda2271-71c5-47f1-8f6f-b8e988a045bf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Model">
+      <UniqueIdentifier>{0cef4cd8-5afa-46a0-a9e1-501d13fb66d2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Color.cpp">
@@ -79,12 +82,6 @@
     <ClCompile Include="tinyobjloader.cpp">
       <Filter>ThridParty\tinyobj</Filter>
     </ClCompile>
-    <ClCompile Include="ModelManager.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="RenderObject.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="ComputeCommand.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -133,6 +130,12 @@
     <ClCompile Include="BloomingFilter.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="ModelManager.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderObject.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -169,12 +172,6 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Texture.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Model.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="ModelManager.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="d3dcommon.h">
@@ -221,9 +218,6 @@
     </ClInclude>
     <ClInclude Include="tinyobjloader.h">
       <Filter>ThridParty\tinyobj</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderObject.h">
-      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Complex.h">
       <Filter>Math</Filter>
@@ -275,6 +269,24 @@
     </ClInclude>
     <ClInclude Include="BloomingFilter.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="SubMeshMaterial.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelManager.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderObject.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="SubMesh.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="SkinnedSubMesh.h">
+      <Filter>Model</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
