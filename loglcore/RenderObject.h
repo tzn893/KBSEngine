@@ -3,6 +3,7 @@
 #include "Model.h"
 #include "PhongRenderPass.h"
 #include "DeferredRenderPass.h"
+#include "ToonRenderPass.h"
 
 class RenderObject {
 public:
@@ -50,6 +51,16 @@ public:
 				break;
 			}
 		}
+		else if constexpr (std::is_same<RPType,ToonRenderPass>::value) {
+			switch (type) {
+			case RENDER_OBJECT_TYPE_MODEL:
+				RenderByToonPass(RenderPass);
+				break;
+			case RENDER_OBJECT_TYPE_MESH:
+				RenderByToonPassMesh(RenderPass);
+				break;
+			}
+		}
 		else {
 			//otherwise we do nothing
 		}
@@ -74,6 +85,8 @@ private:
 	void RenderByPhongPassMesh(PhongRenderPass* rp);
 	void RenderByDeferredPass(DeferredRenderPass* drp);
 	void RenderByDeferredPassMesh(DeferredRenderPass* drp);
+	void RenderByToonPass(ToonRenderPass* trp);
+	void RenderByToonPassMesh(ToonRenderPass* trp);
 
 	union {
 		struct {
@@ -98,6 +111,11 @@ private:
 		std::vector<DeferredRenderPassID> deferredObjectID;
 		std::vector<DeferredRenderPassTexture> deferredTextures;
 	} deferredRPData;
+	struct {
+		bool initialized = false;
+		std::vector<ToonRenderObjectID> toonObjectID;
+		std::vector<ToonPassMaterial> toonMaterials;
+	} toonRPData;
 
 	static size_t renderItemIndex;
 };

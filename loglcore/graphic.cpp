@@ -534,6 +534,8 @@ void Graphic::begin() {
 	mDrawCmdAlloc->Reset();
 	mDrawCmdList->Reset(mDrawCmdAlloc.Get(),nullptr);
 
+	UpdateCameraPass();
+
 	D3D12_RESOURCE_BARRIER barriers[2] = {
 		CD3DX12_RESOURCE_BARRIER::Transition(mBackBuffers[mCurrBackBuffer].Get(),
 		D3D12_RESOURCE_STATE_PRESENT,
@@ -720,14 +722,17 @@ void Graphic::BindShaderResource(D3D12_GPU_VIRTUAL_ADDRESS vaddr, size_t slot) {
 
 void Graphic::BindMainCameraPass(size_t slot) {
 	if (state == BEGIN_COMMAND_RECORDING) {
-		cameraPassData->GetBufferPtr()->cameraPos = mainCamera.getPosition();
-		cameraPassData->GetBufferPtr()->viewMat = mainCamera.getViewMat().T();
-		cameraPassData->GetBufferPtr()->perspectMat = mainCamera.getPerspectMat().T();
-
 		CameraPass* data = cameraPassData->GetBufferPtr();
-
 		mDrawCmdList->SetGraphicsRootConstantBufferView(slot, cameraPassData->GetADDR());
 	}
+}
+
+void Graphic::UpdateCameraPass() {
+	cameraPassData->GetBufferPtr()->cameraPos = mainCamera.getPosition();
+	cameraPassData->GetBufferPtr()->viewMat = mainCamera.getViewMat().T();
+	cameraPassData->GetBufferPtr()->perspectMat = mainCamera.getPerspectMat().T();
+
+	cameraPassData->GetBufferPtr()->transInvView = mainCamera.getViewMat().R();
 }
 
 void Graphic::Draw(D3D12_VERTEX_BUFFER_VIEW* vbv, size_t start, size_t num, D3D_PRIMITIVE_TOPOLOGY topolgy) {
@@ -957,8 +962,10 @@ bool Graphic::createRenderPasses() {
 	debugRenderPass = std::make_unique<DebugRenderPass>();
 	skyboxRenderPass = std::make_unique<SkyboxRenderPass>();
 	postProcessRenderPass = std::make_unique<PostProcessRenderPass>();
+	toonRenderPass = std::make_unique<ToonRenderPass>();
 	
-	RenderPass* rpList[] = { spriteRenderPass.get(),debugRenderPass.get(),skyboxRenderPass.get(),postProcessRenderPass.get()};
+	RenderPass* rpList[] = { spriteRenderPass.get(),debugRenderPass.get(),skyboxRenderPass.get(),postProcessRenderPass.get(),
+		toonRenderPass.get()};
 	return RegisterRenderPasses(rpList, _countof(rpList));
 }
 

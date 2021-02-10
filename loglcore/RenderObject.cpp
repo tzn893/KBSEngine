@@ -202,6 +202,105 @@ void RenderObject::RenderByDeferredPassMesh(DeferredRenderPass* RP) {
 	}
 }
 
+void RenderObject::RenderByToonPass(ToonRenderPass* trp) {
+	Game::Mat4x4 world = Game::PackTransfrom(worldPosition, worldRotation, worldScale);
+	Game::Mat4x4 transInvWorld = world.R();
+	world = world.T();
+	if (!toonRPData.initialized) {
+		size_t objnum = model->GetSubMeshNum();
+		toonRPData.toonObjectID.resize(objnum);
+		toonRPData.toonMaterials.resize(model->GetSubMaterialNum());
+		model->ForEachSubMesh([&](SubMesh* mesh, Model* target, size_t index) {
+			ToonRenderObjectID id = trp->AllocateToonROID();
+			toonRPData.toonObjectID[index] = id;
+			ObjectPass* objPass = trp->GetObjectPass(id);
+			objPass->world = world;
+			objPass->transInvWorld = transInvWorld;
+
+			size_t materialIndex = mesh->GetSubMeshMaterialIndex();
+			SubMeshMaterial* material = target->GetMaterial(mesh);
+			objPass->material.diffuse = Game::Vector4(material->diffuse, 1.f);
+			objPass->material.FresnelR0 = material->specular;
+			objPass->material.Roughness = material->roughness;
+			objPass->material.Metallic = material->metallic;
+			objPass->material.SetMaterialTransform(material->matTransformOffset, material->matTransformScale);
+			objPass->material.emission = material->emissionScale;
+
+			toonRPData.toonMaterials[materialIndex].diffuse = material->textures[SUBMESH_MATERIAL_TYPE_DIFFUSE];
+		});
+		toonRPData.initialized = true;
+	}
+	else {
+		model->ForEachSubMesh(
+			[&](SubMesh* mesh, Model* target, size_t index) {
+			ObjectPass* op = trp->GetObjectPass(toonRPData.toonObjectID[index]);
+			op->world = world;
+			op->transInvWorld = transInvWorld;
+
+			size_t materialIndex = mesh->GetSubMeshMaterialIndex();
+
+			if (mesh->GetIBV() != nullptr) {
+				trp->Draw(mesh->GetVBV(), mesh->GetIBV(), 0,
+					mesh->GetIndexNum(),
+					toonRPData.toonObjectID[index],
+					&toonRPData.toonMaterials[mesh->GetSubMeshMaterialIndex()]
+				);
+			}
+			else {
+				trp->Draw(mesh->GetVBV(), 0,
+					mesh->GetVertexNum(),
+					toonRPData.toonObjectID[index],
+					&toonRPData.toonMaterials[mesh->GetSubMeshMaterialIndex()]
+				);
+			}
+		}
+		);
+	}
+}
+
+void RenderObject::RenderByToonPassMesh(ToonRenderPass* trp) {
+	Game::Mat4x4 world = Game::PackTransfrom(worldPosition, worldRotation, worldScale);
+	Game::Mat4x4 transInvWorld = world.R();
+	world = world.T();
+	if (!toonRPData.initialized) {
+		size_t objnum = model->GetSubMeshNum();
+		toonRPData.toonObjectID.resize(1);
+		toonRPData.toonMaterials.resize(1);
+
+		size_t id = trp->AllocateToonROID();
+		toonRPData.toonObjectID[0] = id;
+		ObjectPass* objPass = trp->GetObjectPass(id);
+		objPass->world = world;
+		objPass->transInvWorld = world;
+
+		SubMeshMaterial* material = &this->mMaterial;
+		objPass->material.diffuse = Game::Vector4(material->diffuse, 1.f);
+		objPass->material.FresnelR0 = material->specular;
+		objPass->material.Roughness = material->roughness;
+		objPass->material.Metallic = material->metallic;
+		objPass->material.SetMaterialTransform(material->matTransformOffset, material->matTransformScale);
+		objPass->material.emission = material->emissionScale;
+
+		toonRPData.toonMaterials[0].diffuse = material->textures[SUBMESH_MATERIAL_TYPE_DIFFUSE];
+
+		toonRPData.initialized = true;
+	}
+	else {
+		ObjectPass* objPass = trp->GetObjectPass(toonRPData.toonObjectID[0]);
+		objPass->world = world;
+		objPass->transInvWorld = transInvWorld;
+
+		if (mMesh.ibv == nullptr) {
+			trp->Draw(mMesh.vbv, mMesh.startIndex, mMesh.indiceNum, toonRPData.toonObjectID[0],
+				&toonRPData.toonMaterials[0]);
+		}
+		else {
+			trp->Draw(mMesh.vbv, mMesh.ibv, 0, mMesh.indiceNum, toonRPData.toonObjectID[0],
+				&toonRPData.toonMaterials[0]);
+		}
+	}
+}
+
 RenderObject::~RenderObject() {
 	if (phongRPData.initialized) {
 		PhongRenderPass* phongRP = gGraphic.GetRenderPass<PhongRenderPass>();
@@ -213,6 +312,12 @@ RenderObject::~RenderObject() {
 		auto drp = gGraphic.GetRenderPass<DeferredRenderPass>();
 		for (auto& i : deferredRPData.deferredObjectID) {
 			drp->DeallocateObjectPass(i);
+		}
+	}
+	if (toonRPData.initialized) {
+		auto trp = gGraphic.GetRenderPass<ToonRenderPass>();
+		for (auto& i : toonRPData.toonObjectID) {
+			trp->DeallocateToonROID(i);
 		}
 	}
 }

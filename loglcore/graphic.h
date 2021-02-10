@@ -21,6 +21,7 @@
 #include "SkyboxRenderPass.h"
 #include "PostProcessRenderPass.h"
 #include "DeferredRenderPass.h"
+#include "ToonRenderPass.h"
 
 #include "TransitionBatch.h"
 #include "GraphicUtil.h"
@@ -132,7 +133,10 @@ public:
 		else  if constexpr (std::is_same<RPType,PostProcessRenderPass>::value) {
 			return postProcessRenderPass.get();
 		}
-		else {
+		else if constexpr (std::is_same<RPType,ToonRenderPass>::value) {
+			return toonRenderPass.get();
+		}
+		else{
 			return nullptr;
 		}
 	}
@@ -165,6 +169,11 @@ public:
 			FindRPAndErase(deferredRenderPass.get());
 			deferredRenderPass->finalize();
 			deferredRenderPass.release();
+		}
+		else if constexpr (std::is_same<RPType,ToonRenderPass>::value) {
+			FindRPAndErase(toonRenderPass.get());
+			toonRenderPass->finalize();
+			toonRenderPass.release();
 		}
 		else {
 			return;//otherwise we do nothing
@@ -205,6 +214,8 @@ public:
 	inline  DXGI_FORMAT	 GetBackBufferDepthFormat() { return mBackBufferDepthFormat; }
 
 	inline  void		 SetHDRExposure(float exposure) { this->exposure = exposure; }
+
+	void	UpdateCameraPass();
 	
 private:
 	void FindRPAndErase(RenderPass* rp);
@@ -284,6 +295,7 @@ private:
 	std::unique_ptr<SkyboxRenderPass> skyboxRenderPass;
 	std::unique_ptr<PostProcessRenderPass> postProcessRenderPass;
 	std::unique_ptr<DeferredRenderPass> deferredRenderPass;
+	std::unique_ptr<ToonRenderPass>   toonRenderPass;
 
 	std::vector<D3D12_RESOURCE_BARRIER> barriers;
 };

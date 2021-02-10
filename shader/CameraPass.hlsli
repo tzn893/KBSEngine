@@ -8,6 +8,7 @@
 cbuffer CameraPass : register(CAMERA_PASS_REGISTER){
     float4x4 view;
     float4x4 perspect;
+    float4x4 transInvView;
     float3   cameraPos;
     float    exposure;
 };

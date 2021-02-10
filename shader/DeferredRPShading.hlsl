@@ -35,10 +35,7 @@ Texture2D   gLutMap        : register(t6);
 #define MAX_SPECULAR_LOD 4
 #endif
 
-float CalcAttenuation(float d, float falloffStart, float falloffEnd)
-{
-    return 1. / (1. + d * d);//* smoothstep(d - 1e-1,d,falloffEnd);
-}
+
 
 static const float3 F0 = float3(.04,.04,.04);
 

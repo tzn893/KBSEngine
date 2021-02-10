@@ -27,7 +27,7 @@
 
 #include "../loglcore/FXAAFilterPass.h"
 #include "../loglcore/BloomingFilter.h"
-
+#include "../loglcore/ToonRenderPass.h"
 
 struct BoxConstantBuffer {
 
@@ -41,6 +41,7 @@ std::unique_ptr<StaticMesh<MeshVertexNormal>> sphereMesh;
 
 PhongRenderPass* prp;
 DeferredRenderPass* drp;
+ToonRenderPass* trp;
 
 std::unique_ptr<RenderObject> fro,spro1,spro2,spro3,mkro;
 
@@ -56,7 +57,7 @@ std::unique_ptr<Texture> tex;
 #include "Config.h"
 
 bool Application::initialize() {
-	
+	trp = gGraphic.GetRenderPass<ToonRenderPass>();
 	drp = gGraphic.GetRenderPass<DeferredRenderPass>();
 
 	{
@@ -110,9 +111,7 @@ bool Application::initialize() {
 			m1.diffuse = Game::ConstColor::White;
 			m1.metallic = 1.f;
 			m1.roughness = .05f;
-			//m1.emissionScale = Game::Vector3(1., 1., 1.);
 
-			m1.textures[SUBMESH_MATERIAL_TYPE_EMISSION] = gTextureManager.getWhiteTexture();
 			
 			m2.diffuse = Game::ConstColor::White;
 			m2.metallic = 1.f;
@@ -133,30 +132,8 @@ bool Application::initialize() {
 			spro3 = std::make_unique<RenderObject>(sphereMesh->GetMesh(), m3, Game::Vector3(0., -1.5,  3.), Game::Vector3(), Game::Vector3(.1, .1, .1));
 		}
 		{
-			/*Model* model = gModelManager.loadModel("../asserts/spaceship/spaceship.obj",
-				"plane", &up);
-			SubMeshMaterial* mat = model->GetMaterial(model->GetSubMesh(0));
-			Texture* roughness = gTextureManager.loadTexture(L"../asserts/spaceship/textures/Intergalactic Spaceship_rough.jpg",
-				L"proughness", true, &up);
-			Texture* metal = gTextureManager.loadTexture(L"../asserts/spaceship/textures/Intergalactic Spaceship_metalness.jpg",
-				L"metal", true, &up);
-			Texture* emission = gTextureManager.loadTexture(L"../asserts/spaceship/textures/Intergalactic Spaceship_emi.jpg",
-				L"emission", true, &up);
-
-			roughness->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
-			metal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
-			emission->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
-
-			mat->textures[SUBMESH_MATERIAL_TYPE_EMISSION] = emission;
-
-			mat->emissionScale = Game::Vector3(50., 50., 50.);
-			mat->roughness = 1.5f;
-			mat->metallic = 2.f;
-
-			pro = std::make_unique<RenderObject>(model, Game::Vector3(.5, -1., 2.5), Game::Vector3(0., 0., 0.), Game::Vector3(.1, .1, .1));
-			*/
 			Model* miku = gModelManager.loadModel("../asserts/miku/model.fbx", "test", &up);
-			mkro = std::make_unique<RenderObject>(miku,Game::Vector3(.5,-2.,3.),Game::Vector3(-90.,0.,0.),Game::Vector3(.03,.03,.03));
+			mkro = std::make_unique<RenderObject>(miku,Game::Vector3(.5,-2.,3.),Game::Vector3(-90.,0.,0.),Game::Vector3(.1,.1,.1));
 		}
 
 		up.End();
@@ -166,7 +143,7 @@ bool Application::initialize() {
 	gLightManager.SetAmbientLight(Game::Vector3(.3, .3, .3));
 
 	mainLight = gLightManager.GetMainLightData();
-	mainLight->SetLightDirection(Game::Vector3(0., -1., 1.));
+	mainLight->SetLightDirection(Game::Vector3(-1., 0., -1.));
 	
 	pointLight = gLightManager.AllocateLightSource(SHADER_LIGHT_TYPE_POINT);
 	pointLight->SetLightIntensity(Game::Vector3(45, 40., 15.));
@@ -182,11 +159,11 @@ bool Application::initialize() {
 
 	//static std::unique_ptr<FXAAFilterPass> fxaa = std::make_unique<FXAAFilterPass>();
 	//gGraphic.GetRenderPass<PostProcessRenderPass>()->RegisterPostProcessPass(fxaa.get());
-	static std::unique_ptr<BloomingFilter> bloom = std::make_unique<BloomingFilter>();
-	gGraphic.GetRenderPass<PostProcessRenderPass>()->RegisterPostProcessPass(bloom.get());
+	//static std::unique_ptr<BloomingFilter> bloom = std::make_unique<BloomingFilter>();
+	//gGraphic.GetRenderPass<PostProcessRenderPass>()->RegisterPostProcessPass(bloom.get());
 
-	AudioClip* audio = gAudioClipManager.LoadAudioClip(L"../asserts/music/nk.wav","nk");
-	audio->Play(true);
+	//AudioClip* audio = gAudioClipManager.LoadAudioClip(L"../asserts/music/nk.wav","nk");
+	//audio->Play(true);
 
 	return true;
 }
@@ -238,10 +215,9 @@ void Application::update() {
 	gLightManager.SetAmbientLight(ambient * li);
 	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3) * li);
 
-	mkro->Render(drp);
+	mkro->Render(trp);
 	fro->Render(drp);
-	//pro->Render(drp);
-	spro1->Render(drp);
+	spro1->Render(trp);
 	spro2->Render(drp);
 	spro3->Render(drp);
 }

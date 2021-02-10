@@ -34,4 +34,9 @@ cbuffer LightPass : register( LIGHT_PASS_REGISTER ){
     uint  lightNum;
 };
 
+float CalcAttenuation(float d, float falloffStart, float falloffEnd)
+{
+    return 1. / (1. + d * d);//* smoothstep(d - 1e-1,d,falloffEnd);
+}
+
 #endif //_LIGHT_PASS_

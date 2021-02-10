@@ -51,6 +51,7 @@
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="tinyobjloader.cpp" />
+    <ClCompile Include="ToonRenderPass.cpp" />
     <ClCompile Include="TransitionBatch.cpp" />
     <ClCompile Include="Vector.cpp" />
   </ItemGroup>
@@ -103,6 +104,7 @@
     <ClInclude Include="Texture.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="tinyobjloader.h" />
+    <ClInclude Include="ToonRenderPass.h" />
     <ClInclude Include="TransitionBatch.h" />
     <ClInclude Include="Vector.h" />
   </ItemGroup>
