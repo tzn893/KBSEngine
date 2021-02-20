@@ -23,6 +23,7 @@
     <ClCompile Include="AudioClip.cpp" />
     <ClCompile Include="AudioClipManager.cpp" />
     <ClCompile Include="BloomingFilter.cpp" />
+    <ClCompile Include="BoneHeirarchy.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="ComputeCommand.cpp" />
     <ClCompile Include="CopyBatch.cpp" />
@@ -40,6 +41,7 @@
     <ClCompile Include="PhongRenderPass.cpp" />
     <ClCompile Include="PipelineStateObject.cpp" />
     <ClCompile Include="PostProcessRenderPass.cpp" />
+    <ClCompile Include="Quaterion.cpp" />
     <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="SampleSquence.cpp" />
@@ -56,6 +58,9 @@
     <ClCompile Include="Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AnimationClip.h" />
+    <ClInclude Include="BoneHeirarchy.h" />
+    <ClInclude Include="Quaterion.h" />
     <ClInclude Include="SkinnedSubMesh.h" />
     <ClInclude Include="AudioClip.h" />
     <ClInclude Include="AudioClipManager.h" />

@@ -278,7 +278,6 @@ void processAiNode(Model* model,aiNode* node,const aiScene* scene,
 	}
 }
 
-
 Model* ModelManager::loadByAssimp(const char* pathName, const char* name, UploadBatch* batch) {
 	Assimp::Importer imp;
 	const aiScene* scene = imp.ReadFile(pathName,

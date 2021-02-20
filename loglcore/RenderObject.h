@@ -119,3 +119,32 @@ private:
 
 	static size_t renderItemIndex;
 };
+
+class SkinnedRenderObject {
+public:
+	SkinnedRenderObject(SkinnedModel* model, Game::Vector3 worldPosition,
+		Game::Vector3 worldRotation, Game::Vector3 worldScale,
+		const char* name = nullptr);
+	
+	template<typename RP>
+	void Render(RP* rp) {
+		if constexpr (std::is_same<RP,DeferredRenderPass>::value) {
+			RenderByDeferredPass(rp);
+		}
+	}
+
+private:
+	void RenderByDeferredPass(DeferredRenderPass* drp);
+
+	std::string name;
+	Game::Vector3 worldPosition;
+	Game::Vector3 worldRotation;
+	Game::Vector3 worldScale;
+
+	SkinnedModel* model;
+	struct {
+		bool initialized;
+		std::vector<DeferredRenderPassID> drpID;
+		std::vector<DeferredRenderPassTexture> drpMaterial;
+	} DefferedRPData;
+};

@@ -132,7 +132,7 @@ bool Application::initialize() {
 			spro3 = std::make_unique<RenderObject>(sphereMesh->GetMesh(), m3, Game::Vector3(0., -1.5,  3.), Game::Vector3(), Game::Vector3(.1, .1, .1));
 		}
 		{
-			Model* miku = gModelManager.loadModel("../asserts/miku/model.fbx", "test", &up);
+			Model* miku = gModelManager.loadModel("../asserts/miku/animated.fbx", "test", &up);
 			mkro = std::make_unique<RenderObject>(miku,Game::Vector3(.5,-2.,3.),Game::Vector3(-90.,0.,0.),Game::Vector3(.1,.1,.1));
 		}
 
@@ -215,11 +215,11 @@ void Application::update() {
 	gLightManager.SetAmbientLight(ambient * li);
 	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3) * li);
 
-	mkro->Render(trp);
+	mkro->Render(drp);
 	fro->Render(drp);
-	spro1->Render(trp);
+	spro1->Render(drp);
 	spro2->Render(drp);
-	spro3->Render(drp);
+	//spro3->Render(drp);
 }
 
 void Application::finalize() {}

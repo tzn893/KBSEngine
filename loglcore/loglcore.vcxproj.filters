@@ -139,6 +139,12 @@
     <ClCompile Include="ToonRenderPass.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="BoneHeirarchy.cpp">
+      <Filter>Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Quaterion.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -293,6 +299,15 @@
     </ClInclude>
     <ClInclude Include="ToonRenderPass.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="BoneHeirarchy.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationClip.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Quaterion.h">
+      <Filter>Math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
