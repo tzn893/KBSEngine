@@ -46,7 +46,7 @@ private:
 
 class BoneHeirarchy {
 public:
-	void  Pushback(Bone b,size_t* parentIndex = nullptr);
+	bool  Pushback(Bone b,size_t* parentIndex = nullptr);
 	Bone* Find(const char* name);
 	Bone* Find(size_t index);
 	BoneAnimationClip* GetAnimation() { return boneAnimation.get(); }
