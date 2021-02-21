@@ -3,7 +3,7 @@
 #include "Matrix.h"
 
 namespace Game {
-	class Quaterion : Vector4 {
+	class Quaterion : public Vector4 {
 	public:
 		Quaterion() :Vector4() {}
 		Quaterion(float x, float y, float z, float w) :Vector4(x, y, z, w) {}
@@ -16,13 +16,17 @@ namespace Game {
 		Quaterion(const Vector2& vec, float z, float w) :Vector4(vec, z, w) {}
 		Quaterion(const Vector2& vec1, const Vector2& vec2) : Vector4(vec1, vec2) {}
 
-		Quaterion(const Vector4& vec) { *this = vec; }
-
-		static Quaterion Axis(Game::Vector3 axis, float angle) {
-			return Quaterion(Game::normalize(axis) * cosf(angle), sinf(angle));
+		Quaterion(const Vector4& vec) { 
+			memcpy(raw, vec.raw, sizeof(float) * 4);
 		}
+
+		static Quaterion Axis(Game::Vector3 axis, float angle);
+
 		Quaterion Conj() const {
 			return Quaterion(-x, -y, -z, w);
+		}
+		float     Dot(const Quaterion& other)const {
+			return Game::dot((Game::Vector4)*this,(Game::Vector4)other);
 		}
 
 		static Quaterion SLerp(const Quaterion& lhs, const Quaterion& rhs, float factor);

@@ -38,6 +38,7 @@ struct BoxConstantBuffer {
 Texture* face;
 std::unique_ptr<StaticMesh<MeshVertexNormal>> planeMesh;
 std::unique_ptr<StaticMesh<MeshVertexNormal>> sphereMesh;
+std::unique_ptr<StaticMesh<MeshVertexNormal>> squreMesh;
 
 PhongRenderPass* prp;
 DeferredRenderPass* drp;
@@ -55,6 +56,7 @@ LightSource* mainLight,* pointLight;
 std::unique_ptr<Texture> tex;
 
 #include "Config.h"
+#include "../loglcore/Quaterion.h"
 
 bool Application::initialize() {
 	trp = gGraphic.GetRenderPass<ToonRenderPass>();
@@ -136,10 +138,15 @@ bool Application::initialize() {
 			mkro = std::make_unique<RenderObject>(miku,Game::Vector3(.5,-2.,3.),Game::Vector3(-90.,0.,0.),Game::Vector3(.1,.1,.1));
 		}
 
+		auto v = GeometryGenerator::Cube(.3, .3, .3, GEOMETRY_FLAG_NONE);
+		squreMesh = std::make_unique<StaticMesh<MeshVertexNormal>>(gGraphic.GetDevice(),
+			v.size() / getVertexStrideByFloat<MeshVertexNormal>(),
+			reinterpret_cast<MeshVertexNormal*>(v.data()),&up);
+
 		up.End();
 	}
 
-
+	
 	gLightManager.SetAmbientLight(Game::Vector3(.3, .3, .3));
 
 	mainLight = gLightManager.GetMainLightData();
@@ -210,7 +217,7 @@ void Application::update() {
 	else if (gInput.KeyHold(InputBuffer::E)) {
 		li = fmin(li + 1e-2,40.);
 	}
-
+	
 	Game::Vector3 ambient = Game::Vector3(.3, .3, .3);
 	gLightManager.SetAmbientLight(ambient * li);
 	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3) * li);

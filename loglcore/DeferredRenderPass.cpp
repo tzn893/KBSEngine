@@ -277,7 +277,7 @@ void DeferredRenderPass::DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_B
 	
 	Texture* white = gTextureManager.getWhiteTexture();
 	D3D12_GPU_DESCRIPTOR_HANDLE whiteHandle{0};
-	if (tex->diffuse == nullptr  || tex->metallic == nullptr
+	if (tex == nullptr || tex->diffuse == nullptr  || tex->metallic == nullptr
 		 || tex->roughness == nullptr) {
 		whiteHandle = descriptorHeap->UploadDescriptors(
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 
@@ -286,7 +286,7 @@ void DeferredRenderPass::DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_B
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE normalHandle{0};
-	if (tex->normal == nullptr) {
+	if (tex == nullptr || tex->normal == nullptr) {
 		normalHandle = descriptorHeap->UploadDescriptors(
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 			gTextureManager.getNormalMapDefaultTexture()->GetShaderResourceViewCPU()
@@ -294,7 +294,7 @@ void DeferredRenderPass::DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_B
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE emissionHandle{ 0 };
-	if (tex->emission == nullptr) {
+	if (tex == nullptr || tex->emission == nullptr) {
 		emissionHandle = descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 			gTextureManager.getBlackTexture()->GetShaderResourceViewCPU()
 		).gpuHandle;
@@ -305,21 +305,27 @@ void DeferredRenderPass::DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_B
 	oe.vbv = vbv;
 	oe.start = start;
 	oe.num = num;
-	oe.objectID = id;
-
-	auto uploadTexture2CurrentHeap = [&](Texture* tex,D3D12_GPU_DESCRIPTOR_HANDLE spare) {
+	oe.objectID = id; 
+	auto uploadTexture2CurrentHeap = [&](Texture* tex, D3D12_GPU_DESCRIPTOR_HANDLE spare) {
 		if (tex == nullptr) return spare;
 		if (tex->GetShaderResourceViewCPU().ptr == 0) {
 			tex->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 		}
 		return descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, tex->GetShaderResourceViewCPU()).gpuHandle;
 	};
-
-	oe.diffuseMap = uploadTexture2CurrentHeap(tex->diffuse,whiteHandle);
-	oe.normalMap = uploadTexture2CurrentHeap(tex->normal,normalHandle);
-	oe.roughnessMap = uploadTexture2CurrentHeap(tex->roughness,whiteHandle);
-	oe.metallicMap = uploadTexture2CurrentHeap(tex->metallic,whiteHandle);
-	oe.emissionMap = uploadTexture2CurrentHeap(tex->emission, emissionHandle);
-
+	if (tex != nullptr) {
+		oe.diffuseMap = uploadTexture2CurrentHeap(tex->diffuse, whiteHandle);
+		oe.normalMap = uploadTexture2CurrentHeap(tex->normal, normalHandle);
+		oe.roughnessMap = uploadTexture2CurrentHeap(tex->roughness, whiteHandle);
+		oe.metallicMap = uploadTexture2CurrentHeap(tex->metallic, whiteHandle);
+		oe.emissionMap = uploadTexture2CurrentHeap(tex->emission, emissionHandle);
+	}
+	else {
+		oe.diffuseMap = whiteHandle;
+		oe.normalMap = normalHandle;
+		oe.roughnessMap = whiteHandle;
+		oe.metallicMap = whiteHandle;		
+		oe.emissionMap = emissionHandle;
+	}
 	objQueue.push_back(oe);
 }
