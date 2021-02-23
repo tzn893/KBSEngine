@@ -6,6 +6,7 @@
 #include "DescriptorAllocator.h"
 #include "GraphicUtil.h"
 
+#include <filesystem>
 
 Game::Vector3 Tangent(
 	Game::Vector3 p0,Game::Vector2 uv0,
@@ -219,6 +220,39 @@ Model* ModelManager::loadModel(const char* pathName, const char* name,UploadBatc
 	return nullptr;
 }
 
+
+SkinnedModel* ModelManager::loadSkinnedModel(const char* pathName, const char* name, UploadBatch* batch) {
+	if (auto model = getSkinnedModelByPath(pathName); model != nullptr) {
+		return model;
+	}
+	if (auto model = getSkinnedModelByName(name); model != nullptr) {
+		return nullptr;
+	}
+
+	std::filesystem::path p(pathName);
+	if (!std::filesystem::exists(p) || !p.has_extension()) {
+		std::string msg = std::string("ModelManager::loadSkinnedModel : path ") + pathName + " doesn't exists\n";
+		OUTPUT_DEBUG_STRING(msg.c_str());
+		return nullptr;
+	}
+	if (supportedByAssimp(p.extension().string().c_str())) {
+		SkinnedModel* rv = nullptr;
+		if (batch == nullptr) {
+			UploadBatch b = UploadBatch::Begin();
+			rv = loadSkinnedModelByAssimp(pathName, name, &b);
+			b.End();
+		}
+		else {
+			rv = loadSkinnedModelByAssimp(pathName, name, batch);
+		}
+		return rv;
+	}
+
+	std::string msg = std::string("model ")+ pathName + "'s format is not supported\n" ;
+	OUTPUT_DEBUG_STRING(msg.c_str());
+	return nullptr;
+}
+
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -226,14 +260,13 @@ Model* ModelManager::loadModel(const char* pathName, const char* name,UploadBatc
 #pragma comment(lib,"assimp-vc140-mt.lib")
 
 
-void processAiNode(Model* model,aiNode* node,const aiScene* scene,
+static void processAiNode(Model* model,aiNode* node,const aiScene* scene,
 		UploadBatch* batch) {
 	for (size_t i = 0; i != node->mNumMeshes;i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 
 		std::vector<MeshVertexNormal> vertices;
 		std::vector<uint16_t>		  indices;
-		SubMeshMaterial			      material;
 
 		vertices.resize(mesh->mNumVertices);
 		for (size_t j = 0; j != mesh->mNumVertices;j++) {
@@ -355,3 +388,177 @@ Model* ModelManager::loadByAssimp(const char* pathName, const char* name, Upload
 }
 
 
+static void appendBoneWeight(SkinnedNormalVertex& v,
+	Bone* bone,float weight) {
+	for (size_t i = 0; i != 4;i++) {
+		if (v.boneWeights[i] == 0.f) {
+			v.boneWeights[i] = weight;
+			v.boneIndices[i] = bone->index;
+			return;
+		}
+	}
+}
+
+static void processBoneAndSubmeshs(std::vector<SkinnedSubMesh*>& submeshs,
+	BoneHeirarchy* boneHeir,const aiNode* node,const aiScene* scene,Bone* parentBone,
+	UploadBatch* batch) {
+	Bone* currBone = parentBone;
+	for (size_t i = 0; i != node->mNumMeshes; i++) {
+		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+
+		std::vector<SkinnedNormalVertex> vertices;
+		std::vector<uint16_t>		  indices;
+
+		vertices.resize(mesh->mNumVertices);
+		for (size_t j = 0; j != mesh->mNumVertices; j++) {
+			SkinnedNormalVertex v;
+			v.data.Position = Game::Vector3(mesh->mVertices[j].x, mesh->mVertices[j].y,
+				mesh->mVertices[j].z);
+			v.data.Normal = Game::Vector3(mesh->mNormals[j].x, mesh->mNormals[j].y,
+				mesh->mNormals[j].z);
+			v.boneWeights = Game::Vector4();
+			if (mesh->mTangents == nullptr) {
+				v.data.Tangent = Game::Vector3(0., 1., 0.);
+			}
+			else {
+				v.data.Tangent = Game::Vector3(mesh->mTangents[j].x, mesh->mTangents[j].y,
+					mesh->mTangents[j].z);
+			}
+			if (mesh->mTextureCoords[0] == nullptr) {
+				v.data.TexCoord = Game::Vector2(0., 0.);
+			}
+			else {
+				v.data.TexCoord = Game::Vector2(mesh->mTextureCoords[0][j].x
+					, mesh->mTextureCoords[0][j].y);
+			}
+			vertices[j] = v;
+		}
+		for (size_t j = 0; j != mesh->mNumFaces; j++) {
+			aiFace face = mesh->mFaces[j];
+			for (size_t k = 0; k != face.mNumIndices; k++) {
+				indices.push_back(face.mIndices[k]);
+			}
+		}
+
+		for (size_t j = 0; j != mesh->mNumBones;j++){
+			Bone* pbone = boneHeir->Find(mesh->mName.C_Str());
+			if (pbone == nullptr) {
+				Bone nbone(mesh->mBones[j]->mName.C_Str());
+				nbone.offset = Game::Mat4x4(reinterpret_cast<float*>(&mesh->mBones[j]->mOffsetMatrix));
+				boneHeir->Pushback(nbone, parentBone == nullptr ? nullptr : &parentBone->index);
+				pbone = boneHeir->Find(nbone.index);
+			}
+			//the name of the bone of this node should match the name of this node
+			if (mesh->mBones[j]->mName == node->mName) {
+				currBone = pbone;
+			}
+			aiBone* pAibone = mesh->mBones[j];
+			for (int vi = 0; vi != pAibone->mNumWeights;vi++) {
+				SkinnedNormalVertex& snv = vertices[pAibone->mWeights[vi].mVertexId];
+				appendBoneWeight(snv, pbone, pAibone->mWeights[vi].mWeight);
+			}
+
+		}
+
+		SkinnedSubMesh* skinnedMesh = new SkinnedSubMesh(mesh->mName.C_Str(),
+			mesh->mMaterialIndex,gGraphic.GetDevice(),indices.size(),indices.data(),
+			vertices.size(),vertices.data(),batch);
+		submeshs.push_back(skinnedMesh);
+	}
+
+	for (size_t i = 0; i != node->mNumChildren;i++) {
+		processBoneAndSubmeshs(submeshs, boneHeir, node->mChildren[i],
+			scene, currBone, batch);
+	}
+}
+
+static std::vector<BoneAnimationClip*> processAnimationClips(BoneHeirarchy* bones,const aiScene* scene) {
+	std::vector<BoneAnimationClip*> result;
+	for (int i = 0; i != scene->mNumAnimations;i++) {
+		aiAnimation* ani = scene->mAnimations[i];
+		
+		float tickPerSecond = ani->mTicksPerSecond;
+		float totalTick = ani->mDuration;
+
+		std::vector<BoneAnimationNode> animationNodes(bones->GetBoneNum());
+		for (int j = 0; j != ani->mNumChannels;j++) {
+			aiNodeAnim* nodeAnim = ani->mChannels[j];
+			Bone* pbone = bones->Find(nodeAnim->mNodeName.C_Str());
+			if (pbone == nullptr) {
+				std::string msg = std::string("ModelManager::loadSkinnedModelByAssimp : can't find animation clip ") + 
+					nodeAnim->mNodeName.C_Str() + "'s corresponding bone\n";
+				OUTPUT_DEBUG_STRING(msg.c_str());
+				continue;
+			}
+
+			std::vector<BoneAnimationNode::Position> nodeAniPos;
+			std::vector<BoneAnimationNode::Rotation> nodeAniRot;
+			std::vector<BoneAnimationNode::Scale> nodeAniScale;
+
+			for (int i = 0; i != nodeAnim->mNumPositionKeys;i++) {
+				aiVectorKey vk = nodeAnim->mPositionKeys[i];
+				Game::Vector3 pos = Game::Vector3(reinterpret_cast<float*>(&vk.mValue));
+				nodeAniPos.push_back({ pos,static_cast<float>(vk.mTime) });
+			}
+
+			for (int i = 0; i != nodeAnim->mNumRotationKeys;i++) {
+				aiQuatKey vk = nodeAnim->mRotationKeys[i];
+				//in our math library the order of quaterion is x,y,z,w
+				//however,in assimp the order is w,x,y,z
+				//so we need to adjust the order manually
+				Game::Quaterion rotation = Game::Quaterion(vk.mValue.x,vk.mValue.y,vk.mValue.z,vk.mValue.w);
+				nodeAniRot.push_back({ rotation,static_cast<float>(vk.mTime) });
+			}
+			for (int i = 0; i != nodeAnim->mNumScalingKeys;i++) {
+				aiVectorKey vk = nodeAnim->mScalingKeys[i];
+				Game::Vector3 scale = Game::Vector3(reinterpret_cast<float*>(&vk.mValue));
+				nodeAniScale.push_back({scale,static_cast<float>(vk.mTime) });
+			}
+
+			animationNodes[pbone->index] = std::move(BoneAnimationNode(nodeAniPos, nodeAniRot, nodeAniScale));
+		}
+
+		result.push_back(new BoneAnimationClip(animationNodes, bones,
+			tickPerSecond, totalTick, ani->mName.C_Str()));
+	}
+	return result;
+}
+
+
+SkinnedModel* ModelManager::loadSkinnedModelByAssimp(const char* pathName,const char* name,UploadBatch* batch) {
+	Assimp::Importer imp;
+	const aiScene* scene = imp.ReadFile(pathName,
+		aiProcess_GenNormals |
+		aiProcess_Triangulate |
+		aiProcess_CalcTangentSpace
+	);
+	std::string pathNameStr = std::string(pathName);
+	size_t dir_index = pathNameStr.find_last_of('/');
+	std::string dirName = pathNameStr.substr(0, dir_index);
+
+	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr) {
+		std::string msg = "fail to load model file " + std::string(pathName) + "reason : " +
+			imp.GetErrorString();
+		OUTPUT_DEBUG_STRING(msg.c_str());
+		return nullptr;
+	}
+
+	aiNode* rootNode = scene->mRootNode;
+	std::vector<SkinnedSubMesh*> submeshs;
+	BoneHeirarchy* bh = new BoneHeirarchy();
+	processBoneAndSubmeshs(submeshs, bh, rootNode, scene, nullptr, batch);
+	
+	std::vector<BoneAnimationClip*> animations;
+	processAnimationClips(bh,scene);
+
+	std::unique_ptr<SkinnedModel> skinnedModel = std::make_unique<SkinnedModel>(bh, animations, name);
+	for (auto mesh : submeshs) {
+		skinnedModel->PushBackSubMesh(mesh);
+	}
+
+	SkinnedModel* rv = skinnedModel.get();
+	skinnedModelByPath[name] = std::move(skinnedModel);
+	skinnedModelsByName[name] = rv;
+
+	return nullptr;
+}

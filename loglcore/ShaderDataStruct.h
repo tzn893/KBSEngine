@@ -98,7 +98,7 @@ struct MeshVertexNormal {
 struct SkinnedNormalVertex {
 	MeshVertexNormal data;
 	uint32_t  boneIndices[4];
-	Game::Vector3   boneWeights;
+	Game::Vector4   boneWeights;
 };
 
 

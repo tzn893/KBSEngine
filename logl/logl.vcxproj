@@ -116,6 +116,12 @@
       <AdditionalLibraryDirectories>D:\CG\logl\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>loglcore.lib;web.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(SolutionDir)ThridParty\lib\*.dll $(OutDir)
+copy $(ProjectDir)config.init $(OutDir)
+if not exist $(OutDir)..\shader copy -r $(SolutionDir)shader $(OutDir)..\
+if not exist $(OutDir)..\asserts copy -r $(SolutionDir)asserts $(OutDir)..\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -157,6 +163,12 @@
       <AdditionalLibraryDirectories>D:\CG\logl\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>loglcore.lib;web.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(SolutionDir)ThridParty\lib\*.dll $(OutDir)
+copy $(ProjectDir)config.init $(OutDir)
+if not exist $(OutDir)..\shader copy -r $(SolutionDir)shader $(OutDir)..\
+if not exist $(OutDir)..\asserts copy -r $(SolutionDir)asserts $(OutDir)..\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
@@ -182,6 +194,9 @@
   <ItemGroup>
     <Image Include="logl.ico" />
     <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config.init" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
