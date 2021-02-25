@@ -32,6 +32,9 @@
     <Filter Include="Model">
       <UniqueIdentifier>{0cef4cd8-5afa-46a0-a9e1-501d13fb66d2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThridParty\M3dLoader">
+      <UniqueIdentifier>{afe500d7-ad25-4622-97cc-e1df4d1c9535}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Color.cpp">
@@ -144,6 +147,9 @@
     </ClCompile>
     <ClCompile Include="Quaterion.cpp">
       <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="M3dLoader.cpp">
+      <Filter>ThridParty\M3dLoader</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -308,6 +314,9 @@
     </ClInclude>
     <ClInclude Include="Quaterion.h">
       <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="M3dLoader.h">
+      <Filter>ThridParty\M3dLoader</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

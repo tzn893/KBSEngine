@@ -417,6 +417,7 @@ static void processBoneAndSubmeshs(std::vector<SkinnedSubMesh*>& submeshs,
 			v.data.Normal = Game::Vector3(mesh->mNormals[j].x, mesh->mNormals[j].y,
 				mesh->mNormals[j].z);
 			v.boneWeights = Game::Vector4();
+			v.boneIndices[0] = v.boneIndices[1] = v.boneIndices[2] = v.boneIndices[3] = 0;
 			if (mesh->mTangents == nullptr) {
 				v.data.Tangent = Game::Vector3(0., 1., 0.);
 			}
@@ -560,5 +561,5 @@ SkinnedModel* ModelManager::loadSkinnedModelByAssimp(const char* pathName,const 
 	skinnedModelByPath[name] = std::move(skinnedModel);
 	skinnedModelsByName[name] = rv;
 
-	return nullptr;
+	return rv;
 }

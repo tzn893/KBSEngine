@@ -36,6 +36,7 @@
     <ClCompile Include="graphic.cpp" />
     <ClCompile Include="GraphicUtil.cpp" />
     <ClCompile Include="LightManager.cpp" />
+    <ClCompile Include="M3dLoader.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="ModelManager.cpp" />
     <ClCompile Include="PhongRenderPass.cpp" />
@@ -60,6 +61,7 @@
   <ItemGroup>
     <ClInclude Include="AnimationClip.h" />
     <ClInclude Include="BoneHeirarchy.h" />
+    <ClInclude Include="M3dLoader.h" />
     <ClInclude Include="Quaterion.h" />
     <ClInclude Include="SkinnedSubMesh.h" />
     <ClInclude Include="AudioClip.h" />

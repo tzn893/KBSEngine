@@ -133,9 +133,12 @@ bool Application::initialize() {
 			spro2 = std::make_unique<RenderObject>(sphereMesh->GetMesh(),m2, Game::Vector3(-1., -1.5, 3.), Game::Vector3(), Game::Vector3(.2, .2, .2));
 			spro3 = std::make_unique<RenderObject>(sphereMesh->GetMesh(), m3, Game::Vector3(0., -1.5,  3.), Game::Vector3(), Game::Vector3(.1, .1, .1));
 		}
-		{
-			Model* miku = gModelManager.loadModel("../asserts/miku/animated.fbx", "test", &up);
-			mkro = std::make_unique<RenderObject>(miku,Game::Vector3(.5,-2.,3.),Game::Vector3(-90.,0.,0.),Game::Vector3(.1,.1,.1));
+		{	
+			Model* model = gModelManager.loadModel("../asserts/animated_model/soldier.m3d", "test", &up);
+
+			//Model* miku = gModelManager.loadModel("../asserts/miku/animated.fbx", "test", &up);
+			mkro = std::make_unique<RenderObject>(model,Game::Vector3(.5,-2.,3.),Game::Vector3(-90.,0.,0.),Game::Vector3(.1,.1,.1));
+			
 		}
 
 		auto v = GeometryGenerator::Cube(.3, .3, .3, GEOMETRY_FLAG_NONE);
