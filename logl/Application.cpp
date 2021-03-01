@@ -134,16 +134,16 @@ bool Application::initialize() {
 			spro3 = std::make_unique<RenderObject>(sphereMesh->GetMesh(), m3, Game::Vector3(0., -1.5,  3.), Game::Vector3(), Game::Vector3(.1, .1, .1));
 		}
 		{	
-			SkinnedModel* model = gModelManager.loadSkinnedModel("../asserts/animated_model/soldier.m3d", "test", &up);
+			Model* model = gModelManager.loadModel("../asserts/miku/model.fbx", "test", &up);
 
-			//mkro = std::make_unique<RenderObject>(model,Game::Vector3(.5,-2.,3.),Game::Vector3(0.,0.,0.),Game::Vector3(.01,.01,.01));
+			mkro = std::make_unique<RenderObject>(model,Game::Vector3(.5,-2.,3.),Game::Vector3(-90.,180.,0.),Game::Vector3(1.,1.,1.));
 			
 		}
 
-		auto v = GeometryGenerator::Cube(.3, .3, .3, GEOMETRY_FLAG_NONE);
-		squreMesh = std::make_unique<StaticMesh<MeshVertexNormal>>(gGraphic.GetDevice(),
-			v.size() / getVertexStrideByFloat<MeshVertexNormal>(),
-			reinterpret_cast<MeshVertexNormal*>(v.data()),&up);
+		SkyboxRenderPass* sky = gGraphic.GetRenderPass<SkyboxRenderPass>();
+		Texture* newSky = gTextureManager.loadCubeTexture(L"../asserts/skybox/mountain", L"mountain", true, &up);
+		sky->SetSkyBox(newSky);
+		
 
 		up.End();
 	}
@@ -223,7 +223,7 @@ void Application::update() {
 	gLightManager.SetAmbientLight(ambient * li);
 	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3) * li);
 
-	//mkro->Render(drp);
+	mkro->Render(drp);
 	fro->Render(drp);
 	spro1->Render(drp);
 	spro2->Render(drp);
