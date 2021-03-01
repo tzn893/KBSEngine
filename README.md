@@ -8,11 +8,11 @@ See https://github.com/137900114/linux_lession_web for how to deploy the server 
 
 How to play:
 
-press ##W## to pitch up
+press **W** to pitch up
 
-press ##S## to pitch down
+press **S** to pitch down
 
-press ##A,S## to yaw right and left
+press **A,D** to yaw right and left
 
 press ##Mouse Left Button## to fire
 
