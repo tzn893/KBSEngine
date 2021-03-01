@@ -37,8 +37,10 @@ public:
 private:
 	Model* loadInOBJFormat(const char* pathname,const char* name,UploadBatch* batch);
 	Model* loadByAssimp(const char* pathname,const char* name,UploadBatch* batch);
+	Model* loadInM3DFormat(const char* pathname,const char* name,UploadBatch* batch);
 
 	SkinnedModel* loadSkinnedModelByAssimp(const char* pathname,const char* name,UploadBatch* batch);
+	SkinnedModel* loadSkinnedModelByM3DFormat(const char* pathname,const char* name,UploadBatch* batch);
 
 	std::map<std::string, std::unique_ptr<Model>> modelsByPath;
 	std::map<std::string, Model*> modelsByName;

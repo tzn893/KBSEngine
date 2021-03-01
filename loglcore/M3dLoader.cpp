@@ -1,42 +1,8 @@
 #include "M3dLoader.h"
-
+#include "TextureManager.h"
+#include "graphic.h"
 
 /*
-bool M3DLoader::LoadM3d(const std::string& filename,
-	std::vector<Vertex>& vertices,
-	std::vector<USHORT>& indices,
-	std::vector<Subset>& subsets,
-	std::vector<M3dMaterial>& mats)
-{
-	std::ifstream fin(filename);
-
-	UINT numMaterials = 0;
-	UINT numVertices = 0;
-	UINT numTriangles = 0;
-	UINT numBones = 0;
-	UINT numAnimationClips = 0;
-
-	std::string ignore;
-
-	if (fin)
-	{
-		fin >> ignore; // file header text
-		fin >> ignore >> numMaterials;
-		fin >> ignore >> numVertices;
-		fin >> ignore >> numTriangles;
-		fin >> ignore >> numBones;
-		fin >> ignore >> numAnimationClips;
-
-		ReadMaterials(fin, numMaterials, mats);
-		ReadSubsetTable(fin, numMaterials, subsets);
-		ReadVertices(fin, numVertices, vertices);
-		ReadTriangles(fin, numTriangles, indices);
-
-		return true;
-	}
-	return false;
-}
-
 bool M3DLoader::LoadM3d(const std::string& filename,
 	std::vector<SkinnedVertex>& vertices,
 	std::vector<USHORT>& indices,
@@ -81,6 +47,109 @@ bool M3DLoader::LoadM3d(const std::string& filename,
 	}
 	return false;
 }*/
+SkinnedModel* M3DLoader::ReadSkinnedModel(const char* filename,const char* name,UploadBatch* up) {
+
+	std::ifstream fi(filename);
+
+	size_t matNum, vNum, tNum, bNum, aNum;
+	std::vector<M3dMaterial> mats;
+	std::vector<Subset> subsets;
+	std::vector<SkinnedNormalVertex> vertices;
+	std::vector<uint16_t> indices;
+	std::vector<int> boneToParentIndex;
+	std::vector<BoneAnimationClip*> animations;
+	BoneHeirarchy* boneHeirarchy = new BoneHeirarchy();
+
+	std::string ignore;
+	if (fi) {
+		fi >> ignore;
+		fi >> ignore >> matNum;
+		fi >> ignore >> vNum;
+		fi >> ignore >> tNum;
+		fi >> ignore >> bNum;
+		fi >> ignore >> aNum;
+
+		ReadMaterials(fi, matNum, mats);
+		ReadSubsetTable(fi, matNum, subsets);
+		ReadSkinnedVertices(fi, vNum, vertices);
+		ReadTriangles(fi, tNum, indices, subsets);
+		ReadBoneHierarchy(fi, bNum, boneHeirarchy);
+		ReadAnimationClips(fi, bNum, aNum,animations, boneHeirarchy);
+
+		SkinnedModel* model = new SkinnedModel(boneHeirarchy, animations, name);
+		for (size_t i = 0; i != subsets.size(); i++) {
+			model->PushBackSubMesh(new SkinnedSubMesh(mats[i].Name.c_str(), i, gGraphic.GetDevice(),
+				subsets[i].FaceCount * 3,
+				indices.data() + subsets[i].FaceStart * 3,
+				subsets[i].VertexCount,
+				vertices.data() + subsets[i].VertexStart,
+				up)
+			);
+			SubMeshMaterial mat;
+			mat.diffuse = mats[i].DiffuseAlbedo;
+			mat.roughness = mats[i].Roughness;
+			mat.metallic = 0.f;
+			std::wstring filename = String2WString(mats[i].DiffuseMapName);
+			mat.textures[SUBMESH_MATERIAL_TYPE_DIFFUSE] = gTextureManager.loadTexture(filename.c_str(), filename.c_str(), true, up);
+			filename = String2WString(mats[i].NormalMapName);
+			mat.textures[SUBMESH_MATERIAL_TYPE_BUMP] = gTextureManager.loadTexture(filename.c_str(), filename.c_str(), true, up);
+			model->PushBackSubMeshMaterial(mat);
+		}
+
+		return model;
+	}
+
+	return nullptr;
+}
+
+Model* M3DLoader::ReadModel(const char* filename,const char* name,UploadBatch* up) {
+	std::ifstream fi(filename);
+
+	size_t matNum, vNum, tNum, bNum, aNum;
+	std::vector<M3dMaterial> mats;
+	std::vector<Subset> subsets;
+	std::vector<MeshVertexNormal> vertices;
+	std::vector<uint16_t> indices;
+
+	std::string ignore;
+	if(fi) {
+		fi >> ignore;
+		fi >> ignore >> matNum;
+		fi >> ignore >> vNum;
+		fi >> ignore >> tNum;
+		fi >> ignore >> bNum;
+		fi >> ignore >> aNum;
+
+		ReadMaterials(fi, matNum, mats);
+		ReadSubsetTable(fi, matNum, subsets);
+		ReadVertices(fi, vNum, vertices);
+		ReadTriangles(fi, tNum, indices,subsets);
+		
+		Model* model = new Model(name);
+		for (size_t i = 0; i != subsets.size();i++) {
+			model->PushBackSubMesh(new SubMesh(mats[i].Name.c_str(), i, gGraphic.GetDevice(),
+				subsets[i].FaceCount * 3,
+				indices.data() + subsets[i].FaceStart * 3,
+				subsets[i].VertexCount,
+				vertices.data() + subsets[i].VertexStart,
+				up)
+			);
+			SubMeshMaterial mat;
+			mat.diffuse = mats[i].DiffuseAlbedo;
+			mat.roughness = mats[i].Roughness;
+			mat.metallic = 0.f;
+			std::wstring filename = String2WString(mats[i].DiffuseMapName);
+			mat.textures[SUBMESH_MATERIAL_TYPE_DIFFUSE] = gTextureManager.loadTexture(filename.c_str(), filename.c_str(), true, up);
+			filename = String2WString(mats[i].NormalMapName);
+			mat.textures[SUBMESH_MATERIAL_TYPE_BUMP] = gTextureManager.loadTexture(filename.c_str(),filename.c_str(),true,up);
+			model->PushBackSubMeshMaterial(mat);
+		}
+
+		return model;
+	}
+
+	return nullptr;
+}
 
 void M3DLoader::ReadMaterials(std::ifstream& fin, size_t numMaterials, std::vector<M3dMaterial>& mats)
 {
@@ -132,6 +201,8 @@ void M3DLoader::ReadVertices(std::ifstream& fin, size_t numVertices, std::vector
 		fin >> ignore >> vertices[i].Tangent.x >> vertices[i].Tangent.y >> vertices[i].Tangent.z >> trash;
 		fin >> ignore >> vertices[i].Normal.x >> vertices[i].Normal.y >> vertices[i].Normal.z;
 		fin >> ignore >> vertices[i].TexCoord.x >> vertices[i].TexCoord.y;
+		fin >> ignore >> ignore >> ignore >> ignore >> ignore;
+		fin >> ignore >> ignore >> ignore >> ignore >> ignore;
 	}
 }
 
@@ -166,7 +237,7 @@ void M3DLoader::ReadSkinnedVertices(std::ifstream& fin, size_t numVertices, std:
 	}
 }
 
-void M3DLoader::ReadTriangles(std::ifstream& fin, size_t numTriangles, std::vector<uint16_t>& indices)
+void M3DLoader::ReadTriangles(std::ifstream& fin, size_t numTriangles, std::vector<uint16_t>& indices,std::vector<M3DLoader::Subset>& subsets)
 {
 	std::string ignore;
 	indices.resize(numTriangles * 3);
@@ -174,13 +245,27 @@ void M3DLoader::ReadTriangles(std::ifstream& fin, size_t numTriangles, std::vect
 	fin >> ignore; // triangles header text
 	for (size_t i = 0; i < numTriangles; ++i)
 	{
-		fin >> indices[i * 3 + 0] >> indices[i * 3 + 1] >> indices[i * 3 + 2];
+		size_t subsetIndex = 0;
+		for (; subsetIndex != subsets.size();subsetIndex++) {
+			if ((subsets[subsetIndex].FaceStart + subsets[subsetIndex].FaceCount) > i) {
+				break;
+			}
+		}
+		size_t indexBase = subsets[subsetIndex].VertexStart;
+
+		fin >> indices[i * 3 + 0] >> indices[i * 3 + 2] >> indices[i * 3 + 1];
+		indices[i * 3 + 0] -= indexBase;
+		indices[i * 3 + 1] -= indexBase;
+		indices[i * 3 + 2] -= indexBase;
 	}
+
+	
 }
 
-void M3DLoader::ReadBoneOffsets(std::ifstream& fin, size_t numBones, std::vector<Game::Mat4x4>& boneOffsets)
+void M3DLoader::ReadBoneHierarchy(std::ifstream& fin, size_t numBones,BoneHeirarchy* boneHeirarchy)
 {
 	std::string ignore;
+	std::vector<Game::Mat4x4> boneOffsets;
 	boneOffsets.resize(numBones);
 
 	fin >> ignore; // BoneOffsets header text
@@ -192,17 +277,22 @@ void M3DLoader::ReadBoneOffsets(std::ifstream& fin, size_t numBones, std::vector
 			boneOffsets[i].a[2][0] >> boneOffsets[i].a[2][1] >> boneOffsets[i].a[2][2] >> boneOffsets[i].a[2][3] >>
 			boneOffsets[i].a[3][0] >> boneOffsets[i].a[3][1] >> boneOffsets[i].a[3][2] >> boneOffsets[i].a[3][3];
 	}
-}
-
-void M3DLoader::ReadBoneHierarchy(std::ifstream& fin, size_t numBones, std::vector<int>& boneIndexToParentIndex)
-{
-	std::string ignore;
-	boneIndexToParentIndex.resize(numBones);
 
 	fin >> ignore; // BoneHierarchy header text
 	for (UINT i = 0; i < numBones; ++i)
 	{
-		fin >> ignore >> boneIndexToParentIndex[i];
+		int parentIndex;
+		fin >> ignore >> parentIndex;
+		std::string boneName = "bone_" + std::to_string(i);
+		Bone b(boneName.c_str());
+		b.offset = boneOffsets[i];
+		if (parentIndex < 0) {
+			boneHeirarchy->Pushback(b, nullptr);
+		}
+		else {
+			size_t index = parentIndex;
+			boneHeirarchy->Pushback(b, &index);
+		}
 	}
 }
 /*
@@ -230,30 +320,53 @@ void M3DLoader::ReadAnimationClips(std::ifstream& fin, size_t numBones, size_t n
 	}
 }
 */
-void M3DLoader::ReadBoneKeyframes(std::ifstream& fin, size_t numBones,std::vector<BoneAnimationNode>& boneAnimation)
+
+void M3DLoader::ReadAnimationClips(std::ifstream& fin, size_t numBones, size_t numClips, std::vector<BoneAnimationClip*>& boneAnimations, BoneHeirarchy* boneHeirarchy) {
+	std::string ignore;
+	fin >> ignore; 
+	
+	for (size_t clipIndex = 0; clipIndex != numClips;clipIndex++) {
+		std::string clipName;
+		fin >> ignore >> clipName;
+		float totalTicks, ticksPersecond;
+		fin >> ignore >> totalTicks >> ignore >> ticksPersecond;
+		fin >> ignore;
+		std::vector<BoneAnimationNode> animationNodes;
+		for (size_t boneIndex = 0; boneIndex != numBones; boneIndex++) {
+			BoneAnimationNode node;
+			ReadBoneKeyframes(fin, node);
+			animationNodes.push_back(node);
+		}
+		BoneAnimationClip* animationClip = new BoneAnimationClip(animationNodes,boneHeirarchy,
+			ticksPersecond,totalTicks,clipName.c_str());
+		boneAnimations.push_back(animationClip);
+	}
+}
+void M3DLoader::ReadBoneKeyframes(std::ifstream& fin,BoneAnimationNode& boneAnimation)
 {
 	std::string ignore;
 	UINT numKeyframes = 0;
 	fin >> ignore >> ignore >> numKeyframes;
-	fin >> ignore; // {
-	/*
-	boneAnimation.Keyframes.resize(numKeyframes);
-	for (UINT i = 0; i < numKeyframes; ++i)
-	{
-		float t = 0.0f;
-		XMFLOAT3 p(0.0f, 0.0f, 0.0f);
-		XMFLOAT3 s(1.0f, 1.0f, 1.0f);
-		XMFLOAT4 q(0.0f, 0.0f, 0.0f, 1.0f);
+	fin >> ignore;
+	std::vector<BoneAnimationNode::Position> positions;
+	std::vector<BoneAnimationNode::Rotation> rotations;
+	std::vector<BoneAnimationNode::Scale> scales;
+	for (size_t i = 0; i != numKeyframes;i++) {
+		float t = 0.f;
+		Game::Vector3 pos;
+		Game::Vector4 rot;
+		Game::Vector3 scl;
 		fin >> ignore >> t;
-		fin >> ignore >> p.x >> p.y >> p.z;
-		fin >> ignore >> s.x >> s.y >> s.z;
-		fin >> ignore >> q.x >> q.y >> q.z >> q.w;
+		fin >> ignore >> pos.x >> pos.y >> pos.z;
+		fin >> ignore >> scl.x >> scl.y >> scl.z;
+		fin >> ignore >> rot.x >> rot.y >> rot.z >> rot.w;
 
-		boneAnimation.Keyframes[i].TimePos = t;
-		boneAnimation.Keyframes[i].Translation = p;
-		boneAnimation.Keyframes[i].Scale = s;
-		boneAnimation.Keyframes[i].RotationQuat = q;
+		rot = Game::normalize(rot);
+
+		positions.push_back({ pos,t });
+		rotations.push_back({ Game::Quaterion(rot),t });
+		scales.push_back({ scl,t });
 	}
-	*/
-	fin >> ignore; // }
+	fin >> ignore;
+	boneAnimation = BoneAnimationNode(positions, rotations, scales);
 }

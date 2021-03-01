@@ -97,7 +97,7 @@ bool GenerateMipmapBatch::initialize() {
 		return false;
 	}
 
-	GMipmapState = std::make_unique<ConstantBuffer<GenerateMipmapState>>(gGraphic.GetDevice(),10);
+	GMipmapState = std::make_unique<ConstantBuffer<GenerateMipmapState>>(gGraphic.GetDevice(),32);
 
 	return true;
 }

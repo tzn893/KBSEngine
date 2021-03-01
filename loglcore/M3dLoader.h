@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include "BoneHeirarchy.h"
+#include "Model.h"
 #include <unordered_map>
 #include <fstream>
 
@@ -64,15 +65,18 @@ public:
 		std::vector<Subset>& subsets,
 		std::vector<M3dMaterial>& mats,
 		SkinnedData& skinInfo);*/
-
+	SkinnedModel* ReadSkinnedModel(const char* filename,const char* name,UploadBatch* up);
+	Model*		  ReadModel(const char* filename, const char* name, UploadBatch* up);
 private:
 	void ReadMaterials(std::ifstream& fin, size_t numMaterials, std::vector<M3dMaterial>& mats);
 	void ReadSubsetTable(std::ifstream& fin, size_t numSubsets, std::vector<Subset>& subsets);
 	void ReadVertices(std::ifstream& fin, size_t numVertices, std::vector<MeshVertexNormal>& vertices);
 	void ReadSkinnedVertices(std::ifstream& fin, size_t numVertices, std::vector<SkinnedNormalVertex>& vertices);
-	void ReadTriangles(std::ifstream& fin, size_t numTriangles, std::vector<uint16_t>& indices);
-	void ReadBoneOffsets(std::ifstream& fin, size_t numBones, std::vector<Game::Mat4x4>& boneOffsets);
-	void ReadBoneHierarchy(std::ifstream& fin, size_t numBones, std::vector<int>& boneIndexToParentIndex);
+	void ReadTriangles(std::ifstream& fin, size_t numTriangles, std::vector<uint16_t>& indices,std::vector<M3DLoader::Subset>& subsets);
+	void ReadBoneHierarchy(std::ifstream& fin, size_t numBones, BoneHeirarchy* boneHeirarchy);
 	//void ReadAnimationClips(std::ifstream& fin, size_t numBones,size_t numAnimationClips, std::unordered_map<std::string,BoneAnimationNode >& animations);
-	void ReadBoneKeyframes(std::ifstream& fin, size_t  numBones, std::vector<BoneAnimationNode>& boneAnimation);
+	void ReadBoneKeyframes(std::ifstream& fin, BoneAnimationNode& boneAnimation);
+	void ReadAnimationClips(std::ifstream& fin,size_t numBones,size_t numClips,std::vector<BoneAnimationClip*>& boneAnimations,BoneHeirarchy* boneHeirarchy);
 };
+
+inline M3DLoader gM3DLoader;

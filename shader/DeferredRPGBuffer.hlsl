@@ -4,12 +4,21 @@
 #include "ObjectPass.hlsli"
 #include "CameraPass.hlsli"
 
+#ifdef USE_SKINNED_VERTEX
+
+#define BONE_ARRAY_REGISTER t5
+#include "SkinnedVertex.hlsli"
+
+#else
+
 struct VertexIn{
     float3 Position : POSITION;
     float3 Normal   : NORMAL;
     float2 Uv       : TEXCOORD0;
     float3 Tangent  : TANGENT;
 };
+
+#endif
 
 struct VertexOut{
     float4 ScreenPos : SV_POSITION;
@@ -31,16 +40,31 @@ Texture2D emissionMap  : register(t4);
 
 SamplerState sp : register(s0);
 
-VertexOut VS(VertexIn vin){
+#ifdef USE_SKINNED_VERTEX
+    VertexOut VS(SkinnedVertexIn vin){
+#else
+    VertexOut VS(VertexIn vin){
+#endif
+
     VertexOut vout;
+
+#ifdef USE_SKINNED_VERTEX
+    LocalVert vert = BlendLocalVertex(vin);
+    vout.WorldPos = mul(world,float4(vert.localPos,0.));
+    vout.Normal = mul((float3x3)transInvWorld,vert.localNormal);
+
+    vout.Tangent = mul((float3x3)transInvWorld,vert.localTanget);
+#else
     vout.WorldPos  = mul(world,float4(vin.Position,1.)).xyz;
-    vout.ScreenPos = mul(perspect,mul(view,float4(vout.WorldPos,1.)));
     vout.Normal    = mul(transInvWorld,float4(vin.Normal,0.)).xyz;
 
+    vout.Tangent   = mul((float3x3)transInvWorld,vin.Tangent);
+#endif
+
+    vout.ScreenPos = mul(perspect,mul(view,float4(vout.WorldPos,1.)));
+    vout.Bitangent = cross(vout.Tangent,vout.Normal);
     vout.Uv        = mul((float3x3)mat.matTransform,float3(vin.Uv,1.)).xy;
 
-    vout.Tangent   = mul((float3x3)transInvWorld,vin.Tangent);
-    vout.Bitangent = cross(vout.Tangent,vout.Normal);
 
 	return vout;
 }

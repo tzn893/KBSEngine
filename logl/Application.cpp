@@ -110,9 +110,9 @@ bool Application::initialize() {
 			rust_diffuse->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 
 			SubMeshMaterial  m1,m2,m3;
-			m1.diffuse = Game::ConstColor::White;
+			m1.diffuse = Game::Vector3(.8,.8,.8);
 			m1.metallic = 1.f;
-			m1.roughness = .05f;
+			m1.roughness = .01f;
 
 			
 			m2.diffuse = Game::ConstColor::White;
@@ -134,10 +134,9 @@ bool Application::initialize() {
 			spro3 = std::make_unique<RenderObject>(sphereMesh->GetMesh(), m3, Game::Vector3(0., -1.5,  3.), Game::Vector3(), Game::Vector3(.1, .1, .1));
 		}
 		{	
-			Model* model = gModelManager.loadModel("../asserts/animated_model/soldier.m3d", "test", &up);
+			SkinnedModel* model = gModelManager.loadSkinnedModel("../asserts/animated_model/soldier.m3d", "test", &up);
 
-			//Model* miku = gModelManager.loadModel("../asserts/miku/animated.fbx", "test", &up);
-			mkro = std::make_unique<RenderObject>(model,Game::Vector3(.5,-2.,3.),Game::Vector3(-90.,0.,0.),Game::Vector3(.1,.1,.1));
+			//mkro = std::make_unique<RenderObject>(model,Game::Vector3(.5,-2.,3.),Game::Vector3(0.,0.,0.),Game::Vector3(.01,.01,.01));
 			
 		}
 
@@ -152,7 +151,7 @@ bool Application::initialize() {
 	gLightManager.SetAmbientLight(Game::Vector3(.3, .3, .3));
 
 	mainLight = gLightManager.GetMainLightData();
-	mainLight->SetLightDirection(Game::Vector3(-1., 0., -1.));
+	mainLight->SetLightDirection(Game::Vector3(0., -1., -1.));
 	
 	pointLight = gLightManager.AllocateLightSource(SHADER_LIGHT_TYPE_POINT);
 	pointLight->SetLightIntensity(Game::Vector3(45, 40., 15.));
@@ -224,7 +223,7 @@ void Application::update() {
 	gLightManager.SetAmbientLight(ambient * li);
 	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3) * li);
 
-	mkro->Render(drp);
+	//mkro->Render(drp);
 	fro->Render(drp);
 	spro1->Render(drp);
 	spro2->Render(drp);

@@ -217,6 +217,9 @@ Model* ModelManager::loadModel(const char* pathName, const char* name,UploadBatc
 			return model;
 		}
 	}
+	if (pathExtName == ".m3d") {
+		return loadInM3DFormat(pathName, name, batch);
+	}
 	return nullptr;
 }
 
@@ -244,6 +247,18 @@ SkinnedModel* ModelManager::loadSkinnedModel(const char* pathName, const char* n
 		}
 		else {
 			rv = loadSkinnedModelByAssimp(pathName, name, batch);
+		}
+		return rv;
+	}
+	if (p.extension().string() == ".m3d") {
+		SkinnedModel* rv = nullptr;
+		if (batch == nullptr) {
+			UploadBatch b = UploadBatch::Begin();
+			rv = loadSkinnedModelByM3DFormat(pathName, name, &b);
+			b.End();
+		}
+		else {
+			rv = loadSkinnedModelByM3DFormat(pathName, name, batch);
 		}
 		return rv;
 	}
@@ -525,7 +540,6 @@ static std::vector<BoneAnimationClip*> processAnimationClips(BoneHeirarchy* bone
 	return result;
 }
 
-
 SkinnedModel* ModelManager::loadSkinnedModelByAssimp(const char* pathName,const char* name,UploadBatch* batch) {
 	Assimp::Importer imp;
 	const aiScene* scene = imp.ReadFile(pathName,
@@ -562,4 +576,33 @@ SkinnedModel* ModelManager::loadSkinnedModelByAssimp(const char* pathName,const 
 	skinnedModelsByName[name] = rv;
 
 	return rv;
+}
+
+#include "M3dLoader.h"
+
+Model* ModelManager::loadInM3DFormat(const char* pathname, const char* name, UploadBatch* batch) {
+	Model* model = gM3DLoader.ReadModel(pathname, name, batch);
+	if (model == nullptr) {
+		std::string msg = "ModelManager::loadInM3DFormat : fail to load model from " + std::string(pathname);
+			+"\n";
+		OUTPUT_DEBUG_STRING(msg.c_str());
+		return nullptr;
+	}
+
+	this->modelsByName[name] = model;
+	this->modelsByPath[pathname] = std::unique_ptr<Model>(model);
+	return model;
+}
+
+SkinnedModel* ModelManager::loadSkinnedModelByM3DFormat(const char* path,const char* name,UploadBatch* batch) {
+	SkinnedModel* model = gM3DLoader.ReadSkinnedModel(path, name, batch);
+	if (model == nullptr) {
+		std::string msg = "ModelManager::loadInM3DFormat : fail to load model from " + std::string(path) + "\n";
+		OUTPUT_DEBUG_STRING(msg.c_str());
+		return nullptr;
+	}
+
+	this->skinnedModelsByName[name] = model;
+	this->skinnedModelByPath[path] = std::unique_ptr<SkinnedModel>(model);
+	return model;
 }

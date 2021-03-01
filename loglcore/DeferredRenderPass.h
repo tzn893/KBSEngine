@@ -41,6 +41,10 @@ public:
 	void		   DrawObject(D3D12_VERTEX_BUFFER_VIEW* vbv, D3D12_INDEX_BUFFER_VIEW* ibv,
 		size_t start, size_t num, DeferredRenderPassID id, DeferredRenderPassTexture* tex = nullptr);
 
+	void		   DrawSkinnedObject(D3D12_VERTEX_BUFFER_VIEW* vbv,D3D12_INDEX_BUFFER_VIEW* ibv,
+		size_t start,size_t num,DeferredRenderPassID id,DeferredRenderPassTexture* tex,
+		D3D12_GPU_VIRTUAL_ADDRESS boneTransformBuffer);
+
 	D3D12_CPU_DESCRIPTOR_HANDLE GetGBufferHandle(size_t offset) {
 		if (offset < GBufferNum) return GBuffer[offset]->GetShaderResourceViewCPU();
 		return { 0 };
