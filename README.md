@@ -16,7 +16,7 @@ implemented:
 
 4.Shadow Map
 
-5.Blooming![捕获](pic\捕获.PNG)
+5.Blooming![捕获](https://github.com/137900114/KBSEngine/pic/捕获.PNG)
 
 
 
