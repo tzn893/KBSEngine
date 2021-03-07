@@ -217,6 +217,7 @@ public:
 
 	void	UpdateCameraPass();
 	
+	float   GetExposure() { return exposure; }
 private:
 	void FindRPAndErase(RenderPass* rp);
 	bool CreatePipelineStateObject(Shader* shader, Game::GraphicPSO* pso, const wchar_t* name, bool rp);

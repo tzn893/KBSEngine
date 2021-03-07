@@ -3,7 +3,6 @@
 #include "graphic.h"
 
 bool  BoneHeirarchy::Pushback(Bone& b,size_t* parent) {
-	if (boneTransforms != nullptr) return false;
 	if (boneToName.count(b.name)
 		&& (parent != nullptr && *parent >= bones.size())) {
 		return false;
@@ -35,10 +34,6 @@ Bone*  BoneHeirarchy::Find(size_t index) {
 	return nullptr;
 }
 
-void   BoneHeirarchy::CreateConstantBuffer() {
-	if(boneTransforms == nullptr)
-		boneTransforms = std::make_unique<ConstantBuffer<Game::Mat4x4>>(gGraphic.GetDevice(),GetBoneNum(),true);
-}
 
 BoneAnimationNode::BoneAnimationNode(std::vector<Position>& positions,
 	std::vector<Rotation>& rotation,
@@ -59,6 +54,8 @@ BoneAnimationNode::BoneAnimationNode(std::vector<Position>& positions,
 			return lhs.time < rhs.time;
 		});
 }
+
+
 
 Game::Mat4x4 BoneAnimationNode::Interpolate(float AnimationTick) {
 	Game::Vector3 position,scale;
@@ -86,7 +83,7 @@ Game::Mat4x4 BoneAnimationNode::Interpolate(float AnimationTick) {
 				return lhs.time < rhs;
 			});
 		if (postScale == scaleKeyframes.end()) {
-			scale = scaleKeyframes.rend()->scale;
+			scale = scaleKeyframes.rbegin()->scale;
 		}
 		else if (postScale == scaleKeyframes.begin()) {
 			scale = postScale->scale;
@@ -95,7 +92,7 @@ Game::Mat4x4 BoneAnimationNode::Interpolate(float AnimationTick) {
 			auto preScale = postScale - 1;
 
 			float factor = (AnimationTick - preScale->time) / (postScale->time - preScale->time);
-			position = preScale->scale * (1. - factor) + postScale->scale * factor;
+			scale = preScale->scale * (1. - factor) + postScale->scale * factor;
 		}
 	}
 	else {
@@ -108,7 +105,7 @@ Game::Mat4x4 BoneAnimationNode::Interpolate(float AnimationTick) {
 							}
 			);
 		if (postRotation == rotationKeyframes.end()) {
-			rotation = rotationKeyframes.rend()->rotation;
+			rotation = rotationKeyframes.rbegin()->rotation;
 		}
 		else if (postRotation == rotationKeyframes.begin()) {
 			rotation = postRotation->rotation;
@@ -120,26 +117,34 @@ Game::Mat4x4 BoneAnimationNode::Interpolate(float AnimationTick) {
 			rotation = Game::Quaterion::SLerp(preRotation->rotation, postRotation->rotation, factor);
 		}
 	}
-
 	return Game::PackTransformQuaterion(position,rotation,scale);
 }
 
-void BoneAnimationClip::Play(float time,ANIMATION_PLAY_TYPE type) {
+std::vector<Game::Mat4x4> tmp,tmp1;
+void printMat(Game::Mat4x4& m) {
+	std::string msg = std::to_string((float)m.a[0][0]) + "," + std::to_string(m.a[0][1]) + "," + std::to_string(m.a[0][2]) + "," + std::to_string(m.a[0][3]) + "\n"
+		+ std::to_string(m.a[1][0]) + "," + std::to_string(m.a[1][1]) + "," + std::to_string(m.a[1][2]) + "," + std::to_string(m.a[1][3]) + "\n"
+		+ std::to_string(m.a[2][0]) + "," + std::to_string(m.a[2][1]) + "," + std::to_string(m.a[2][2]) + "," + std::to_string(m.a[2][3]) + "\n"
+		+ std::to_string(m.a[3][0]) + "," + std::to_string(m.a[3][1]) + "," + std::to_string(m.a[3][2]) + "," + std::to_string(m.a[3][3]) + "\n\n";
+	OUTPUT_DEBUG_STRING(msg.c_str());
+}
+
+void BoneAnimationClip::Interpolate(float time,Game::Mat4x4* boneTransformBuffer) {
 	float AnimationTick = 0.;
-	if (type == ANIMATION_PLAY_TYPE_LOOP) {
-		float timeTick = tickPersecond * time;
-		AnimationTick = fmod(timeTick, totalTick);
-	}
-	else if (type == ANIMATION_PLAY_TYPE_CLIP) {
-		float AnimationTick = clamp(totalTick, 0, time * tickPersecond);
-	}
+	float timeTick = tickPersecond * time;
+	AnimationTick = fmod(timeTick, totalTick);
 	
+	//tmp.resize(heir->GetBoneNum());
+	//tmp1.resize(heir->GetBoneNum());
 	for (auto bi : heir->roots) {
-		TranverseBoneHeirarchy(bi, Game::Mat4x4::I(),AnimationTick);
+		TranverseBoneHeirarchy(bi, Game::Mat4x4::I(),AnimationTick,
+			boneTransformBuffer);
 	}
 }
 
-void BoneAnimationClip::TranverseBoneHeirarchy(size_t index, Game::Mat4x4 parentToRoot,float AnimationTick) {
+
+void BoneAnimationClip::TranverseBoneHeirarchy(size_t index, Game::Mat4x4 parentToRoot,float AnimationTick,
+	Game::Mat4x4* boneTransformBuffer) {
 	Bone* bone = heir->Find(index);
 	if (bone == nullptr) {
 		OUTPUT_DEBUG_STRING("fail to find bone while playing animation\n");
@@ -147,12 +152,17 @@ void BoneAnimationClip::TranverseBoneHeirarchy(size_t index, Game::Mat4x4 parent
 	}
 	BoneAnimationNode* boneAniNode = &keyframes[index];
 	Game::Mat4x4 boneAniMat = boneAniNode->Interpolate(AnimationTick);
-	Game::Mat4x4 boneFinalTransform = Game::mul(parentToRoot, Game::mul(boneAniMat, bone->offset));
+	Game::Mat4x4 boneTransform = Game::mul(parentToRoot, boneAniMat);
+	Game::Mat4x4 boneFinalTransform = Game::mul(boneTransform, bone->offset);
 	
-	*heir->boneTransforms->GetBufferPtr(index) = boneFinalTransform.T();
+	boneTransformBuffer[index] = boneFinalTransform.T();
 	for (auto& child : bone->childIndex) {
-		TranverseBoneHeirarchy(child, boneFinalTransform, AnimationTick);
+		//the offset of the bone doesn't affect 
+		TranverseBoneHeirarchy(child, boneTransform, AnimationTick,boneTransformBuffer);
 	}
+
+	//tmp[index] = boneAniMat;
+	//tmp1[index] = boneFinalTransform;
 }
 
 BoneAnimationClip::BoneAnimationClip(const std::vector<BoneAnimationNode>& frames, BoneHeirarchy* heir
@@ -160,6 +170,4 @@ BoneAnimationClip::BoneAnimationClip(const std::vector<BoneAnimationNode>& frame
 		keyframes(frames), heir(heir),name(name),
 		tickPersecond(tickPersecond),totalTick(totalTick){
 	if (tickPersecond == 0) tickPersecond = 25.f;
-	heir->CreateConstantBuffer();
-	Play(0.);
 }

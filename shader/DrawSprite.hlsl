@@ -1,3 +1,5 @@
+#include "ToneMapUtil.hlsli"
+
 struct VertexIn{
     float2 Position : POSITION;
     float2 TexCoord : TEXCOORD0;
@@ -12,6 +14,7 @@ StructuredBuffer<SpriteConstant> spriteBuffer : register(t1);
 
 cbuffer ViewConstant : register(b1){
     float4x4 viewTrans;
+    float exposure;
 };
 
 struct VertexOut{
@@ -39,5 +42,5 @@ float4 PS(VertexOut vin) : SV_TARGET{
 	if (result.a == 0.f) {
 		discard;
 	}
-    return result;
+    return float4(ITM_STANDERD(result.rgb,exposure),result.a);
 }

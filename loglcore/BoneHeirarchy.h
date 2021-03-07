@@ -25,9 +25,8 @@ public:
 	
 	size_t GetBoneNum() { return bones.size(); }
 private:
-	void   CreateConstantBuffer();
 
-	std::unique_ptr<ConstantBuffer<Game::Mat4x4>> boneTransforms;
+	//std::unique_ptr<ConstantBuffer<Game::Mat4x4>> boneTransforms;
 	std::vector<Bone> bones;
 	std::map<std::string, size_t> boneToName;
 	std::vector<size_t> roots;
@@ -62,18 +61,16 @@ private:
 	std::vector<Scale> scaleKeyframes;
 };
 
-class BoneAnimationClip : public AnimationClip {
+class BoneAnimationClip{
 public:
-	void Play(float time,ANIMATION_PLAY_TYPE type = ANIMATION_PLAY_TYPE_CLIP) override;
-	inline D3D12_GPU_VIRTUAL_ADDRESS GetBoneTransformData() {
-		return heir->boneTransforms->GetADDR();
-	}
+	void Interpolate(float time,Game::Mat4x4* boneTransformBuffer) ;
 	BoneAnimationClip(const std::vector<BoneAnimationNode>& frames, BoneHeirarchy* heir
 		,float tickPersecond,float totalTick,const char* name);
 	const char* GetName() { return name.c_str(); }
 	BoneHeirarchy* GetBoneHeirarchy() { return heir; }
 private:
-	void TranverseBoneHeirarchy(size_t node,Game::Mat4x4 rootTransform,float AnimationTick);
+	void TranverseBoneHeirarchy(size_t node,Game::Mat4x4 rootTransform,float AnimationTick,
+		Game::Mat4x4* boneTransformBuffer);
 
 	std::vector<BoneAnimationNode> keyframes;
 	BoneHeirarchy* heir;

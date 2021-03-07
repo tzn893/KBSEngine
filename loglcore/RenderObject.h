@@ -133,6 +133,9 @@ public:
 		}
 	}
 
+	void Interpolate(float time,const char* boneAnimationName);
+	
+
 private:
 	void RenderByDeferredPass(DeferredRenderPass* drp);
 
@@ -141,10 +144,12 @@ private:
 	Game::Vector3 worldRotation;
 	Game::Vector3 worldScale;
 
+	std::unique_ptr<ConstantBuffer<Game::Mat4x4>> boneTransformBuffer;
+
 	SkinnedModel* model;
 	struct {
 		bool initialized;
 		std::vector<DeferredRenderPassID> drpID;
 		std::vector<DeferredRenderPassTexture> drpMaterial;
-	} DefferedRPData;
+	} DeferredRPData;
 };

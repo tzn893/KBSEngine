@@ -114,6 +114,8 @@ void SpriteRenderPass::UpdateViewConstant() {
 
 void SpriteRenderPass::Render(Graphic* graphic,RENDER_PASS_LAYER layer) {
 	std::vector<SpriteGroup>* targetGroup;
+	float exp = gGraphic.GetExposure();
+	spriteViewConstant->GetBufferPtr()->exposure = exp;
 	if (layer == RENDER_PASS_LAYER_OPAQUE) {
 		targetGroup = &renderGroupOpaque;
 		if (!graphic->BindPSOAndRootSignature(L"SpriteOpaque", L"Sprite")) {

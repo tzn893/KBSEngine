@@ -321,3 +321,73 @@ RenderObject::~RenderObject() {
 		}
 	}
 }
+
+SkinnedRenderObject::SkinnedRenderObject(SkinnedModel* model, Game::Vector3 worldPosition,
+	Game::Vector3 worldRotation, Game::Vector3 worldScale,
+	const char* name):worldPosition(worldPosition),
+		worldRotation(worldRotation),worldScale(worldScale),model(model){
+	ID3D12Device* device = gGraphic.GetDevice();
+	boneTransformBuffer = std::make_unique<ConstantBuffer<Game::Mat4x4>>(device,model->GetBoneHeirarchy()->GetBoneNum(),true);
+	static int renderItemIndex = 0;
+	if (name != nullptr) this->name = name;
+	else {
+		this->name = std::string("_unnamed_skinned_renderobject") + std::to_string(renderItemIndex++);
+	}
+	boneTransformBuffer->GetBuffer()->SetName(L"bone transform");
+	
+}
+
+void SkinnedRenderObject::RenderByDeferredPass(DeferredRenderPass* drp) {
+	Game::Mat4x4 world = Game::PackTransfrom(worldPosition, worldRotation, worldScale);
+	Game::Mat4x4 transInvWorld = world.R();
+	world = world.T();
+	if (!DeferredRPData.initialized) {
+		size_t objnum = model->GetSubMeshNum();
+		DeferredRPData.drpID.resize(objnum);
+		DeferredRPData.drpMaterial.resize(model->GetSubMaterialNum());
+		model->ForEachSubMesh([&](SkinnedSubMesh* mesh, TModel<SkinnedSubMesh>* target, size_t index) {
+			DeferredRenderPassID id = drp->AllocateObjectPass();
+			DeferredRPData.drpID[index] = id;
+			ObjectPass* objPass = drp->GetObjectPass(id);
+			objPass->world = world;
+			objPass->transInvWorld = transInvWorld;
+
+			size_t materialIndex = mesh->GetSubMeshMaterialIndex();
+			SubMeshMaterial* material = target->GetMaterial(mesh);
+			objPass->material.diffuse = Game::Vector4(material->diffuse, 1.f);
+			objPass->material.FresnelR0 = material->specular;
+			objPass->material.Roughness = material->roughness;
+			objPass->material.Metallic = material->metallic;
+			objPass->material.SetMaterialTransform(material->matTransformOffset, material->matTransformScale);
+			objPass->material.emission = material->emissionScale;
+
+			DeferredRPData.drpMaterial[materialIndex].diffuse = material->textures[SUBMESH_MATERIAL_TYPE_DIFFUSE];
+			DeferredRPData.drpMaterial[materialIndex].normal = material->textures[SUBMESH_MATERIAL_TYPE_BUMP];
+			DeferredRPData.drpMaterial[materialIndex].metallic = material->textures[SUBMESH_MATERIAL_TYPE_METALNESS];
+			DeferredRPData.drpMaterial[materialIndex].roughness = material->textures[SUBEMSH_MATERIAL_TYPE_ROUGHNESS];
+			DeferredRPData.drpMaterial[materialIndex].emission = material->textures[SUBMESH_MATERIAL_TYPE_EMISSION];
+		});
+		DeferredRPData.initialized = true;
+	}
+	else {
+		model->ForEachSubMesh(
+				[&](SkinnedSubMesh* mesh, TModel<SkinnedSubMesh>* target, size_t index) {
+				ObjectPass* op = drp->GetObjectPass(DeferredRPData.drpID[index]);
+				op->world = world;
+				op->transInvWorld = transInvWorld;
+
+				size_t materialIndex = mesh->GetSubMeshMaterialIndex();
+				drp->DrawSkinnedObject(mesh->GetVBV(), mesh->GetIBV(),
+					0, mesh->GetIndexNum(), DeferredRPData.drpID[index],
+					&DeferredRPData.drpMaterial[index],
+					boneTransformBuffer->GetADDR());
+			}
+		);
+	}
+}
+
+void SkinnedRenderObject::Interpolate(float time,const char* boneAnimationName) {
+	BoneAnimationClip* anima = model->GetBoneAnimationClip(boneAnimationName);
+	if (anima == nullptr) return;
+	anima->Interpolate(time, boneTransformBuffer->GetBufferPtr());
+}

@@ -119,7 +119,6 @@ namespace Game {
         Vector4(const Vector2& vec,float z, float w) :x(vec.x), y(vec.y),z(z),w(w) {}
 		Vector4(const Vector2& vec1,const Vector2& vec2):x(vec1.x),y(vec1.y),z(vec2.x),w(vec2.y) {}
 
-
         inline float& operator[](int index) { return raw[index]; }
         inline const float& operator[](int index) const { return raw[index]; }
 

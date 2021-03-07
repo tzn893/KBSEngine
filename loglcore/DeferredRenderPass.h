@@ -70,6 +70,12 @@ private:
 	};
 	std::vector<ObjectElement> objQueue;
 
+	struct AnimatedObjectElement {
+		ObjectElement objEle;
+		D3D12_GPU_VIRTUAL_ADDRESS boneTransform;
+	};
+	std::vector<AnimatedObjectElement> animatedObjQueue;
+
 	std::unique_ptr<ConstantBuffer<ObjectPass>> objConstants;
 	std::vector<size_t> availableConstantBuffers;
 	size_t allocatedConstantBuffers;
@@ -79,6 +85,7 @@ private:
 	std::unique_ptr<DescriptorHeap> descriptorHeap;
 
 	const wchar_t* defPreproc = L"deferred_preprocess";
+	const wchar_t* defSkinnedPreproc = L"deferred_skinned_preprocess";
 	const wchar_t* defShading = L"defferred_shading";
 	const wchar_t* lutMapPath = L"../asserts/pbr/BrdfLut.png";
 

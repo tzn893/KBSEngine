@@ -23,7 +23,7 @@ struct LocalVert {
 LocalVert BlendLocalVertex(SkinnedVertexIn vin){
     float w0 = vin.boneWeights.x,w1 = vin.boneWeights.y,
         w2 = vin.boneWeights.z,w3 = vin.boneWeights.w;
-    float4x4 b0 = vin.boneIndices.x,b1 = vin.boneIndices.y,
+    uint b0 = vin.boneIndices.x,b1 = vin.boneIndices.y,
         b2 = vin.boneIndices.z,b3 = vin.boneIndices.w;
 
     float4x4 trans = bones[b0];

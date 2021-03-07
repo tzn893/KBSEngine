@@ -45,6 +45,8 @@ DeferredRenderPass* drp;
 ToonRenderPass* trp;
 
 std::unique_ptr<RenderObject> fro,spro1,spro2,spro3,mkro;
+std::unique_ptr<SkinnedRenderObject> sro[3];
+std::unique_ptr<RenderObject> sro1;
 
 std::vector<Game::Vector3> bullets;
 FPSCamera camera;
@@ -57,6 +59,12 @@ std::unique_ptr<Texture> tex;
 
 #include "Config.h"
 #include "../loglcore/Quaterion.h"
+
+#include <DirectXMath.h>
+using namespace DirectX;
+
+Texture* t1;
+SpriteData sd;
 
 bool Application::initialize() {
 	trp = gGraphic.GetRenderPass<ToonRenderPass>();
@@ -134,15 +142,12 @@ bool Application::initialize() {
 			spro3 = std::make_unique<RenderObject>(sphereMesh->GetMesh(), m3, Game::Vector3(0., -1.5,  3.), Game::Vector3(), Game::Vector3(.1, .1, .1));
 		}
 		{	
-			Model* model = gModelManager.loadModel("../asserts/miku/model.fbx", "test", &up);
-
-			mkro = std::make_unique<RenderObject>(model,Game::Vector3(.5,-2.,3.),Game::Vector3(-90.,180.,0.),Game::Vector3(1.,1.,1.));
-			
+			SkinnedModel* model = gModelManager.loadSkinnedModel("../asserts/animated_model/soldier.m3d", "test", &up);
+			Model* nsmodel = gModelManager.loadModel("../asserts/animated_model/soldier.m3d", "test", &up);
+			sro[0] = std::make_unique<SkinnedRenderObject>(model, Game::Vector3(1., -2., 4.), Game::Vector3(0., 0., 0.), Game::Vector3(.03, .03, .03)); 
+			sro[1] = std::make_unique<SkinnedRenderObject>(model, Game::Vector3(0., -2., 4.), Game::Vector3(0., 0., 0.), Game::Vector3(.03, .03, .03));
+			sro[2] = std::make_unique<SkinnedRenderObject>(model, Game::Vector3(-1., -2., 4.), Game::Vector3(0., 0., 0.), Game::Vector3(.03, .03, .03));
 		}
-
-		SkyboxRenderPass* sky = gGraphic.GetRenderPass<SkyboxRenderPass>();
-		Texture* newSky = gTextureManager.loadCubeTexture(L"../asserts/skybox/mountain", L"mountain", true, &up);
-		sky->SetSkyBox(newSky);
 		
 
 		up.End();
@@ -165,13 +170,12 @@ bool Application::initialize() {
 
 	camera.attach(gGraphic.GetMainCamera());
 
-	//static std::unique_ptr<FXAAFilterPass> fxaa = std::make_unique<FXAAFilterPass>();
-	//gGraphic.GetRenderPass<PostProcessRenderPass>()->RegisterPostProcessPass(fxaa.get());
-	//static std::unique_ptr<BloomingFilter> bloom = std::make_unique<BloomingFilter>();
-	//gGraphic.GetRenderPass<PostProcessRenderPass>()->RegisterPostProcessPass(bloom.get());
-
-	//AudioClip* audio = gAudioClipManager.LoadAudioClip(L"../asserts/music/nk.wav","nk");
-	//audio->Play(true);
+	t1 = gTextureManager.loadTexture(L"../asserts/1.bmp", L"1");
+	sd.Color = Game::ConstColor::White;
+	sd.Position = Game::Vector3(.5, .5, 0.);
+	sd.rotation = 0.;
+	sd.Scale = Game::Vector3(.2, .2);
+	t1->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor(1));
 
 	return true;
 }
@@ -223,11 +227,16 @@ void Application::update() {
 	gLightManager.SetAmbientLight(ambient * li);
 	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3) * li);
 
-	mkro->Render(drp);
+	sro[0]->Interpolate(gTimer.TotalTime(), "Take1");
+	sro[1]->Interpolate(gTimer.TotalTime() * 3., "Take1");
+	sro[2]->Interpolate(gTimer.TotalTime() * 2., "Take1");
+
 	fro->Render(drp);
 	spro1->Render(drp);
 	spro2->Render(drp);
-	//spro3->Render(drp);
+	sro[0]->Render(drp);
+	sro[1]->Render(drp);
+	sro[2]->Render(drp);
 }
 
 void Application::finalize() {}

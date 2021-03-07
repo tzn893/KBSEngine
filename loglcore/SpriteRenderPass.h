@@ -64,6 +64,7 @@ private:
 
 	struct SpriteViewConstant {
 		Game::Mat4x4 view;
+		float exposure;
 	};
 
 	/*struct RegisteredTexture {

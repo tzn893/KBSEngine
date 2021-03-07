@@ -276,6 +276,7 @@ void M3DLoader::ReadBoneHierarchy(std::ifstream& fin, size_t numBones,BoneHeirar
 			boneOffsets[i].a[1][0] >> boneOffsets[i].a[1][1] >> boneOffsets[i].a[1][2] >> boneOffsets[i].a[1][3] >>
 			boneOffsets[i].a[2][0] >> boneOffsets[i].a[2][1] >> boneOffsets[i].a[2][2] >> boneOffsets[i].a[2][3] >>
 			boneOffsets[i].a[3][0] >> boneOffsets[i].a[3][1] >> boneOffsets[i].a[3][2] >> boneOffsets[i].a[3][3];
+		boneOffsets[i] = boneOffsets[i].T();
 	}
 
 	fin >> ignore; // BoneHierarchy header text

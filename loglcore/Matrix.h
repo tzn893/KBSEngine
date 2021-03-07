@@ -98,7 +98,6 @@ namespace Game {
 				a[3][0] = a30, a[3][1] = a31, a[3][2] = a32, a[3][3] = a33;
 		}
 
-
 		//Inverse and determinate cost a lot,using these two
 		//operation too ofthen is not recomended
 		float det() const;

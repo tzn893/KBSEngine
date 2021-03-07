@@ -5,7 +5,7 @@ using namespace Game;
 #include <DirectXMath.h>
 
 Quaterion Quaterion::SLerp(const Quaterion& lhs, const Quaterion& rhs, float factor) {
-	float cosTheta = lhs.Dot(rhs);
+	float cosTheta = fmin(lhs.Dot(rhs),1.);
 	float sinTheta = sqrt(1. - cosTheta * cosTheta);
 	
 	if (sinTheta < 1e-4) {
@@ -29,9 +29,9 @@ Game::Mat4x4  Quaterion::RotationMat() const {
 	float q1q4 = 2 * x * w;
 
 	float mat[] = {
-		2 * x * x + q4q4m1,q1q2 + q3q4       ,q1q3 - q2q4       ,0,
-		q1q2 - q3q4		  ,2 * y * y + q4q4m1,q2q3 + q1q4       ,0,
-		q1q3 + q2q4		  ,q2q3 - q1q4		 ,2 * z * z + q4q4m1,0,
+		2 * x * x + q4q4m1,q1q2 - q3q4       ,q1q3 + q2q4       ,0,
+		q1q2 + q3q4		  ,2 * y * y + q4q4m1,q2q3 - q1q4       ,0,
+		q1q3 - q2q4		  ,q2q3 + q1q4		 ,2 * z * z + q4q4m1,0,
 		0				  ,0				 ,0					,1
 	};
 

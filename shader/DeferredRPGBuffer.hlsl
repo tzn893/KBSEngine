@@ -50,10 +50,10 @@ SamplerState sp : register(s0);
 
 #ifdef USE_SKINNED_VERTEX
     LocalVert vert = BlendLocalVertex(vin);
-    vout.WorldPos = mul(world,float4(vert.localPos,0.));
+    vout.WorldPos = mul(world,float4(vert.localPos,1.)).xyz;
     vout.Normal = mul((float3x3)transInvWorld,vert.localNormal);
-
-    vout.Tangent = mul((float3x3)transInvWorld,vert.localTanget);
+    vout.Tangent = mul((float3x3)transInvWorld,vert.localTangent);
+    
 #else
     vout.WorldPos  = mul(world,float4(vin.Position,1.)).xyz;
     vout.Normal    = mul(transInvWorld,float4(vin.Normal,0.)).xyz;
