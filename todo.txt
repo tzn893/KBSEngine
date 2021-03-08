@@ -1,2 +1,0 @@
-Occlusion Query （Blooming）
-Animation： Quaterion Bone Heirarchy 

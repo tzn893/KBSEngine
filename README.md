@@ -26,16 +26,21 @@ Todo:
 2. CSM
 3. post processer like Motion Blur,SSR,AO,Dof
 4. Occlusion Query
+5. *Render Graph(Current;y Working On)*
 
 **Animation System**
 
+1.Skeletal Animation![image](https://github.com/137900114/KBSEngine/blob/master/pic/ani.PNG)
+
 Todo:
 
-*1.Skeletal  Animation(Currently Working On)*
-
-2.Animation State Machine
+1.Animation State Machine
 
 **Physics System**
+
+Todo:
+
+1.Bullet embedding
 
 **User Interface**
 

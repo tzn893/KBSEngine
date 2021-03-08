@@ -120,15 +120,6 @@ Game::Mat4x4 BoneAnimationNode::Interpolate(float AnimationTick) {
 	return Game::PackTransformQuaterion(position,rotation,scale);
 }
 
-std::vector<Game::Mat4x4> tmp,tmp1;
-void printMat(Game::Mat4x4& m) {
-	std::string msg = std::to_string((float)m.a[0][0]) + "," + std::to_string(m.a[0][1]) + "," + std::to_string(m.a[0][2]) + "," + std::to_string(m.a[0][3]) + "\n"
-		+ std::to_string(m.a[1][0]) + "," + std::to_string(m.a[1][1]) + "," + std::to_string(m.a[1][2]) + "," + std::to_string(m.a[1][3]) + "\n"
-		+ std::to_string(m.a[2][0]) + "," + std::to_string(m.a[2][1]) + "," + std::to_string(m.a[2][2]) + "," + std::to_string(m.a[2][3]) + "\n"
-		+ std::to_string(m.a[3][0]) + "," + std::to_string(m.a[3][1]) + "," + std::to_string(m.a[3][2]) + "," + std::to_string(m.a[3][3]) + "\n\n";
-	OUTPUT_DEBUG_STRING(msg.c_str());
-}
-
 void BoneAnimationClip::Interpolate(float time,Game::Mat4x4* boneTransformBuffer) {
 	float AnimationTick = 0.;
 	float timeTick = tickPersecond * time;

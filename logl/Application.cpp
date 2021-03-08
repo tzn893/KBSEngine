@@ -228,8 +228,8 @@ void Application::update() {
 	mainLight->SetLightIntensity(Game::Vector3(.3, .3, .3) * li);
 
 	sro[0]->Interpolate(gTimer.TotalTime(), "Take1");
-	sro[1]->Interpolate(gTimer.TotalTime() * 3., "Take1");
-	sro[2]->Interpolate(gTimer.TotalTime() * 2., "Take1");
+	sro[1]->Interpolate(gTimer.TotalTime() * 5., "Take1");
+	sro[2]->Interpolate(gTimer.TotalTime() * 10., "Take1");
 
 	fro->Render(drp);
 	spro1->Render(drp);
