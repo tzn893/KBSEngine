@@ -16,4 +16,4 @@ press **A,D** to yaw right and left
 
 press **Mouse Left Button** to fire
 
-By default the program will try to connect to my private server.You can change the connect configuration in /logl/config.init file.
+By default the program will try to connect to my personal server.You can change the connection configuration in /logl/config.init file.
