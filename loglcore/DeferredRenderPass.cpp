@@ -104,13 +104,16 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 
 		Descriptor desc = descriptorHeap->Allocate(GBufferNum, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+		DXGI_FORMAT rtFormat = gGraphic.GetRenderTargetFormat(), dsFormat = gGraphic.GetDepthStencilFormat();
+
+
 		D3D12_CLEAR_VALUE cv;
-		cv.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		cv.Format = rtFormat;
 		memset(cv.Color, 0, sizeof(cv.Color));
 
 		for (size_t i = 0; i != GBufferNum; i++) {
 			GBuffer[i] = std::make_unique<Texture>(gGraphic.GetScreenWidth(), gGraphic.GetScreenHeight(),
-				TEXTURE_FORMAT_FLOAT4, TEXTURE_FLAG_ALLOW_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON, &cv);
+				Texture::GetTextureFormat(rtFormat), TEXTURE_FLAG_ALLOW_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON, &cv);
 			GBuffer[i]->CreateRenderTargetView(descriptorHeap->Allocate(1, D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
 			GBuffer[i]->CreateShaderResourceView(desc.Offset(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, i));
 		}
@@ -177,7 +180,7 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 		GBufferShadingPSO.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 		GBufferShadingPSO.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
 		GBufferShadingPSO.SetRenderTargetFormat(gGraphic.GetRenderTargetFormat());
-		GBufferShadingPSO.SetDepthStencilViewFomat(gGraphic.GetBackBufferDepthFormat());
+		GBufferShadingPSO.SetDepthStencilViewFomat(gGraphic.GetDepthStencilFormat());
 
 		if (!gGraphic.CreatePipelineStateObject(shader, &GBufferShadingPSO, defShading)) {
 			OUTPUT_DEBUG_STRING("fail to create pso for deferred render pass");

@@ -211,7 +211,7 @@ public:
 	}
 
 	inline	DXGI_FORMAT	 GetRenderTargetFormat() { return mRenderTargetFormat; }
-	inline  DXGI_FORMAT	 GetBackBufferDepthFormat() { return mBackBufferDepthFormat; }
+	inline  DXGI_FORMAT	 GetDepthStencilFormat() { return mBackBufferDepthFormat; }
 
 	inline  void		 SetHDRExposure(float exposure) { this->exposure = exposure; }
 

@@ -36,6 +36,24 @@ static DXGI_FORMAT getDXGIFormatFromTextureFormat(TEXTURE_FORMAT format) {
 	return DXGI_FORMAT(0);
 }
 
+static TEXTURE_FORMAT getTextureFormatFromDXGIFormat(DXGI_FORMAT format) {
+	switch (format) {
+	case DXGI_FORMAT_R32G32B32A32_FLOAT:
+		return TEXTURE_FORMAT_FLOAT4;
+	case DXGI_FORMAT_R32G32_FLOAT:
+		return TEXTURE_FORMAT_FLOAT2;
+	case DXGI_FORMAT_R8G8B8A8_UNORM:
+		return TEXTURE_FORMAT_RGBA;
+	case DXGI_FORMAT_R32_FLOAT:
+		return TEXTURE_FORMAT_FLOAT;
+	case DXGI_FORMAT_D24_UNORM_S8_UINT:
+		return TEXTURE_FORMAT_DEPTH_STENCIL;
+	case DXGI_FORMAT_R8G8_UNORM:
+		return TEXTURE_FORMAT_RG;		
+	}
+	return TEXTURE_FORMAT_INVALID;
+}
+
 static D3D12_RESOURCE_FLAGS getResourceFlagFromTextureFlag(TEXTURE_FLAG flag) {
 	D3D12_RESOURCE_FLAGS result = D3D12_RESOURCE_FLAG_NONE;
 	if (flag & TEXTURE_FLAG_ALLOW_RENDER_TARGET) {
@@ -58,6 +76,13 @@ static D3D12_RESOURCE_DIMENSION getResourceDimensionFromResourceType(TEXTURE_TYP
 		return D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	}
 	return D3D12_RESOURCE_DIMENSION(-1);
+}
+
+TEXTURE_FORMAT Texture::GetTextureFormat() {
+	return getTextureFormatFromDXGIFormat(format);
+}
+TEXTURE_FORMAT Texture::GetTextureFormat(DXGI_FORMAT format) {
+	return getTextureFormatFromDXGIFormat(format);
 }
 
 Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,

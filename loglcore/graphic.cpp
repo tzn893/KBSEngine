@@ -885,7 +885,7 @@ bool Graphic::CreatePipelineStateObject(Shader* shader,Game::GraphicPSO* PSO,con
 	PSO->SetSampleMask(UINT_MAX);
 	if (rp) {
 		PSO->SetRenderTargetFormat(GetRenderTargetFormat());
-		PSO->SetDepthStencilViewFomat(GetBackBufferDepthFormat());
+		PSO->SetDepthStencilViewFomat(GetDepthStencilFormat());
 	}
 
 	if (!PSO->Create(mDevice.Get())) {

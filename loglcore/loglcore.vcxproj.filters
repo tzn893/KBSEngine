@@ -35,6 +35,12 @@
     <Filter Include="ThridParty\M3dLoader">
       <UniqueIdentifier>{afe500d7-ad25-4622-97cc-e1df4d1c9535}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RenderGraph">
+      <UniqueIdentifier>{c4815283-2be2-473b-b46a-fd66d3cb38e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Lagacy">
+      <UniqueIdentifier>{9e6fbf57-f2bb-4cb7-a7e2-0af1758274d8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Color.cpp">
@@ -73,15 +79,6 @@
     <ClCompile Include="DescriptorAllocator.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="SpriteRenderPass.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="PhongRenderPass.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="DebugRenderPass.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="tinyobjloader.cpp">
       <Filter>ThridParty\tinyobj</Filter>
     </ClCompile>
@@ -89,15 +86,6 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="LightManager.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="SkyboxRenderPass.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="PostProcessRenderPass.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="DeferredRenderPass.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="GenerateMipmapBatch.cpp">
@@ -127,20 +115,11 @@
     <ClCompile Include="SampleSquence.cpp">
       <Filter>Math</Filter>
     </ClCompile>
-    <ClCompile Include="FXAAFilterPass.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="BloomingFilter.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="ModelManager.cpp">
       <Filter>Model</Filter>
     </ClCompile>
     <ClCompile Include="RenderObject.cpp">
       <Filter>Model</Filter>
-    </ClCompile>
-    <ClCompile Include="ToonRenderPass.cpp">
-      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="BoneHeirarchy.cpp">
       <Filter>Model</Filter>
@@ -150,6 +129,39 @@
     </ClCompile>
     <ClCompile Include="M3dLoader.cpp">
       <Filter>ThridParty\M3dLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderGraphResourceNode.cpp">
+      <Filter>RenderGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="DeferredRenderPass.cpp">
+      <Filter>Lagacy</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugRenderPass.cpp">
+      <Filter>Lagacy</Filter>
+    </ClCompile>
+    <ClCompile Include="BloomingFilter.cpp">
+      <Filter>Lagacy</Filter>
+    </ClCompile>
+    <ClCompile Include="FXAAFilterPass.cpp">
+      <Filter>Lagacy</Filter>
+    </ClCompile>
+    <ClCompile Include="PhongRenderPass.cpp">
+      <Filter>Lagacy</Filter>
+    </ClCompile>
+    <ClCompile Include="PostProcessRenderPass.cpp">
+      <Filter>Lagacy</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyboxRenderPass.cpp">
+      <Filter>Lagacy</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteRenderPass.cpp">
+      <Filter>Lagacy</Filter>
+    </ClCompile>
+    <ClCompile Include="ToonRenderPass.cpp">
+      <Filter>Lagacy</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderGraphScheduler.cpp">
+      <Filter>RenderGraph</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -216,19 +228,7 @@
     <ClInclude Include="RenderPass.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="SpriteRenderPass.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="PhongRenderPass.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="ShaderDataStruct.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="DeferredRenderPass.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="DebugRenderPass.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="tinyobjloader.h">
@@ -241,12 +241,6 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="ComputeCommand.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="SkyboxRenderPass.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="PostProcessRenderPass.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="GenerateMipmapBatch.h">
@@ -279,12 +273,6 @@
     <ClInclude Include="SampleSquence.h">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="FXAAFilterPass.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="BloomingFilter.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Model.h">
       <Filter>Model</Filter>
     </ClInclude>
@@ -303,9 +291,6 @@
     <ClInclude Include="SkinnedSubMesh.h">
       <Filter>Model</Filter>
     </ClInclude>
-    <ClInclude Include="ToonRenderPass.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="BoneHeirarchy.h">
       <Filter>Model</Filter>
     </ClInclude>
@@ -317,6 +302,45 @@
     </ClInclude>
     <ClInclude Include="M3dLoader.h">
       <Filter>ThridParty\M3dLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderGraph.h">
+      <Filter>RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderGraphResourceNode.h">
+      <Filter>RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderGraphPassNode.h">
+      <Filter>RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderGraphScheduler.h">
+      <Filter>RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="DeferredRenderPass.h">
+      <Filter>Lagacy</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugRenderPass.h">
+      <Filter>Lagacy</Filter>
+    </ClInclude>
+    <ClInclude Include="BloomingFilter.h">
+      <Filter>Lagacy</Filter>
+    </ClInclude>
+    <ClInclude Include="FXAAFilterPass.h">
+      <Filter>Lagacy</Filter>
+    </ClInclude>
+    <ClInclude Include="PhongRenderPass.h">
+      <Filter>Lagacy</Filter>
+    </ClInclude>
+    <ClInclude Include="PostProcessRenderPass.h">
+      <Filter>Lagacy</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyboxRenderPass.h">
+      <Filter>Lagacy</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteRenderPass.h">
+      <Filter>Lagacy</Filter>
+    </ClInclude>
+    <ClInclude Include="ToonRenderPass.h">
+      <Filter>Lagacy</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

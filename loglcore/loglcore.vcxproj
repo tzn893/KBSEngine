@@ -43,6 +43,8 @@
     <ClCompile Include="PipelineStateObject.cpp" />
     <ClCompile Include="PostProcessRenderPass.cpp" />
     <ClCompile Include="Quaterion.cpp" />
+    <ClCompile Include="RenderGraphResourceNode.cpp" />
+    <ClCompile Include="RenderGraphScheduler.cpp" />
     <ClCompile Include="RenderObject.cpp" />
     <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="SampleSquence.cpp" />
@@ -63,6 +65,10 @@
     <ClInclude Include="BoneHeirarchy.h" />
     <ClInclude Include="M3dLoader.h" />
     <ClInclude Include="Quaterion.h" />
+    <ClInclude Include="RenderGraph.h" />
+    <ClInclude Include="RenderGraphPassNode.h" />
+    <ClInclude Include="RenderGraphResourceNode.h" />
+    <ClInclude Include="RenderGraphScheduler.h" />
     <ClInclude Include="SkinnedSubMesh.h" />
     <ClInclude Include="AudioClip.h" />
     <ClInclude Include="AudioClipManager.h" />

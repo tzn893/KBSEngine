@@ -1,3 +1,4 @@
+
 #pragma once
 #include "RenderPass.h"
 
@@ -12,7 +13,6 @@ using DeferredRenderPassID = int64_t;
 struct DeferredRenderPassTexture {
 	Texture* normal;
 	Texture* diffuse;
-	//Texture* specular;
 	Texture* metallic;
 	Texture* roughness;
 	Texture* emission;

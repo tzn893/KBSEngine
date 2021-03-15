@@ -11,7 +11,8 @@ enum TEXTURE_FORMAT {
 	TEXTURE_FORMAT_RGBA,
 	TEXTURE_FORMAT_RG ,
 	TEXTURE_FORMAT_FLOAT,
-	TEXTURE_FORMAT_DEPTH_STENCIL
+	TEXTURE_FORMAT_DEPTH_STENCIL,
+	TEXTURE_FORMAT_INVALID
 };
 
 enum TEXTURE_TYPE {
@@ -74,9 +75,12 @@ public:
 	}
 	size_t GetWidth() { return width; }
 	size_t GetHeight() { return height; }
+	size_t GetMipNum() { return mipnum; }
 
 	TEXTURE_TYPE GetType() { return type; }
 	DXGI_FORMAT GetFormat() { return format; }
+	TEXTURE_FORMAT GetTextureFormat();
+	static TEXTURE_FORMAT GetTextureFormat(DXGI_FORMAT format);
 	bool IsValid() { return isValid; }
 
 	void CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOURCE_VIEW_DESC* srv = nullptr);
