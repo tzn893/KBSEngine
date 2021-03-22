@@ -8,9 +8,11 @@ enum TEXTURE_FORMAT {
 	//TEXTURE_FORMAT_RGB,
 	TEXTURE_FORMAT_FLOAT4,
 	TEXTURE_FORMAT_FLOAT2,
-	TEXTURE_FORMAT_RGBA,
-	TEXTURE_FORMAT_RG ,
-	TEXTURE_FORMAT_FLOAT,
+	TEXTURE_FORMAT_HALF4 ,
+	TEXTURE_FORMAT_HALF2 ,
+	TEXTURE_FORMAT_RGBA  ,
+	TEXTURE_FORMAT_RG    ,
+	TEXTURE_FORMAT_FLOAT ,
 	TEXTURE_FORMAT_DEPTH_STENCIL,
 	TEXTURE_FORMAT_INVALID
 };
@@ -68,19 +70,31 @@ public:
 		, UploadBatch* batch = nullptr);
 
 
+	void NameResource(const wchar_t* name) {
+		if (isValid) mRes->SetName(name);
+	}
 
 	ID3D12Resource* GetResource() {
 		if (!isValid) return nullptr;
 		return mRes.Get();
 	}
+	
 	size_t GetWidth() { return width; }
+	
 	size_t GetHeight() { return height; }
+	
 	size_t GetMipNum() { return mipnum; }
 
 	TEXTURE_TYPE GetType() { return type; }
+	
 	DXGI_FORMAT GetFormat() { return format; }
+	
 	TEXTURE_FORMAT GetTextureFormat();
+	
 	static TEXTURE_FORMAT GetTextureFormat(DXGI_FORMAT format);
+	
+	static DXGI_FORMAT    GetFormat(TEXTURE_FORMAT format);
+
 	bool IsValid() { return isValid; }
 
 	void CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOURCE_VIEW_DESC* srv = nullptr);

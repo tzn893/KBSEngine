@@ -53,7 +53,7 @@ private:
 	size_t size[3];
 	size_t handleSize[3];
 
-	static constexpr size_t defaultDSVRTVSize = 8;
+	static constexpr size_t defaultDSVRTVSize = 64;
 };
 
 class DescriptorAllocator {

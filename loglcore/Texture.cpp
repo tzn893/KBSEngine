@@ -4,14 +4,14 @@
 
 static size_t  getFormatElementSize(TEXTURE_FORMAT format) {
 	switch (format) {
-	
+	case TEXTURE_FORMAT_RGBA:
+	case TEXTURE_FORMAT_HALF4:
 	case TEXTURE_FORMAT_FLOAT4:
 		return 4;
 	case TEXTURE_FORMAT_FLOAT2:
+	case TEXTURE_FORMAT_HALF2:
 	case TEXTURE_FORMAT_RG:
 		return 2;
-	case TEXTURE_FORMAT_RGBA:
-		return 4;
 	case TEXTURE_FORMAT_FLOAT:
 		return 1;
 	}
@@ -20,6 +20,10 @@ static size_t  getFormatElementSize(TEXTURE_FORMAT format) {
 
 static DXGI_FORMAT getDXGIFormatFromTextureFormat(TEXTURE_FORMAT format) {
 	switch (format) {
+	case TEXTURE_FORMAT_HALF4:
+		return DXGI_FORMAT_R16G16B16A16_FLOAT;
+	case TEXTURE_FORMAT_HALF2:
+		return DXGI_FORMAT_R16G16_FLOAT;
 	case TEXTURE_FORMAT_FLOAT4:
 		return DXGI_FORMAT_R32G32B32A32_FLOAT;
 	case TEXTURE_FORMAT_FLOAT2:
@@ -38,6 +42,10 @@ static DXGI_FORMAT getDXGIFormatFromTextureFormat(TEXTURE_FORMAT format) {
 
 static TEXTURE_FORMAT getTextureFormatFromDXGIFormat(DXGI_FORMAT format) {
 	switch (format) {
+	case DXGI_FORMAT_R16G16B16A16_FLOAT:
+		return TEXTURE_FORMAT_HALF4;
+	case DXGI_FORMAT_R16G16_FLOAT:
+		return TEXTURE_FORMAT_HALF2;
 	case DXGI_FORMAT_R32G32B32A32_FLOAT:
 		return TEXTURE_FORMAT_FLOAT4;
 	case DXGI_FORMAT_R32G32_FLOAT:
@@ -81,8 +89,13 @@ static D3D12_RESOURCE_DIMENSION getResourceDimensionFromResourceType(TEXTURE_TYP
 TEXTURE_FORMAT Texture::GetTextureFormat() {
 	return getTextureFormatFromDXGIFormat(format);
 }
+
 TEXTURE_FORMAT Texture::GetTextureFormat(DXGI_FORMAT format) {
 	return getTextureFormatFromDXGIFormat(format);
+}
+
+DXGI_FORMAT	   Texture::GetFormat(TEXTURE_FORMAT format) {
+	return getDXGIFormatFromTextureFormat(format);
 }
 
 Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
@@ -480,7 +493,12 @@ void Texture::CreateShaderResourceView(Descriptor descriptor,D3D12_SHADER_RESOUR
 	else {
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format = GetFormat();
+		if (format == TEXTURE_FORMAT_DEPTH_STENCIL) {
+			srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		}
+		else{
+			srvDesc.Format = GetFormat();
+		}
 		srvDesc.ViewDimension = GetMostPossibleDimension<D3D12_SRV_DIMENSION>(type);
 		switch (type) {
 		case TEXTURE_TYPE_2D:

@@ -1,7 +1,15 @@
 #include "RenderGraphResourceNode.h"
-
+#include "GraphicUtil.h"
 
 namespace RenderGraph {
+
+
+	ResourceNode::ResourceNode(ResourceNodeID InternalID, const char* name, Texture* texture) :
+		InternalID(InternalID), name(name), texture(texture) {
+		std::wstring wname = String2WString(this->name);
+		texture->NameResource(wname.c_str());
+	}
+
 
 	ResourceNodeManager::ResourceItem::ResourceItem(ResourceItem&& other) {
 		if (other.isConstant) {
@@ -97,6 +105,13 @@ namespace RenderGraph {
 		ResourceNode* rv = item.node.get();
 		resources[name] = std::move(item);
 		return rv;
+	}
+
+	void ResourceNodeManager::Reset() {
+		availableIDs.clear();
+		nodeList.clear();
+		resources.clear(); 
+		internalIDCounter = 0;
 	}
 
 

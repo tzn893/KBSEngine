@@ -163,6 +163,15 @@
     <ClCompile Include="RenderGraphScheduler.cpp">
       <Filter>RenderGraph</Filter>
     </ClCompile>
+    <ClCompile Include="RenderGraphPassNode.cpp">
+      <Filter>RenderGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderGraph.cpp">
+      <Filter>RenderGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="DefaultRenderGraph.cpp">
+      <Filter>RenderGraph</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h">
@@ -341,6 +350,9 @@
     </ClInclude>
     <ClInclude Include="ToonRenderPass.h">
       <Filter>Lagacy</Filter>
+    </ClInclude>
+    <ClInclude Include="DefaultRenderGraph.h">
+      <Filter>RenderGraph</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -10,12 +10,19 @@ namespace RenderGraph {
 	class ResourceNode {
 		friend class ResourceNodeManager;
 	public:
-		ResourceNode(ResourceNodeID InternalID, const char* name,Texture* texture):
-			InternalID(InternalID),name(name),texture(texture){}
+		ResourceNode(ResourceNodeID InternalID, const char* name, Texture* texture);
 
-		const char* GetName() { return name.c_str(); }
-		ResourceNodeID GetInternalID() { return InternalID; }
+		const char* GetName() const { return name.c_str(); }
+		ResourceNodeID GetInternalID() const { return InternalID; }
 		Texture*    GetTexture() { return texture; }
+
+		inline void StateTransition(D3D12_RESOURCE_STATES state,TransitionBatch* batch = nullptr) {
+			texture->StateTransition(state,batch);
+		}
+
+		inline D3D12_RESOURCE_STATES GetResourceState() {
+			return texture->GetResourceState();
+		}
 
 		//get the srv of the texture.create one if it doesn't exists
 		D3D12_CPU_DESCRIPTOR_HANDLE GetSrvDescriptor(D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc = nullptr);
@@ -40,21 +47,24 @@ namespace RenderGraph {
 	public:
 		template<typename ...Args>
 		ResourceNode* Register(const char* name, Args ...tex) {
-			Texture* tex = new Texture(tex...);
-			if (ResourceNode* rv = DoRegister(tex, name, true); rv != nullptr)
+			Texture* texture = new Texture(tex...);
+			if (ResourceNode* rv = DoRegister(texture, name, true); rv != nullptr)
 				return rv;
-			delete tex;
+			delete texture;
 			return nullptr;
 		}
 
 		template<>
-		ResourceNode* Register(const char* name,Texture* texture) {
+		ResourceNode* Register(const char* name, Texture* texture) {
 			return DoRegister(texture, name,false);
 		}
 
 		bool Destroy(const char* name);
 		ResourceNode* FindResourceNode(const char* name);
 		ResourceNode* GetResourceNode(size_t internalID);
+
+		void Reset();
+
 	private:
 		ResourceNode* DoRegister(Texture* texture,const char* name,bool isConstant);
 
@@ -78,5 +88,4 @@ namespace RenderGraph {
 		size_t internalIDCounter = 0;
 	};
 
-	inline ResourceNodeManager gResourceNodeManager;
 }

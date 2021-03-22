@@ -145,7 +145,7 @@ bool Application::initialize() {
 			SkinnedModel* model = gModelManager.loadSkinnedModel("../asserts/animated_model/soldier.m3d", "test", &up);
 			Model* nsmodel = gModelManager.loadModel("../asserts/animated_model/soldier.m3d", "test", &up);
 			sro[0] = std::make_unique<SkinnedRenderObject>(model, Game::Vector3(1., -2., 4.), Game::Vector3(0., 0., 0.), Game::Vector3(.03, .03, .03)); 
-			sro[1] = std::make_unique<SkinnedRenderObject>(model, Game::Vector3(0., -2., 4.), Game::Vector3(0., 0., 0.), Game::Vector3(.03, .03, .03));
+			sro[1] = std::make_unique<SkinnedRenderObject>(model, Game::Vector3(0., -2., 4.), Game::Vector3(0., 0., 0.), Game::Vector3(.03, .01, .03));
 			sro[2] = std::make_unique<SkinnedRenderObject>(model, Game::Vector3(-1., -2., 4.), Game::Vector3(0., 0., 0.), Game::Vector3(.03, .03, .03));
 		}
 		

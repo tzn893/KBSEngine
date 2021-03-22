@@ -28,6 +28,7 @@
     <ClCompile Include="ComputeCommand.cpp" />
     <ClCompile Include="CopyBatch.cpp" />
     <ClCompile Include="DebugRenderPass.cpp" />
+    <ClCompile Include="DefaultRenderGraph.cpp" />
     <ClCompile Include="DeferredRenderPass.cpp" />
     <ClCompile Include="DescriptorAllocator.cpp" />
     <ClCompile Include="FXAAFilterPass.cpp" />
@@ -43,6 +44,8 @@
     <ClCompile Include="PipelineStateObject.cpp" />
     <ClCompile Include="PostProcessRenderPass.cpp" />
     <ClCompile Include="Quaterion.cpp" />
+    <ClCompile Include="RenderGraph.cpp" />
+    <ClCompile Include="RenderGraphPassNode.cpp" />
     <ClCompile Include="RenderGraphResourceNode.cpp" />
     <ClCompile Include="RenderGraphScheduler.cpp" />
     <ClCompile Include="RenderObject.cpp" />
@@ -63,6 +66,7 @@
   <ItemGroup>
     <ClInclude Include="AnimationClip.h" />
     <ClInclude Include="BoneHeirarchy.h" />
+    <ClInclude Include="DefaultRenderGraph.h" />
     <ClInclude Include="M3dLoader.h" />
     <ClInclude Include="Quaterion.h" />
     <ClInclude Include="RenderGraph.h" />
