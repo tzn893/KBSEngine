@@ -21,7 +21,7 @@ bool   DebugRenderPass::Initialize(UploadBatch* batch) {
 		{"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,8,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0}
 	};
 
-	shader = gShaderManager.loadShader(L"../shader/DebugDirectDraw.hlsl", "VS", "PS",
+	shader = gShaderManager.loadShader(L"../shader/Legacy/DebugDirectDraw.hlsl", "VS", "PS",
 		L"debugDD", lDesc, L"debugDD");
 	if (shader == nullptr) {
 		OUTPUT_DEBUG_STRING("fail to create shader for debug render pass\n");

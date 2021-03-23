@@ -39,7 +39,7 @@ bool PhongRenderPass::Initialize(UploadBatch* batch) {
 		nullptr,nullptr
 	};
 
-	Shader* shader = gShaderManager.loadShader(L"../shader/PhongLighting.hlsl", "VS", "PS",
+	Shader* shader = gShaderManager.loadShader(L"../shader/Legacy/PhongLighting.hlsl", "VS", "PS",
 		rootSigName.c_str(), layout, rootSigName.c_str(),macro);
 
 	if (shader == nullptr) {
@@ -85,7 +85,7 @@ bool PhongRenderPass::Initialize(UploadBatch* batch) {
 	};
 
 
-	Shader* texShader = gShaderManager.loadShader(L"../shader/PhongLighting.hlsl", "VS", "PS",
+	Shader* texShader = gShaderManager.loadShader(L"../shader/Legacy/PhongLighting.hlsl", "VS", "PS",
 		texRootSigName.c_str(), layout, texRootSigName.c_str(),texMacro);
 
 	if (texShader == nullptr) {

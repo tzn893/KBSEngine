@@ -21,7 +21,7 @@ bool   ShadowRenderPass::Initialize(UploadBatch* batch) {
 	};
 
 	Shader* shadowPassShader = gShaderManager.loadShader(
-		L"../shader/ShadowMap.hlsl", "VS", "PS",
+		L"../shader/Legacy/ShadowMap.hlsl", "VS", "PS",
 		shadowRootSigName.c_str(), layout, L"shadowPass");
 	if (shadowPassShader == nullptr) {
 		OUTPUT_DEBUG_STRING("fail to create shader for shadow pass\n");
@@ -120,7 +120,7 @@ void   ShadowRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 		D3D12_RESOURCE_STATE_RENDER_TARGET,
 		D3D12_RESOURCE_STATE_COMMON);*/
 	mDepthRTVTex->StateTransition(D3D12_RESOURCE_STATE_COMMON);
-	graphic->BindCurrentBackBufferAsRenderTarget();
+	graphic->BindCurrentBackBufferAsRTWidthDepth();
 
 	objQueue.clear();
 }

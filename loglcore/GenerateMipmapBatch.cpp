@@ -62,7 +62,7 @@ bool GenerateMipmapBatch::initialize() {
 	}
 	mipRootSig = root.GetRootSignature();
 
-	ComputeShader* cs = gShaderManager.loadComputeShader(L"../shader/GenerateMip.hlsl",
+	ComputeShader* cs = gShaderManager.loadComputeShader(L"../shader/Util/GenerateMipUtil.hlsl",
 		"GenerateMipmap", rootSigName, rootSigName, nullptr);
 	if (cs == nullptr) {
 		OUTPUT_DEBUG_STRING("fail to create compute shader for mipmap generating\n");
@@ -208,7 +208,7 @@ static bool GenerateIrradianceInitialize(DXGI_FORMAT targetFormat) {
 	irrRootSig = rootSig.GetRootSignature();
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> layout{};
-	Shader* shader = gShaderManager.loadShader(L"../shader/PBRIrradianceBaking.hlsl", "VS", "PS",
+	Shader* shader = gShaderManager.loadShader(L"../shader/Util/PBRIrradianceBakingUtil.hlsl", "VS", "PS",
 		irrRootSigName, layout, irrPsoName);
 	if (shader == nullptr) {
 		OUTPUT_DEBUG_STRING("fail to create shader for irradience generation\n");
@@ -381,7 +381,7 @@ static bool PrefilterInitialize() {
 	}
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> input;
-	Shader* shader = gShaderManager.loadShader(L"../shader/PBRPrefliteringEnvoriment.hlsl",
+	Shader* shader = gShaderManager.loadShader(L"../shader/Util/PBRPrefliteringEnvorimentUtil.hlsl",
 		"VS", "PS", prefilterRootSigName, input, prefilterPsoName,
 		nullptr);
 	if (shader == nullptr) {

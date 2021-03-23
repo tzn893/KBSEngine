@@ -23,7 +23,7 @@ bool SkyboxRenderPass::Initialize(UploadBatch* batch) {
 		{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0}
 	};
 
-	Shader* shader = gShaderManager.loadShader(L"../shader/Skybox.hlsl",
+	Shader* shader = gShaderManager.loadShader(L"../shader/Legacy/Skybox.hlsl",
 		"VS", "PS", rootSigName, layout, L"skybox", nullptr);
 	if (shader == nullptr) {
 		OUTPUT_DEBUG_STRING("fail to create shader for sky box render pass\n");

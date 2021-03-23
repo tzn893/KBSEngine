@@ -93,7 +93,8 @@ public:
 		D3D12_RESOURCE_STATES sourceInitState, D3D12_RESOURCE_STATES destAfterState,
 		D3D12_RESOURCE_STATES sourceAfterState);
 
-	void BindCurrentBackBufferAsRenderTarget(bool clear = false, float* clearValue = nullptr);
+	void BindCurrentBackBufferAsRT(bool clear = false, float* clearValue = nullptr);
+	void BindCurrentBackBufferAsRTWidthDepth(bool clear = false, float* clearValue = nullptr);
 	void BindRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, size_t rtvNum = 1,
 		bool clear = false, float* clearValule = nullptr, D3D12_VIEWPORT* viewPort = nullptr, D3D12_RECT* rect = nullptr,
 		bool clearDepth = false);
@@ -210,7 +211,7 @@ public:
 		return 0;
 	}
 
-	inline	DXGI_FORMAT	 GetRenderTargetFormat() { return mRenderTargetFormat; }
+	inline	DXGI_FORMAT	 GetRenderTargetFormat() { return mBackBufferFormat; }
 	inline  DXGI_FORMAT	 GetDepthStencilFormat() { return mBackBufferDepthFormat; }
 
 	inline  void		 SetHDRExposure(float exposure) { this->exposure = exposure; }
@@ -250,13 +251,13 @@ private:
 
 	size_t mCurrBackBuffer;
 	ComPtr<ID3D12Resource> mBackBuffers[Graphic_mBackBufferNum];
-	ComPtr<ID3D12Resource> mRenderTargets[Graphic_mBackBufferNum];
+	//ComPtr<ID3D12Resource> mRenderTargets[Graphic_mBackBufferNum];
 	ComPtr<ID3D12Resource> mDepthStencilBuffer;
 
-	ComPtr<ID3D12DescriptorHeap> mSRVHeap;
+	//ComPtr<ID3D12DescriptorHeap> mSRVHeap;
 	float exposure = 1.;
 
-	DXGI_FORMAT mRenderTargetFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	//DXGI_FORMAT mRenderTargetFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	DXGI_FORMAT mBackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_FORMAT mBackBufferDepthFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 

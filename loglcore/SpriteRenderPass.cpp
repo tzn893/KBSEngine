@@ -17,7 +17,7 @@ bool SpriteRenderPass::Initialize(UploadBatch* batch) {
 		{"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,8,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0}
 	};
 
-	spriteShader = gShaderManager.loadShader(L"../shader/DrawSprite.hlsl", "VS", "PS", L"Sprite",inputLayout,L"DrawSprite");
+	spriteShader = gShaderManager.loadShader(L"../shader/Legacy/DrawSprite.hlsl", "VS", "PS", L"Sprite",inputLayout,L"DrawSprite");
 	if (spriteShader == nullptr) {
 		return false;
 	}

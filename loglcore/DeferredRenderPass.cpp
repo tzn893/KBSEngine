@@ -28,7 +28,7 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 			{"TANGENT",0,DXGI_FORMAT_R32G32B32_FLOAT,0,32,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
 		};
 
-		Shader* shader = gShaderManager.loadShader(L"../shader/DeferredRPGBuffer.hlsl",
+		Shader* shader = gShaderManager.loadShader(L"../shader/Legacy/DeferredRPGBuffer.hlsl",
 			"VS", "PS", defPreproc, layout, defPreproc, nullptr);
 		if (shader == nullptr) {
 			OUTPUT_DEBUG_STRING("DeferredRenderPass::Initialize fail to create preprocess shader\n");
@@ -79,7 +79,7 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 			{NULL,NULL}
 		};
 
-		shader = gShaderManager.loadShader(L"../shader/DeferredRPGBuffer.hlsl", "VS", "PS", defSkinnedPreproc,
+		shader = gShaderManager.loadShader(L"../shader/Legacy/DeferredRPGBuffer.hlsl", "VS", "PS", defSkinnedPreproc,
 			skinnedLayout, defSkinnedPreproc,macros);
 
 		if (shader == nullptr) {
@@ -104,7 +104,7 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 
 		Descriptor desc = descriptorHeap->Allocate(GBufferNum, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-		DXGI_FORMAT rtFormat = gGraphic.GetRenderTargetFormat(), dsFormat = gGraphic.GetDepthStencilFormat();
+		DXGI_FORMAT rtFormat = Texture::GetFormat(TEXTURE_FORMAT_FLOAT4), dsFormat = gGraphic.GetDepthStencilFormat();
 
 
 		D3D12_CLEAR_VALUE cv;
@@ -113,7 +113,7 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 
 		for (size_t i = 0; i != GBufferNum; i++) {
 			GBuffer[i] = std::make_unique<Texture>(gGraphic.GetScreenWidth(), gGraphic.GetScreenHeight(),
-				Texture::GetTextureFormat(rtFormat), TEXTURE_FLAG_ALLOW_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON, &cv);
+				TEXTURE_FORMAT_FLOAT4, TEXTURE_FLAG_ALLOW_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON, &cv);
 			GBuffer[i]->CreateRenderTargetView(descriptorHeap->Allocate(1, D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
 			GBuffer[i]->CreateShaderResourceView(desc.Offset(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, i));
 		}
@@ -161,7 +161,7 @@ bool DeferredRenderPass::Initialize(UploadBatch* batch) {
 			{nullptr,nullptr}
 		};
 
-		Shader* shader = gShaderManager.loadShader(L"../shader/DeferredRPShading.hlsl", "VS", "PS",
+		Shader* shader = gShaderManager.loadShader(L"../shader/Legacy/DeferredRPShading.hlsl", "VS", "PS",
 			defShading, layoutShading, defShading, macros);
 
 		Game::GraphicPSO GBufferShadingPSO;
@@ -266,7 +266,7 @@ void DeferredRenderPass::Render(Graphic* graphic, RENDER_PASS_LAYER layer) {
 	}
 	tbatch.End();
 
-	graphic->BindCurrentBackBufferAsRenderTarget();
+	graphic->BindCurrentBackBufferAsRTWidthDepth();
 
 	/*SkyboxRenderPass* sbrp = gGraphic.GetRenderPass<SkyboxRenderPass>();
 	Texture* irrMap = sbrp->GetIrradianceMap();

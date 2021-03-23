@@ -137,6 +137,8 @@ namespace RenderGraph {
 		context.resourceNodeManager = &resourceNodeManager;
 		context.descriptorHeap = descriptorHeap.get();
 
+		gGraphic.BindDescriptorHeap(descriptorHeap->GetHeap());
+
 		scheduler.Excute(&context);
 	}
 

@@ -25,7 +25,7 @@ bool ToonRenderPass::Initialize(UploadBatch* up) {
 		{"TANGENT",0,DXGI_FORMAT_R32G32B32_FLOAT,0,32,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
 	};
 
-	Shader* shading = gShaderManager.loadShader(L"../shader/ToonShading.hlsl",
+	Shader* shading = gShaderManager.loadShader(L"../shader/Legacy/ToonShading.hlsl",
 		"VS", "PS", toon_render_pass_shading, layout, toon_render_pass_shading, nullptr);
 	if (shading == nullptr) {
 		OUTPUT_DEBUG_STRING("fail to create shader for toon render pass\n");
@@ -51,7 +51,7 @@ bool ToonRenderPass::Initialize(UploadBatch* up) {
 		return false;
 	}
 
-	Shader* outline = gShaderManager.loadShader(L"../shader/ToonOutline.hlsl",
+	Shader* outline = gShaderManager.loadShader(L"../shader/Legacy/ToonOutline.hlsl",
 		"VS", "PS", toon_render_pass_outline, layout, toon_render_pass_outline,
 		nullptr);
 	if (outline == nullptr) {
