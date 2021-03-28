@@ -17,6 +17,9 @@ public:
 		size_t mipnum,Descriptor srcSrvHandle,
 		D3D12_RESOURCE_STATES tarInitState);
 
+	static bool GenerateHDRCubeMap(ID3D12Resource* res,ID3D12Resource* target,
+		D3D12_RESOURCE_STATES resState,D3D12_RESOURCE_STATES targetState);
+
 private:
 	//we will read the lut directly from disk rather than compute them in realtime
 	static bool GenerateEnvLUT(ID3D12Resource* target, D3D12_RESOURCE_STATES tarInitState,

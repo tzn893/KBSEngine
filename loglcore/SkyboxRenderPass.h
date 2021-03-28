@@ -17,6 +17,10 @@ public:
 	Texture* GetIrradianceMap();
 	Texture* GetSpecularIBLMap();
 	void     SetSkyBox(Texture* tex);
+
+	void	 CreateIrradianceMap();
+	void	 CreateSpecularIBLMap();
+
 private:
 	const wchar_t* default_skybox_path = L"../asserts/skybox/clear";
 

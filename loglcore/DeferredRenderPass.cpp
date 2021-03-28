@@ -296,9 +296,15 @@ void DeferredRenderPass::DeferredShadingPass::Render(Graphic* graphic,RENDER_PAS
 	if (layer != RENDER_PASS_LAYER_OPAQUE || !drp->activated) return;
 	SkyboxRenderPass* sbrp = gGraphic.GetRenderPass<SkyboxRenderPass>();
 	Texture* irrMap = sbrp->GetIrradianceMap();
+	if (irrMap == nullptr) {
+		irrMap = gTextureManager.getWhiteTexture();
+	}
 	D3D12_GPU_DESCRIPTOR_HANDLE irrDescHandle = drp->descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 		irrMap->GetShaderResourceViewCPU()).gpuHandle;
 	Texture* specMap = sbrp->GetSpecularIBLMap();
+	if (specMap == nullptr) {
+		specMap = gTextureManager.getWhiteTexture();
+	}
 	D3D12_GPU_DESCRIPTOR_HANDLE specDescHandle = drp->descriptorHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 		specMap->GetShaderResourceViewCPU()).gpuHandle;
 

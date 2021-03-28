@@ -31,6 +31,25 @@ public:
 			sub_res_num,initState,TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS, batch),name(name),pathName(path)
 	{}
 
+	ManagedTexture(const wchar_t* name,const wchar_t* path,
+		size_t width, size_t height, TEXTURE_FORMAT format,
+		TEXTURE_TYPE type, TEXTURE_FLAG flag = TEXTURE_FLAG_NONE,
+		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON,
+		D3D12_CLEAR_VALUE* cv = nullptr) :
+		Texture(width, height, format, type, flag, initState, cv),
+		name(name),pathName(path){}
+
+	ManagedTexture(const wchar_t* name, const wchar_t* path,
+		D3D12_RESOURCE_DESC desc, void** original_buffer,
+		size_t original_buffer_num,
+		D3D12_SUBRESOURCE_DATA* sub_res,
+		size_t sub_res_num,
+		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON) :
+		Texture(desc, original_buffer, original_buffer_num,
+			sub_res, sub_res_num, initState),
+		name(name), pathName(path)
+	{};
+
 	const wchar_t* GetName() { return name.c_str(); }
 	const wchar_t* GetPath() { return pathName.c_str(); }
 private:
@@ -57,6 +76,7 @@ private:
 	std::map<std::wstring, ManagedTexture*> texturesByName;
 
 	ManagedTexture* loadTextureBySTB(const wchar_t* path,const wchar_t* name,bool filp_vertically,UploadBatch* batch,size_t mipnum = 1);
+	ManagedTexture* loadHDRTextureBySTB(const wchar_t* path,const wchar_t* name,bool filp_vertically);
 	std::unique_ptr<Texture> white,black,normal,blue;
 };
 

@@ -13,6 +13,7 @@ bool Graphic::createCommandObject() {
 	D3D12_COMMAND_QUEUE_DESC desc = {};
 	desc.NodeMask = 0;
 	desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	desc.Flags = D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT;
 
 	HRESULT hr = mDevice->CreateCommandQueue(&desc,IID_PPV_ARGS(&mCommandQueue));
 	if (FAILED(hr)) {

@@ -20,6 +20,8 @@ static size_t  getFormatElementSize(TEXTURE_FORMAT format) {
 
 static DXGI_FORMAT getDXGIFormatFromTextureFormat(TEXTURE_FORMAT format) {
 	switch (format) {
+	case TEXTURE_FORMAT_FLOAT3:
+		return DXGI_FORMAT_R32G32B32_FLOAT;
 	case TEXTURE_FORMAT_HALF4:
 		return DXGI_FORMAT_R16G16B16A16_FLOAT;
 	case TEXTURE_FORMAT_HALF2:
@@ -46,6 +48,8 @@ static TEXTURE_FORMAT getTextureFormatFromDXGIFormat(DXGI_FORMAT format) {
 		return TEXTURE_FORMAT_HALF4;
 	case DXGI_FORMAT_R16G16_FLOAT:
 		return TEXTURE_FORMAT_HALF2;
+	case DXGI_FORMAT_R32G32B32_FLOAT:
+		return TEXTURE_FORMAT_FLOAT3;
 	case DXGI_FORMAT_R32G32B32A32_FLOAT:
 		return TEXTURE_FORMAT_FLOAT4;
 	case DXGI_FORMAT_R32G32_FLOAT:
@@ -72,6 +76,20 @@ static D3D12_RESOURCE_FLAGS getResourceFlagFromTextureFlag(TEXTURE_FLAG flag) {
 	}
 	if (flag & TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS) {
 		result |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	}
+	return result;
+}
+
+static TEXTURE_FLAG getTextureFlagFromResourceFlag(D3D12_RESOURCE_FLAGS flag) {
+	TEXTURE_FLAG result = TEXTURE_FLAG_NONE;
+	if (flag & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) {
+		result =(TEXTURE_FLAG)(result | TEXTURE_FLAG_ALLOW_RENDER_TARGET);
+	}
+	if (flag & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) {
+		result = (TEXTURE_FLAG)(result | TEXTURE_FLAG_ALLOW_DEPTH_STENCIL);
+	}
+	if (flag & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) {
+		result = (TEXTURE_FLAG)(result | TEXTURE_FLAG_ALLOW_UNORDERED_ACCESS);
 	}
 	return result;
 }
@@ -445,6 +463,33 @@ Texture::Texture(size_t width, size_t height, TEXTURE_FORMAT format,
 	}
 	isValid = true;
 	this->currState = initState;
+}
+
+Texture::Texture(D3D12_RESOURCE_DESC desc, void** orignal_data,
+	size_t orignal_data_num,
+	D3D12_SUBRESOURCE_DATA* sub_res,
+	size_t sub_res_num,
+	D3D12_RESOURCE_STATES state) {
+	this->width = desc.Width;
+	this->height = desc.Height;
+	this->mipnum = desc.MipLevels;
+	this->format = desc.Format;
+	this->flag = getTextureFlagFromResourceFlag(desc.Flags);
+
+	this->currState = state;
+
+	UploadTextureResource resource;
+	resource.subres.insert(resource.subres.begin(),
+		sub_res, sub_res + sub_res_num);
+	resource.original_buffer.insert(resource.original_buffer.begin(),
+		orignal_data, orignal_data + orignal_data_num);
+	for (int i = 0; i != orignal_data_num; i++)
+		orignal_data[i] = nullptr;
+
+	UploadBatch batch = UploadBatch::Begin();
+	mRes = batch.UploadTexture(resource, desc, state);
+	batch.End();
+	isValid = mRes != nullptr;
 }
 
 template<typename TARGET>

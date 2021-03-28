@@ -54,7 +54,7 @@ float4 PS(VertexOut vin) : SV_TARGET{
     result += emission;
 
     //compute the result from environment
-    float3 irradiance =  diffuse * gIrradianceMap.Sample(irrSp,normal).rgb;
+    float3 irradiance =  diffuse * gIrradianceMap.Sample(irrSp,-normal).rgb;
     float3 F1 = lerp(F0,diffuse,metallic);
     float3 kD = (1. - F1) * (1. - metallic);
 

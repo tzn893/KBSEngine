@@ -1,10 +1,7 @@
 #include "PBRLightingUtil.hlsli"
 
-#define SAMPLE_NUM 512
-
-#define USE_QUADS
-#include "GeometryUtil.hlsli"
-
+#define SAMPLE_NUM 65536
+/*
 cbuffer Proj : register(b0){
     float4x4 Mright;
     float4x4 Mleft ;
@@ -51,6 +48,41 @@ Vout VS(uint vid : SV_VERTEXID){
     v.Pback  = mul(Mback ,quads[vid]).xyz;
     return v;
 }
+*/
+
+cbuffer State : register(b1){
+    float roughness;
+};
+
+static const float4 quads[6] =
+{
+    float4(-1.0f, -1.0f, 0.f,  1.f),
+    float4( 1.0f,  1.0f, 0.f,  1.f),
+    float4( 1.0f, -1.0f, 0.f,  1.f),
+    float4(-1.0f,  1.0f, 0.f,  1.f),
+    float4(-1.0f, -1.0f, 0.f,  1.f),
+    float4( 1.0f,  1.0f, 0.f,  1.f)
+};
+
+cbuffer Proj : register(b0){
+    float4x4 proj;
+};
+
+TextureCube srcTex : register(t0);
+SamplerState sp  : register(s0);
+
+struct Vout{
+    float3 Pos : TEXCOORD0;
+    float4 NDC : SV_POSITION;
+};
+
+Vout VS(uint vid : SV_VERTEXID){ 
+	Vout v;
+    v.NDC = quads[vid];
+    v.Pos = mul(proj,quads[vid]).xyz;
+    return v;
+}
+
 
 float4 SampleImportanceGGX(float3 normal){
     float3 result = 0.;
@@ -72,7 +104,11 @@ float4 SampleImportanceGGX(float3 normal){
     return float4(result,1.);
 }
 
-Pout PS(Vout v) : SV_TARGET{
+float4 PS(Vout v) : SV_TARGET{
+    return SampleImportanceGGX(normalize(v.Pos));
+}
+
+/*Pout PS(Vout v) : SV_TARGET{
     Pout p;
     p.pright = SampleImportanceGGX(normalize(v.Pright));
     p.pleft  = SampleImportanceGGX(normalize(v.Pleft ));
@@ -81,4 +117,4 @@ Pout PS(Vout v) : SV_TARGET{
     p.pfront = SampleImportanceGGX(normalize(v.Pfront));
     p.pback  = SampleImportanceGGX(normalize(v.Pback));
     return p;
-}
+}*/

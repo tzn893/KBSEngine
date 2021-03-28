@@ -15,7 +15,7 @@ struct Shader {
 	std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayout;
 
 	Shader(ID3DBlob* shaderByteCodeVS,ID3DBlob* shaderByteCodePS,const wchar_t* name,const wchar_t* path,const wchar_t* rootSig,
-		std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout):
+		const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout):
 		name(name),path(path),shaderByteCodeVS(shaderByteCodeVS),
 		rootSignatureName(rootSig),shaderByteCodePS(shaderByteCodePS),
 		inputLayout(inputLayout){
@@ -48,7 +48,7 @@ struct ComputeShader {
 class ShaderManager {
 public:
 	Shader* loadShader(const wchar_t* path,const char* VS,const char* PS,const wchar_t* rootSigName,
-		std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
+		const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout,
 			const wchar_t* name = nullptr,const D3D_SHADER_MACRO* macros = nullptr);
 
 	ComputeShader* loadComputeShader(const wchar_t* path,const char* CS,

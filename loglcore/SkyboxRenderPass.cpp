@@ -85,26 +85,26 @@ void   SkyboxRenderPass::SetSkyBox(Texture* tex) {
 	skyboxDesc = mHeap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, tex->GetShaderResourceViewCPU());
 
 	skybox = tex;
-	irradianceMap = nullptr;
+	//irradianceMap = nullptr;
 }
 
 Texture* SkyboxRenderPass::GetIrradianceMap() {
-	if (irradianceMap == nullptr) {
-		irradianceMap = std::make_unique<Texture>(skybox->GetWidth(), skybox->GetHeight(), TEXTURE_FORMAT_RGBA,
+	/*if (irradianceMap == nullptr) {
+		irradianceMap = std::make_unique<Texture>(skybox->GetWidth(), skybox->GetHeight(), TEXTURE_FORMAT_HALF4,
 			TEXTURE_TYPE_2DCUBE, TEXTURE_FLAG_ALLOW_RENDER_TARGET);
 		irradianceMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 		GenerateMipmapBatch::GenerateIBLIrradience(skybox->GetResource(),
 			irradianceMap->GetResource(), skybox->GetShaderResourceViewCPU(),
 			D3D12_RESOURCE_STATE_COMMON
 		);
-	}
+	}*/
 	return irradianceMap.get();
 }
 
 Texture* SkyboxRenderPass::GetSpecularIBLMap() {
-	if (specularMap == nullptr) {
+	/*if (specularMap == nullptr) {
 		specularMap = std::make_unique<Texture>(skybox->GetWidth(), skybox->GetHeight(),
-			5, TEXTURE_FORMAT_RGBA, TEXTURE_TYPE_2DCUBE,
+			5, TEXTURE_FORMAT_HALF4, TEXTURE_TYPE_2DCUBE,
 			TEXTURE_FLAG_ALLOW_RENDER_TARGET);
 		specularMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 		GenerateMipmapBatch::PrefilterEnvironment(
@@ -112,11 +112,35 @@ Texture* SkyboxRenderPass::GetSpecularIBLMap() {
 			specularMapMipNum,skybox->GetShaderResourceViewCPU(),
 			D3D12_RESOURCE_STATE_COMMON
 		);
-	}
+	}*/
 	return specularMap.get();
 }
 
 void   SkyboxRenderPass::finalize() {
 	mHeap.release();
 	mBox.release();
+}
+
+void   SkyboxRenderPass::CreateIrradianceMap() {
+	if (skybox == nullptr) return;
+	irradianceMap = std::make_unique<Texture>(skybox->GetWidth(), skybox->GetHeight(), TEXTURE_FORMAT_HALF4,
+		TEXTURE_TYPE_2DCUBE, TEXTURE_FLAG_ALLOW_RENDER_TARGET);
+	irradianceMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	GenerateMipmapBatch::GenerateIBLIrradience(skybox->GetResource(),
+		irradianceMap->GetResource(), skybox->GetShaderResourceViewCPU(),
+		D3D12_RESOURCE_STATE_COMMON
+	);
+}
+
+void   SkyboxRenderPass::CreateSpecularIBLMap() {
+	if (skybox == nullptr) return;
+	specularMap = std::make_unique<Texture>(skybox->GetWidth(), skybox->GetHeight(),
+		5, TEXTURE_FORMAT_HALF4, TEXTURE_TYPE_2DCUBE,
+		TEXTURE_FLAG_ALLOW_RENDER_TARGET);
+	specularMap->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
+	GenerateMipmapBatch::PrefilterEnvironment(
+		skybox->GetResource(), specularMap->GetResource(),
+		specularMapMipNum, skybox->GetShaderResourceViewCPU(),
+		D3D12_RESOURCE_STATE_COMMON
+	);
 }

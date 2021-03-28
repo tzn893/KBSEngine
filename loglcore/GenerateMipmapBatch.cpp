@@ -30,7 +30,7 @@ const wchar_t*	irrRootSigName = L"gen_irr";
 const wchar_t*  irrPsoName	   = L"gen_irr";
 static bool irr_gen_initialized = false;
 
-struct GenIrrProj{
+struct GenProj{
 	Game::Mat4x4 mright;
 	Game::Mat4x4 mleft;
 	Game::Mat4x4 mup;
@@ -38,7 +38,55 @@ struct GenIrrProj{
 	Game::Mat4x4 mfront;
 	Game::Mat4x4 mback;
 };
-static std::unique_ptr<ConstantBuffer<GenIrrProj>> mGenIrrProj;
+static std::unique_ptr<ConstantBuffer<GenProj>> mGenProj;
+static std::unique_ptr<ConstantBuffer<Game::Mat4x4>> mProj;
+
+static void CreateGenProj() {
+	
+	if (mGenProj != nullptr) return;
+
+	mGenProj = std::make_unique<ConstantBuffer<GenProj>>(gGraphic.GetDevice());
+	mProj = std::make_unique<ConstantBuffer<Game::Mat4x4>>(gGraphic.GetDevice(),6);
+
+	GenProj* irr = mGenProj->GetBufferPtr();
+	irr->mright = Game::Mat4x4(
+		0, 0, 0, 1,
+		0, 1, 0, 0,
+		-1, 0, 0, 0,
+		0, 0, 0, 0).T();
+	*mProj->GetBufferPtr(0) = irr->mright;
+	irr->mleft = Game::Mat4x4(
+		0, 0, 0, -1,
+		0, 1, 0, 0,
+		1, 0, 0, 0,
+		0, 0, 0, 0).T();
+	*mProj->GetBufferPtr(1) = irr->mleft;
+	irr->mup = Game::Mat4x4(
+		-1, 0, 0, 0,
+		0, 0, 0, 1,
+		0, 1, 0, 0,
+		0, 0, 0, 0).T();
+	*mProj->GetBufferPtr(2) = irr->mup;
+	irr->mdown = Game::Mat4x4(
+		1, 0, 0, 0,
+		0, 0, 0, -1,
+		0, 1, 0, 0,
+		0, 0, 0, 0).T();
+	*mProj->GetBufferPtr(3) = irr->mdown;
+	irr->mfront = Game::Mat4x4(
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 0, 1,
+		0, 0, 0, 0).T();
+	*mProj->GetBufferPtr(4) = irr->mfront;
+	irr->mback = Game::Mat4x4(
+		-1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 0, -1,
+		0, 0, 0, 0).T();
+	*mProj->GetBufferPtr(5) = irr->mback;
+}
+
 
 bool GenerateMipmapBatch::initialize() {
 	Game::RootSignature root(6, 1);
@@ -227,9 +275,9 @@ static bool GenerateIrradianceInitialize(DXGI_FORMAT targetFormat) {
 	mPso.SetSampleMask(UINT_MAX);
 	mPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 	mPso.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
-	DXGI_FORMAT rtvFormats[6] = { targetFormat ,targetFormat ,targetFormat ,
-		targetFormat ,targetFormat , targetFormat};
-	mPso.SetRenderTargetFormat(6, rtvFormats);
+	/*DXGI_FORMAT rtvFormats[6] = { targetFormat ,targetFormat ,targetFormat ,
+		targetFormat ,targetFormat , targetFormat};*/
+	mPso.SetRenderTargetFormat(targetFormat);
 	
 	if (!gGraphic.CreatePipelineStateObject(shader,&mPso,irrPsoName)) {
 		OUTPUT_DEBUG_STRING("fail to create pso for irradince generation\n");
@@ -238,43 +286,12 @@ static bool GenerateIrradianceInitialize(DXGI_FORMAT targetFormat) {
 
 	irrPso = mPso.GetPSO();
 	
-	mGenIrrProj = std::make_unique<ConstantBuffer<GenIrrProj>>(gGraphic.GetDevice());
-
-	GenIrrProj* irr = mGenIrrProj->GetBufferPtr();
-	irr->mright = Game::Mat4x4(
-					0, 0, 0, 1,
-					0, 1, 0, 0,
-				   -1, 0, 0, 0,
-					0, 0, 0, 0).T();
-	irr->mleft  = Game::Mat4x4(
-					 0, 0, 0,-1,
-					 0, 1, 0, 0,
-					 1, 0, 0, 0,
-					 0,	0, 0, 0).T();
-	irr->mfront = Game::Mat4x4(
-					 1, 0, 0, 0,
-					 0, 1, 0, 0,
-					 0, 0, 0, 1,
-					 0, 0, 0, 0).T();
-	irr->mback  = Game::Mat4x4(
-					-1, 0, 0, 0,
-					 0, 1, 0, 0,
-					 0, 0, 0,-1,
-					 0, 0, 0, 0).T();
-	irr->mup    = Game::Mat4x4(
-					-1, 0, 0, 0,
-					 0, 0, 0, 1,
-					 0, 1, 0, 0,
-					 0, 0, 0, 0).T();
-	irr->mdown = Game::Mat4x4(
-					 1, 0, 0, 0,
-					 0, 0, 0,-1,
-					 0, 1, 0, 0,
-					 0, 0, 0, 0).T();
+	CreateGenProj();
+	
 	return true;
 }
 
-bool GenerateMipmapBatch::GenerateIBLIrradience(ID3D12Resource* source, 
+bool GenerateMipmapBatch::GenerateIBLIrradience(ID3D12Resource* source,
 	ID3D12Resource* target,
 	Descriptor srcSrvHandle,
 	D3D12_RESOURCE_STATES tarInitState) {
@@ -292,15 +309,7 @@ bool GenerateMipmapBatch::GenerateIBLIrradience(ID3D12Resource* source,
 	heap->ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	heap->ClearAllocatedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-	cmdAlloc->Reset();
-	cmdList->Reset(cmdAlloc.Get(), irrPso.Get());
-	cmdList->SetGraphicsRootSignature(irrRootSig.Get());
 	
-	if (tarInitState != D3D12_RESOURCE_STATE_RENDER_TARGET) {
-		cmdList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(target,tarInitState,
-				D3D12_RESOURCE_STATE_RENDER_TARGET));
-	}
 	size_t tarHeight = target->GetDesc().Height,
 		tarWidth = target->GetDesc().Width;
 	D3D12_RECT sissor;
@@ -316,11 +325,9 @@ bool GenerateMipmapBatch::GenerateIBLIrradience(ID3D12Resource* source,
 	viewPort.TopLeftY = 0;
 	viewPort.MinDepth = 0;
 	viewPort.MaxDepth = 1.0f;
-	cmdList->RSSetScissorRects(1, &sissor);
-	cmdList->RSSetViewports(1, &viewPort);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvs[6];
-	for (size_t i = 0; i != 6;i++) {
+	for (size_t i = 0; i != 6; i++) {
 		Descriptor desc = heap->Allocate(1, D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
 		rtvDesc.Format = target->GetDesc().Format;
@@ -332,33 +339,54 @@ bool GenerateMipmapBatch::GenerateIBLIrradience(ID3D12Resource* source,
 		gGraphic.GetDevice()->CreateRenderTargetView(target, &rtvDesc, desc.cpuHandle);
 		rtvs[i] = desc.cpuHandle;
 	}
-	cmdList->OMSetRenderTargets(6, rtvs, false, nullptr);
+	//cmdList->OMSetRenderTargets(6, rtvs, false, nullptr);
 
-	ID3D12DescriptorHeap* heaps[] = {heap->GetHeap()};
-	cmdList->SetDescriptorHeaps(_countof(heaps), heaps);
+	
 
-	cmdList->SetGraphicsRootDescriptorTable(1, heap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-		srcSrvHandle.cpuHandle).gpuHandle);
-	cmdList->SetGraphicsRootConstantBufferView(0, mGenIrrProj->GetADDR());
-	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	cmdList->DrawInstanced(6, 1, 0, 0);
+	for (size_t i = 0; i != 6;i++) {
+		cmdAlloc->Reset();
+		cmdList->Reset(cmdAlloc.Get(), irrPso.Get());
+		cmdList->SetGraphicsRootSignature(irrRootSig.Get());
 
-	if (tarInitState != D3D12_RESOURCE_STATE_RENDER_TARGET) {
-		cmdList->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(target,
-				D3D12_RESOURCE_STATE_RENDER_TARGET, tarInitState)
-		);
+		cmdList->RSSetScissorRects(1, &sissor);
+		cmdList->RSSetViewports(1, &viewPort);
+
+
+		if (i == 0 && tarInitState != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+			cmdList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(target, tarInitState,
+					D3D12_RESOURCE_STATE_RENDER_TARGET));
+		}
+
+		ID3D12DescriptorHeap* heaps[] = { heap->GetHeap() };
+		cmdList->SetDescriptorHeaps(_countof(heaps), heaps);
+
+		cmdList->OMSetRenderTargets(1, rtvs + i, false, nullptr);
+		cmdList->SetGraphicsRootDescriptorTable(1, heap->UploadDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+			srcSrvHandle.cpuHandle).gpuHandle);
+		cmdList->SetGraphicsRootConstantBufferView(0, mProj->GetADDR(i));
+		cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cmdList->DrawInstanced(6, 1, 0, 0);
+
+		if (i == 5 && tarInitState != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+			cmdList->ResourceBarrier(1,
+				&CD3DX12_RESOURCE_BARRIER::Transition(target,
+					D3D12_RESOURCE_STATE_RENDER_TARGET, tarInitState)
+			);
+		}
+
+		cmdList->Close();
+
+		ID3D12CommandQueue* cmdQueue = gGraphic.GetCommandQueue();
+		ID3D12CommandList* toExcute[] = { cmdList.Get() };
+		cmdQueue->ExecuteCommandLists(_countof(toExcute), toExcute);
+
+		FlushCommandQueue(cmdQueue);
 	}
-
-	cmdList->Close();
-
-	ID3D12CommandQueue* cmdQueue = gGraphic.GetCommandQueue();
-	ID3D12CommandList* toExcute[] = { cmdList.Get() };
-	cmdQueue->ExecuteCommandLists(_countof(toExcute), toExcute);
-
-	FlushCommandQueue(cmdQueue);
 	return true;
 }
+
+
 
 static bool env_prefilter_inited = false;
 
@@ -368,7 +396,7 @@ const wchar_t*  prefilterPsoName = L"env_prefilter";
 static ComPtr<ID3D12RootSignature> prefilterRootSig;
 static ComPtr<ID3D12PipelineState> prefilterPso;
 
-static bool PrefilterInitialize() {
+static bool PrefilterInitialize(DXGI_FORMAT targetFormat) {
 	Game::RootSignature rootSig(3, 1);
 	rootSig[0].initAsConstantBuffer(0, 0);
 	rootSig[1].initAsConstants(1, 0, 1);
@@ -389,7 +417,6 @@ static bool PrefilterInitialize() {
 		return false;
 	}
 
-	DXGI_FORMAT targetFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	Game::GraphicPSO mPso;
 	mPso.LazyBlendDepthRasterizeDefault();
@@ -415,6 +442,8 @@ static bool PrefilterInitialize() {
 	prefilterPso = mPso.GetPSO();
 	prefilterRootSig = rootSig.GetRootSignature();
 
+	CreateGenProj();
+
 	return true;
 }
 
@@ -425,12 +454,12 @@ bool GenerateMipmapBatch::PrefilterEnvironment(ID3D12Resource* source, ID3D12Res
 		if (!initialize()) return false;
 		initialized = true;
 	}
-	if (!irr_gen_initialized) {
-		if (!GenerateIrradianceInitialize(DXGI_FORMAT_R8G8B8A8_UNORM)) return false;
+	/*if (!irr_gen_initialized) {
+		if (!GenerateIrradianceInitialize(target->GetDesc().Format)) return false;
 		irr_gen_initialized = true;
-	}
+	}*/
 	if (!env_prefilter_inited) {
-		if (!PrefilterInitialize()) return false;
+		if (!PrefilterInitialize(target->GetDesc().Format)) return false;
 		env_prefilter_inited = true;
 	}
 
@@ -483,7 +512,7 @@ bool GenerateMipmapBatch::PrefilterEnvironment(ID3D12Resource* source, ID3D12Res
 		for (size_t i = 0; i != 6;i++) {
 			D3D12_CPU_DESCRIPTOR_HANDLE handle = heap->Allocate(1, D3D12_DESCRIPTOR_HEAP_TYPE_RTV).cpuHandle;
 			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
-			rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			rtvDesc.Format = target->GetDesc().Format;
 			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 			rtvDesc.Texture2DArray.ArraySize = 1;
 			rtvDesc.Texture2DArray.FirstArraySlice = i;
@@ -495,7 +524,7 @@ bool GenerateMipmapBatch::PrefilterEnvironment(ID3D12Resource* source, ID3D12Res
 		cmdList->OMSetRenderTargets(6, rtvs, false, nullptr);
 
 		cmdList->SetGraphicsRootDescriptorTable(2, srvHandle);
-		cmdList->SetGraphicsRootConstantBufferView(0, mGenIrrProj->GetADDR());
+		cmdList->SetGraphicsRootConstantBufferView(0, mGenProj->GetADDR());
 		cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		cmdList->SetGraphicsRoot32BitConstant(1, Pack32bitNum((float)mipi / (float)(mipnum - 1)), 0);
 		cmdList->DrawInstanced(6, 1, 0, 0);
@@ -517,6 +546,8 @@ bool GenerateMipmapBatch::PrefilterEnvironment(ID3D12Resource* source, ID3D12Res
 	}
 	return true;
 }
+
+
 
 static bool lut_generator_inited = false;
 
@@ -622,5 +653,174 @@ bool GenerateMipmapBatch::GenerateEnvLUT(ID3D12Resource* target,
 	cmdQueue->ExecuteCommandLists(_countof(lists), lists);
 
 	FlushCommandQueue(cmdQueue);
+	return true;
+}
+
+
+static bool hdr_generator_inited = false;
+
+const wchar_t* hdrPsoName = L"hdr_gen";
+const wchar_t* hdrRootSigName = L"hdr_gen";
+
+static ComPtr<ID3D12RootSignature> hdrGenRootSig;
+static ComPtr<ID3D12PipelineState> hdrGenPso;
+
+static bool HDRGenerateIntitialize() {
+	Game::RootSignature rootSig(2,1);
+	rootSig[0].initAsDescriptorTable(0, 0, 1, D3D12_DESCRIPTOR_RANGE_TYPE_SRV);
+	rootSig[1].initAsConstantBuffer(0, 0);
+	rootSig.InitializeSampler(0, CD3DX12_STATIC_SAMPLER_DESC(0));
+
+	if (!gGraphic.CreateRootSignature(hdrRootSigName,&rootSig)) {
+		OUTPUT_DEBUG_STRING("GenerateMipmapBatch::GenerateHDRCubeMap : fail to create root signature for generating hdr cube map\n");
+		return false;
+	}
+
+	Shader* shader = gShaderManager.loadShader(L"../shader/Util/GenerateCubeForHDRUtil.hlsl", "VS", "PS",
+		hdrRootSigName, {}, hdrRootSigName, nullptr);
+	if (shader == nullptr) {
+		OUTPUT_DEBUG_STRING("GenerateMipmapBatch::GenerateHDRCubeMap : fail to create shader for generating hdr cube map\n");
+		return false;
+	}
+	hdrGenRootSig = rootSig.GetRootSignature();
+
+	DXGI_FORMAT targetFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+
+	Game::GraphicPSO mPso;
+	mPso.LazyBlendDepthRasterizeDefault();
+	CD3DX12_DEPTH_STENCIL_DESC dsd(D3D12_DEFAULT);
+	dsd.DepthEnable = false;
+	dsd.StencilEnable = false;
+	mPso.SetDepthStencilState(dsd);
+	CD3DX12_RASTERIZER_DESC rsd(D3D12_DEFAULT);
+	rsd.CullMode = D3D12_CULL_MODE_NONE;
+	mPso.SetRasterizerState(rsd);
+	mPso.SetSampleMask(UINT_MAX);
+	mPso.SetPrimitiveTopologyType(D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+	mPso.SetFlag(D3D12_PIPELINE_STATE_FLAG_NONE);
+	DXGI_FORMAT rtvFormats[6] = { targetFormat ,targetFormat ,targetFormat ,
+		targetFormat ,targetFormat , targetFormat };
+	mPso.SetRenderTargetFormat(6, rtvFormats);
+
+	if (!gGraphic.CreatePipelineStateObject(shader,&mPso,hdrPsoName)) {
+		OUTPUT_DEBUG_STRING("GenerateMipmapBatch::GenerateHDRCubeMap : fail to create pso for generateing hdr cube map\n");
+		return false;
+	}
+
+	hdrGenPso = mPso.GetPSO();
+
+	CreateGenProj();
+
+	return true;
+}
+
+
+bool GenerateMipmapBatch::GenerateHDRCubeMap(ID3D12Resource* res,ID3D12Resource* target,
+	D3D12_RESOURCE_STATES resState, D3D12_RESOURCE_STATES targetState) {
+
+	if (!initialized) {
+		if (!initialize()) return  false;
+		initialized = true;
+	}
+	if (!hdr_generator_inited) {
+		if (!HDRGenerateIntitialize()) return false;
+		hdr_generator_inited = true;
+	}
+
+	size_t tarHeight = target->GetDesc().Height;
+	size_t tarWidth = target->GetDesc().Width;
+
+	D3D12_RECT sissor;
+	sissor.bottom = tarHeight ;
+	sissor.top = 0;
+	sissor.left = 0;
+	sissor.right = tarWidth ;
+
+	D3D12_VIEWPORT viewPort;
+	viewPort.Width = tarWidth ;
+	viewPort.Height = tarHeight ;
+	viewPort.TopLeftX = 0;
+	viewPort.TopLeftY = 0;
+	viewPort.MinDepth = 0;
+	viewPort.MaxDepth = 1.0f;
+
+	ID3D12CommandQueue* commandQueue = gGraphic.GetCommandQueue();
+
+	heap->ClearUploadedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	heap->ClearAllocatedDescriptors(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC sourceSRVDesc;
+	sourceSRVDesc.Format = res->GetDesc().Format;
+	sourceSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	sourceSRVDesc.Texture2D.MipLevels = -1;
+	sourceSRVDesc.Texture2D.MostDetailedMip = 0;
+	sourceSRVDesc.Texture2D.PlaneSlice = 0;
+	sourceSRVDesc.Texture2D.ResourceMinLODClamp = 0.f;
+
+	sourceSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	Descriptor sourceSRV = heap->Allocate(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	gGraphic.GetDevice()->CreateShaderResourceView(res, &sourceSRVDesc, sourceSRV.cpuHandle);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE targetRTV[6];
+	for (size_t i = 0; i != 6;i++) {
+		targetRTV[i] = heap->Allocate(1,D3D12_DESCRIPTOR_HEAP_TYPE_RTV).cpuHandle;
+
+		D3D12_RENDER_TARGET_VIEW_DESC targetRTVDesc;
+		targetRTVDesc.Format = target->GetDesc().Format;
+		targetRTVDesc.Texture2DArray.ArraySize = 1;
+		targetRTVDesc.Texture2DArray.FirstArraySlice = i;
+		targetRTVDesc.Texture2DArray.MipSlice = 0;
+		targetRTVDesc.Texture2DArray.PlaneSlice = 0;
+		targetRTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+
+		gGraphic.GetDevice()->CreateRenderTargetView(target, &targetRTVDesc, targetRTV[i]);
+	}
+
+	cmdAlloc->Reset();
+	cmdList->Reset(cmdAlloc.Get(), nullptr);
+	
+	if (resState != D3D12_RESOURCE_STATE_COMMON) {
+		cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res,
+			resState, D3D12_RESOURCE_STATE_COMMON));
+	}
+	if (targetState != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+		cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(target,
+			targetState, D3D12_RESOURCE_STATE_RENDER_TARGET));
+	}
+	
+	cmdList->RSSetViewports(1, &viewPort);
+	cmdList->RSSetScissorRects(1,&sissor);
+	
+	ID3D12DescriptorHeap* heaps[] = {heap->GetHeap()};
+	cmdList->SetDescriptorHeaps(_countof(heaps), heaps);
+
+	cmdList->SetGraphicsRootSignature(hdrGenRootSig.Get());
+	cmdList->SetPipelineState(hdrGenPso.Get());
+
+	cmdList->OMSetRenderTargets(6, targetRTV, false, nullptr);
+
+	cmdList->SetGraphicsRootDescriptorTable(0, sourceSRV.gpuHandle);
+	cmdList->SetGraphicsRootConstantBufferView(1, mGenProj->GetADDR());
+
+	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	cmdList->DrawInstanced(6, 1, 0, 0);
+
+	if (resState != D3D12_RESOURCE_STATE_COMMON) {
+		cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res,
+			 D3D12_RESOURCE_STATE_COMMON, resState));
+	}
+	if (targetState != D3D12_RESOURCE_STATE_RENDER_TARGET) {
+		cmdList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(target,
+			 D3D12_RESOURCE_STATE_RENDER_TARGET, targetState));
+	}
+	
+	cmdList->Close();
+
+	ID3D12CommandList* toExcute[] = { cmdList.Get() };
+	commandQueue->ExecuteCommandLists(_countof(toExcute), toExcute);
+
+	FlushCommandQueue(commandQueue);
+	
 	return true;
 }

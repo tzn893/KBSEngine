@@ -22,8 +22,7 @@ ManagedTexture* TextureManager::getTextureByPath(const wchar_t* path) {
 
 bool supportedBySTB(const path& _ext) {
 	std::wstring extName = _ext.extension().wstring();
-	return extName == L".png" || extName == L".bmp" || extName == L".jpg" ||
-		extName == L".hdr" || extName == L".tga";
+	return extName == L".png" || extName == L".bmp" || extName == L".jpg" || extName == L".tga";
 }
 
 inline bool supported(const path& ext) {
@@ -71,6 +70,9 @@ ManagedTexture* TextureManager::loadTexture(const wchar_t* filepath,const wchar_
 	if (supportedBySTB(ps)) {
 		return loadTextureBySTB(filepath,name,filp_vertically,batch);
 	}
+	else if (ps.extension() == ".hdr") {
+		return loadHDRTextureBySTB(filepath, name, filp_vertically);
+	}
 
 	//the image extension name is not supportted
 	return nullptr;
@@ -103,6 +105,7 @@ ManagedTexture* TextureManager::loadTexture(const wchar_t* filepath,size_t mipnu
 	if (supportedBySTB(ps)) {
 		return loadTextureBySTB(filepath, name, filp_vertically, nullptr, mipnum);
 	}
+	
 	return nullptr;
 }
 
@@ -300,4 +303,65 @@ Texture* TextureManager::getNormalMapDefaultTexture() {
 		normal->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor());
 	}
 	return normal.get();
+}
+
+
+#include "GenerateMipmapBatch.h"
+
+ManagedTexture* TextureManager::loadHDRTextureBySTB(const wchar_t* path, const wchar_t* name, bool filp_vertically) {
+
+	void* data = nullptr;
+	int height, width;
+	stbi_set_flip_vertically_on_load(filp_vertically);
+	FILE* target_file = nullptr;
+	if (errno_t error = _wfopen_s(&target_file, path, L"rb"); error != 0) {
+		std::wstring msg = L"file " + std::wstring(path) + L" doesn't exists";
+		OUTPUT_DEBUG_STRINGW(msg.c_str());
+	}
+	data = stbi_loadf_from_file(target_file, &width, &height, nullptr, 3);
+
+	fclose(target_file);
+
+	D3D12_RESOURCE_DESC desc;
+	desc.Alignment = 0;
+	desc.DepthOrArraySize = 1;
+	desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	desc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	desc.Height = height;
+	desc.Width = width;
+	desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	desc.MipLevels = 1;
+	desc.SampleDesc.Count = 1;
+	desc.SampleDesc.Quality = 0;
+
+
+	D3D12_SUBRESOURCE_DATA subRes;
+	subRes.pData = data;
+	subRes.RowPitch = width * 12;
+	subRes.SlicePitch = height * subRes.RowPitch;
+
+	//we will bake the texture to a cube map later
+
+	std::unique_ptr<Texture> tex = std::make_unique<Texture>(desc, &data, 1, &subRes, 1);
+
+	std::unique_ptr<ManagedTexture> cubeTex = std::make_unique<ManagedTexture>(name,path, 1024, 1024, 
+		TEXTURE_FORMAT_HALF4, TEXTURE_TYPE_2DCUBE,
+		TEXTURE_FLAG_ALLOW_RENDER_TARGET, D3D12_RESOURCE_STATE_COMMON);
+
+	if (!tex->IsValid() || !cubeTex->IsValid()) {
+		return nullptr;
+	}
+
+	if (!GenerateMipmapBatch::GenerateHDRCubeMap(tex->GetResource(), cubeTex->GetResource(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COMMON)) {
+		return nullptr;
+	}
+	tex.release();
+
+	ManagedTexture* managedTex = cubeTex.get();
+	
+	texturesByName[name] = managedTex;
+	texturesByPath[path] = std::move(cubeTex);
+
+	return managedTex;
 }

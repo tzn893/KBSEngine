@@ -119,8 +119,8 @@ bool Application::initialize() {
 
 			SubMeshMaterial  m1,m2,m3;
 			m1.diffuse = Game::Vector3(.8,.8,.8);
-			m1.metallic = 1.f;
-			m1.roughness = .01f;
+			m1.metallic = 0.f;
+			m1.roughness = 1.f;
 
 			
 			m2.diffuse = Game::ConstColor::White;
@@ -148,7 +148,15 @@ bool Application::initialize() {
 			sro[1] = std::make_unique<SkinnedRenderObject>(model, Game::Vector3(0., -2., 4.), Game::Vector3(0., 0., 0.), Game::Vector3(.03, .01, .03));
 			sro[2] = std::make_unique<SkinnedRenderObject>(model, Game::Vector3(-1., -2., 4.), Game::Vector3(0., 0., 0.), Game::Vector3(.03, .03, .03));
 		}
-		
+
+		Texture* hdr = gTextureManager.loadTexture(L"../asserts/skybox/Arches_E_PineTree_3k.hdr", L"sky");
+		hdr->CreateShaderResourceView(gDescriptorAllocator.AllocateDescriptor(1));
+
+		SkyboxRenderPass* pass = gGraphic.GetRenderPass<SkyboxRenderPass>();
+
+		gGraphic.GetRenderPass<SkyboxRenderPass>()->SetSkyBox(hdr);
+		pass->CreateIrradianceMap();
+		//pass->CreateSpecularIBLMap();
 
 		up.End();
 	}

@@ -24,9 +24,9 @@ namespace RenderGraph {
 			TEXTURE_FORMAT_HALF4, Game::Vector4());
 		gbuffer2->CreateRtvDescriptor(AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
 
-		auto lightBuffer = ClaimResourceNodeRT("light buffer", screenWidth, screenHeight,
+		auto colorBuffer = ClaimResourceNodeRT("color buffer", screenWidth, screenHeight,
 			TEXTURE_FORMAT_HALF4, Game::Vector4());
-		lightBuffer->CreateRtvDescriptor(AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
+		colorBuffer->CreateRtvDescriptor(AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV));
 		
 
 

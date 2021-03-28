@@ -2,7 +2,7 @@
 
 
 Shader* ShaderManager::loadShader( const wchar_t* path,const char* VS,const char* PS,const wchar_t* rootSigName
-	, std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout, const wchar_t* name, const D3D_SHADER_MACRO* macros) {
+	,const std::vector<D3D12_INPUT_ELEMENT_DESC>& inputLayout, const wchar_t* name, const D3D_SHADER_MACRO* macros) {
 	if (VS == nullptr) VS = "VS";
 	if (PS == nullptr) PS = "PS";
 

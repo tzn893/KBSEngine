@@ -7,6 +7,7 @@
 enum TEXTURE_FORMAT {
 	//TEXTURE_FORMAT_RGB,
 	TEXTURE_FORMAT_FLOAT4,
+	TEXTURE_FORMAT_FLOAT3,
 	TEXTURE_FORMAT_FLOAT2,
 	TEXTURE_FORMAT_HALF4 ,
 	TEXTURE_FORMAT_HALF2 ,
@@ -69,6 +70,12 @@ public:
 		TEXTURE_FLAG flag = TEXTURE_FLAG_NONE
 		, UploadBatch* batch = nullptr);
 
+	Texture(D3D12_RESOURCE_DESC desc,void** original_buffer,
+		size_t original_buffer_num,
+		D3D12_SUBRESOURCE_DATA* sub_res,
+		size_t sub_res_num,
+		D3D12_RESOURCE_STATES initState = D3D12_RESOURCE_STATE_COMMON);
+
 
 	void NameResource(const wchar_t* name) {
 		if (isValid) mRes->SetName(name);
@@ -119,6 +126,11 @@ public:
 
 	D3D12_RESOURCE_STATES StateTransition(D3D12_RESOURCE_STATES nextState,TransitionBatch* batch = nullptr);
 	D3D12_RESOURCE_STATES GetResourceState() { return currState; }
+
+	virtual ~Texture() {
+		mRes = nullptr;
+		isValid = false;
+	}
 protected:
 	TEXTURE_TYPE type;
 	TEXTURE_FLAG flag;
