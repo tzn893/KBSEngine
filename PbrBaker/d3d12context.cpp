@@ -4,6 +4,16 @@
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"d3dcompiler.lib")
 
+static size_t ScoreAdapter(IDXGIAdapter* adapter) {
+	DXGI_ADAPTER_DESC adaDesc;
+	adapter->GetDesc(&adaDesc);
+	//À¬»øÎ¢Èíguna
+	if (std::wstring(adaDesc.Description) == L"Microsoft Basic Render Driver") {
+		return 0;
+	}
+	return adaDesc.DedicatedSystemMemory + adaDesc.SharedSystemMemory + adaDesc.DedicatedVideoMemory;
+}
+
 bool D3D12Context::Initialize(ICallBack callback, HWND wind) {
 	
 #ifdef _DEBUG || DEBUG
@@ -15,9 +25,32 @@ bool D3D12Context::Initialize(ICallBack callback, HWND wind) {
 	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&factory));
 	if (FAILED(hr)) return false;
 
+	ComPtr<IDXGIAdapter> adapter, targetAda = nullptr;
+	size_t iadapter = 0, score = 0;
+	while (factory->EnumAdapters(iadapter, &adapter) != DXGI_ERROR_NOT_FOUND) {
+		size_t mScore = ScoreAdapter(adapter.Get());
+		if (mScore > score) {
+			targetAda = adapter;
+			score = mScore;
+		}
+		iadapter++;
+	}
 
-	hr = D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&device));
-	if (FAILED(hr)) return false;
+	if (targetAda == nullptr) {
+		hr = D3D12CreateDevice(nullptr,
+			D3D_FEATURE_LEVEL_12_0,
+			IID_PPV_ARGS(&device));
+	}
+	else {
+		hr = D3D12CreateDevice(targetAda.Get(),
+			D3D_FEATURE_LEVEL_12_0,
+			IID_PPV_ARGS(&device));
+	}
+
+	if (FAILED(hr)) {
+		return false;
+	}
+
 
 
 	{

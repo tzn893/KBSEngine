@@ -1,15 +1,16 @@
 #include <Windows.h>
 #include "d3d12context.h"
+#include "console.h"
 #include <string>
-
-#include <iostream>
 
 HINSTANCE hinstance;
 HWND winHandle;
-int winWidth = 800, winHeight = 600;
+int winWidth = 10, winHeight = 10;
 bool quit = false;
 
 D3D12Context d3d;
+
+std::wstring ChooseFilePath(const wchar_t* filter);
 
 LRESULT CALLBACK WinProc(HWND handle, UINT Msg,
 	WPARAM wParam, LPARAM lParam);
@@ -17,7 +18,10 @@ LRESULT CALLBACK WinProc(HWND handle, UINT Msg,
 bool D3DInitialize(D3D12Context* context);
 bool D3DUpdate(D3D12Context* context);
 
-std::wstring filepath;
+std::wstring filepath,outputpath;
+size_t outputTexSize2Pow = 10;
+size_t outputTexSize = 1 << outputTexSize2Pow;
+size_t outputMipNum = 5;
 
 int main() {
 	
@@ -46,11 +50,11 @@ int main() {
 		NULL, NULL, hinstance, NULL);
 
 	if (winHandle == NULL) {
-		printf("fail to initialize window\n");
+		gConsole.Log("fail to initialize window").LineSwitch();
 		return false;
 	}
 
-	ShowWindow(winHandle, SW_SHOWDEFAULT);
+	//ShowWindow(winHandle, SW_SHOWDEFAULT);
 	UpdateWindow(winHandle);
 
 
@@ -61,30 +65,26 @@ int main() {
 	winWidth = rect.right - rect.left;
 
 	if (!d3d.Initialize(D3DInitialize,winHandle)) {
-		printf("fail to initialize d3d\n");
+		gConsole.Log("fail to initialize d3d").LineSwitch();
 		return false;
 	}
 
-	OPENFILENAMEW ofn;
-	char szFile[300];
+	gConsole.FlushLog();
 
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = NULL;
-	ofn.lpstrFile = (LPWSTR)szFile;
-	ofn.lpstrFile[0] = '\0';
-	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = L"All\0*.HDR";
-	ofn.nFilterIndex = 1;
-	ofn.lpstrFileTitle = NULL;
-	ofn.nMaxFileTitle = 0;
-	ofn.lpstrInitialDir = NULL;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+	filepath = ChooseFilePath(L"hdr\0*.HDR\0");
 
-	if (GetOpenFileNameW(&ofn)) {
-		std::wcout << ofn.lpstrFile << std::endl;
-		filepath = ofn.lpstrFile;
+	
+	if (filepath.empty()) {
+		gConsole.WLog(L"fail to get the file name");
+		return false;
 	}
+	
+	//outputpath = ChooseFilePath(L"");
+
+
+	gConsole.WLog(L"now loading file ", filepath, " to memory").LineSwitch();
+
+	gConsole.FlushLog();
 
 	MSG msg;
 	while (!quit) {
@@ -127,6 +127,8 @@ LRESULT CALLBACK WinProc(HWND handle, UINT Msg,
 
 #include "../loglcore/ConstantBuffer.h"
 
+#include <filesystem>
+
 #include <memory>
 
 struct GenProj {
@@ -157,9 +159,50 @@ size_t hdrCubeSrv = 1;
 size_t irrMapRTV[] = {6,7,8,9,10,11};
 size_t irrMapSrv = 2;
 
-size_t specRTV[5][6] = { {12,13,14,15,16,17},{18,19,20,21,22,23},{24,25,26,27,28,29},{30,31,32,33,34,35},{36,37,38,39,40,41} };
+size_t specRTV[5][6] = { {12,13,14,15,16,17},
+						 {18,19,20,21,22,23},
+						 {24,25,26,27,28,29},
+						 {30,31,32,33,34,35},
+						 {36,37,38,39,40,41} };
 size_t specSRV = 3;
 
+struct Buffer {
+	float* data;
+	size_t size;
+	size_t width;
+	size_t height;
+	size_t mipi;
+	size_t arri;
+};
+
+char* convert_fimage_to_cimage(Buffer& buffer){
+
+	char* data = reinterpret_cast<char*>(malloc(buffer.width * buffer.height * 3));
+
+	float* p = buffer.data;
+
+	auto castF = [](float f) {
+		int res = static_cast<int>(f * 256.f) - 1;
+		if (res < 0) res = 0;
+		if (res > 255) res = 255;
+		return static_cast<char>(res);
+	};
+
+	for (size_t i = 0; i != buffer.height;i++) {
+		for (size_t j = 0; j != buffer.width; j++) {
+			data[i * buffer.width * 3 + j * 3] = castF(*p);
+			data[i * buffer.width * 3 + j * 3 + 1] = castF(*(p + 1));
+			data[i * buffer.width * 3 + j * 3 + 2] = castF(*(p + 2));
+
+			p += 4;
+		}
+	}
+
+	return data;
+}
+
+std::vector<Buffer> irrData;
+std::vector<Buffer> specData;
 
 bool D3DInitialize(D3D12Context* context) {
 	//create resources
@@ -170,8 +213,8 @@ bool D3DInitialize(D3D12Context* context) {
 		rDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		rDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		rDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		rDesc.Height = 1024;
-		rDesc.Width = 1024;
+		rDesc.Height = outputTexSize;
+		rDesc.Width = outputTexSize;
 		rDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		rDesc.MipLevels = 1;
 		rDesc.SampleDesc = { 1,0 };
@@ -216,8 +259,8 @@ bool D3DInitialize(D3D12Context* context) {
 		rDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		rDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		rDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		rDesc.Height = 1024;
-		rDesc.Width = 1024;
+		rDesc.Height = outputTexSize;
+		rDesc.Width = outputTexSize;
 		rDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		rDesc.MipLevels = 1;
 		rDesc.SampleDesc = { 1,0 };
@@ -232,6 +275,8 @@ bool D3DInitialize(D3D12Context* context) {
 		);
 
 		context->resources["irradiance"] = res;
+		
+		res->SetName(L"hdr_irradiance");
 
 		for (size_t i = 0; i != 6; i++) {
 			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
@@ -263,9 +308,9 @@ bool D3DInitialize(D3D12Context* context) {
 		rDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		rDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		rDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		rDesc.Height = 1024;
-		rDesc.Width = 1024;
-		rDesc.MipLevels = 5;
+		rDesc.Height = outputTexSize;
+		rDesc.Width = outputTexSize;
+		rDesc.MipLevels = outputMipNum;
 		rDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		rDesc.SampleDesc = { 1,0 };
 
@@ -278,10 +323,10 @@ bool D3DInitialize(D3D12Context* context) {
 			nullptr, IID_PPV_ARGS(&res)
 		);
 
-		res->SetName(L"hdr_specula");
+		res->SetName(L"hdr_specular");
 
 
-		for (size_t mipi = 0; mipi != 5; mipi++) {
+		for (size_t mipi = 0; mipi != outputMipNum; mipi++) {
 			for (size_t arri = 0; arri != 6; arri++) {
 				D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
 				rtvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -301,7 +346,7 @@ bool D3DInitialize(D3D12Context* context) {
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-		srvDesc.TextureCube.MipLevels = 5;
+		srvDesc.TextureCube.MipLevels = -1;
 		srvDesc.TextureCube.MostDetailedMip = 0;
 		srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 
@@ -405,8 +450,10 @@ bool D3DInitialize(D3D12Context* context) {
 			0, 0, 0, 0).T();
 		*projConst->GetBufferPtr(5) = irr->mback;
 	}
+
 	
-	taskQueue.push_back([](D3D12Context* context) {
+	taskQueue.push_back([&](D3D12Context* context) {
+
 		FILE* file;
 		auto err = _wfopen_s(&file, filepath.c_str(), L"rb");
 
@@ -476,6 +523,8 @@ bool D3DInitialize(D3D12Context* context) {
 
 		free(hdr_data);
 
+		gConsole.Log("load the hdr file ").WLog(filepath, L" successfully!").LineSwitch().FlushLog();
+
 		return true;
 	});
 
@@ -531,10 +580,12 @@ bool D3DInitialize(D3D12Context* context) {
 
 		cl->ResourceBarrier(1, barrier.data() + 1);
 
+		gConsole.Log("bake the hdr to cube map successfully!").LineSwitch().FlushLog();
+
 		return true;
 	});
+	
 
-	/*
 	{
 		CD3DX12_ROOT_PARAMETER params[2];
 
@@ -585,6 +636,8 @@ bool D3DInitialize(D3D12Context* context) {
 
 	size_t blockNum = 4;
 	size_t rtNum = 6;
+
+	
 	for (size_t i = 0; i != rtNum; i++) {
 		for (size_t j = 0;j != blockNum * blockNum; j++) {
 			taskQueue.push_back([&,i,j,blockNum,rtNum](D3D12Context* context) {
@@ -626,14 +679,19 @@ bool D3DInitialize(D3D12Context* context) {
 
 				context->cmdList->DrawInstanced(6, 1, 0, 0);
 
-				std::cout << "baking irradiance map process:" << (float)(j + i * blockNum * blockNum + 1) / (blockNum * blockNum * rtNum) * 100.f
-					<< "% (" <<i * blockNum * blockNum + j + 1 <<"/"<< (blockNum * blockNum * rtNum) <<")"<< std::endl;
+				gConsole.ClearLog().LogProcess("baking irradiance map process:", (float)(j + i * blockNum * blockNum + 1) / (blockNum * blockNum * rtNum), "")
+					.Log("(", i * blockNum * blockNum + j + 1, "/", (blockNum * blockNum * rtNum), ")");
+
+				if (j == blockNum * blockNum - 1 && i == rtNum - 1) {
+					gConsole.LineSwitch(2).FlushLog();
+				}
 
 				return true;
 			});
 		}
 	}
-	*/
+	
+
 
 	{
 		CD3DX12_ROOT_PARAMETER params[3];
@@ -680,10 +738,11 @@ bool D3DInitialize(D3D12Context* context) {
 	}
 
 
-	size_t mipnum = 5;
+	size_t mipnum = outputMipNum;
 	size_t arrnum = 6;
-	size_t blockNum = 4;
+	blockNum = 4;
 
+	
 	for (size_t mipi = 0; mipi != mipnum;mipi++) {
 		for (size_t arri = 0; arri != arrnum;arri++) {
 			for (size_t bi = 0; bi != blockNum * blockNum;bi++) {
@@ -728,7 +787,13 @@ bool D3DInitialize(D3D12Context* context) {
 					cl->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 					cl->DrawInstanced(6, 1, 0, 0);
 
-					std::cout << arri << "," << mipi << "," << bi << std::endl;
+
+					gConsole.ClearLog().LogProcess("baking specular map process:", (float)(bi + (arri + mipi * arrnum) * blockNum * blockNum + 1) / (blockNum * blockNum * arrnum * mipnum), "").
+						Log("(", (bi + (arri + mipi * arrnum) * blockNum * blockNum + 1), "/", (blockNum * blockNum * arrnum * mipnum),")");
+
+					if (bi == blockNum * blockNum - 1 && arri == arrnum - 1 && mipi == mipnum - 1) {
+						gConsole.LineSwitch(2).FlushLog();
+					}
 
 					return true;
 				});
@@ -737,7 +802,211 @@ bool D3DInitialize(D3D12Context* context) {
 	}
 	
 	
-	taskQueue.push_back(EndlessLoop);
+	{
+		D3D12_RESOURCE_DESC rDesc;
+		rDesc.Alignment = 0;
+		rDesc.DepthOrArraySize = 1;
+		rDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		rDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		rDesc.Format = DXGI_FORMAT_UNKNOWN;
+		rDesc.Height = 1;
+		rDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		rDesc.SampleDesc = { 1,0 };
+		rDesc.MipLevels = 1;
+
+		for (size_t i = 0; i != 5;i++) {
+
+			size_t size = GetRequiredIntermediateSize(context->resources["hdr_spec"].Get(),
+				i, 1);
+
+			rDesc.Width = size;
+
+			ComPtr<ID3D12Resource> res;
+			context->device->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
+				D3D12_HEAP_FLAG_NONE,
+				&rDesc, D3D12_RESOURCE_STATE_COPY_DEST,
+				nullptr, IID_PPV_ARGS(&res)
+			);
+
+			context->resources["readback" + std::to_string(i)] = res;
+
+			std::wstring name = L"readback" + std::to_wstring(i);
+			 
+			res->SetName(name.c_str());
+		}
+	}
+
+	auto CaptureTexture = [&](const char* src,size_t subres,size_t mipi) {
+		return [&,src,subres,mipi](D3D12Context* context) {
+			ID3D12Resource* srcTex = context->resources[src].Get();
+			std::string tarName = "readback" + std::to_string(mipi);
+			ID3D12Resource* tarTex = context->resources[tarName].Get();
+
+			std::vector<D3D12_RESOURCE_BARRIER> barrier = {
+				CD3DX12_RESOURCE_BARRIER::Transition(srcTex,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_COPY_SOURCE),
+				CD3DX12_RESOURCE_BARRIER::Transition(srcTex,D3D12_RESOURCE_STATE_COPY_SOURCE,D3D12_RESOURCE_STATE_RENDER_TARGET)
+			};
+
+			ID3D12GraphicsCommandList* cl = context->cmdList.Get();
+
+			cl->ResourceBarrier(1, barrier.data());
+
+			D3D12_RESOURCE_DESC srcDesc = srcTex->GetDesc();
+			size_t mipnum = srcDesc.MipLevels;
+
+			D3D12_TEXTURE_COPY_LOCATION srcLoc;
+			srcLoc.SubresourceIndex = mipnum * subres + mipi;
+			srcLoc.pResource = srcTex;
+			srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+
+			size_t srcRowSize = 0;
+			context->device->GetCopyableFootprints(&srcDesc, mipnum * subres + mipi, 1, 0, nullptr, nullptr, &srcRowSize, nullptr);
+
+			D3D12_TEXTURE_COPY_LOCATION dstLoc{};
+			dstLoc.pResource = tarTex;
+			dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+			dstLoc.PlacedFootprint.Offset = 0;
+			dstLoc.PlacedFootprint.Footprint.Width = srcDesc.Width >> mipi;
+			dstLoc.PlacedFootprint.Footprint.Height = srcDesc.Height >> mipi;
+			dstLoc.PlacedFootprint.Footprint.Format = srcDesc.Format;
+			dstLoc.PlacedFootprint.Footprint.RowPitch = srcRowSize;
+			dstLoc.PlacedFootprint.Footprint.Depth = 1;
+
+			cl->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
+
+			cl->ResourceBarrier(1,barrier.data() + 1);
+
+			return true;
+		};
+	};
+
+	auto LoadCapturedTexture = [&](std::vector<Buffer>* output,size_t mipi,size_t arri,size_t width,size_t height) {
+		return [&,output,mipi,arri,width,height](D3D12Context* context) {
+			std::string resName = "readback" + std::to_string(mipi);
+			ID3D12Resource* res = context->resources[resName].Get();
+			
+			size_t bufferSize = GetRequiredIntermediateSize(res,0,1);
+
+			Buffer buf;
+			buf.size = bufferSize;
+			buf.mipi = mipi;
+			buf.arri = arri;
+			buf.width = width;
+			buf.height = height;
+			void* pbuf = malloc(bufferSize);
+
+			void* pReadbackBuf = nullptr;
+
+			if (FAILED(res->Map(0, nullptr, &pReadbackBuf))) {
+				free(pbuf);
+				gConsole.Log("fail to map readback buffer from gpu to cpu").LineSwitch();
+
+				return false;
+			}
+			memcpy(pbuf, pReadbackBuf, bufferSize);
+
+			res->Unmap(0, nullptr);
+
+			buf.data = reinterpret_cast<float*>(pbuf);
+
+			output->emplace_back(buf);
+
+			return true;
+		};
+	};
+
+
+	for (size_t i = 0; i != 6;i++) {
+		taskQueue.push_back(CaptureTexture("irradiance", i, 0));
+		taskQueue.push_back(LoadCapturedTexture(&irrData,0,i,outputTexSize,outputTexSize));
+	}
+
+	for (size_t mipi = 0; mipi != outputMipNum; mipi++) {
+		for (size_t arri = 0; arri != 6; arri++) {
+			taskQueue.push_back(CaptureTexture("hdr_spec",arri,mipi));
+			taskQueue.push_back(LoadCapturedTexture(&specData,mipi,arri,
+					outputTexSize >> mipi,outputTexSize >> mipi));
+		}
+
+	}
+
+	taskQueue.push_back([&](D3D12Context* con) {
+
+		std::sort(irrData.begin(), irrData.end(), [](const Buffer& lhs, const Buffer& rhs) {
+			if (lhs.arri < rhs.arri) {
+				return true;
+			}
+			return false;
+		});
+
+		std::sort(specData.begin(), specData.end(), [](const Buffer& lhs, const Buffer& rhs) {
+			if (lhs.mipi < rhs.mipi) return true;
+			else if (lhs.mipi > rhs.mipi) return false;
+			else {
+				if (lhs.arri < rhs.arri) return true;
+				else return false;
+			}
+		});
+
+		std::filesystem::path p(filepath);
+		auto dir = p.parent_path();
+
+		dir /= "pbr_bake";
+
+		const char* filenames[] = { "right.bmp","left.bmp","up.bmp","down.bmp","front.bmp","back.bmp" };
+
+		if (!std::filesystem::exists(dir)) {
+			CreateDirectory(dir.string().c_str(), NULL);
+		}
+
+		auto irra_dir = dir / "irradiance";
+		if (!std::filesystem::exists(irra_dir)) {
+			CreateDirectory(irra_dir.string().c_str(), NULL);
+		}
+
+		for (size_t i = 0; i != 6; i++) {
+			char* rawData = convert_fimage_to_cimage(irrData[i]);
+			stbi_write_bmp((irra_dir / filenames[i]).string().c_str(), irrData[i].width, irrData[i].height, 3, rawData);
+			free(rawData);
+
+			gConsole.Log("irradiance map has been written to ", (irra_dir / filenames[i]).string()).LineSwitch();
+		}
+
+		auto spec_dir = dir / "specular";
+		if (!std::filesystem::exists(spec_dir)) {
+			CreateDirectory(spec_dir.string().c_str(), NULL);
+		}
+
+		size_t mipnum = specData.size() / 6;
+
+		for (size_t mipi = 0; mipi < mipnum;mipi++) {
+			
+			auto spec_mip_dir = spec_dir / ("mip" + std::to_string(mipi)).c_str();
+			if (!std::filesystem::exists(spec_mip_dir)) {
+				CreateDirectory(spec_mip_dir.string().c_str(), NULL);
+			}
+
+			for (size_t arri = 0; arri != 6;arri ++) {
+				Buffer& buf = specData[arri + mipi * 6];
+				
+				char* rawData = convert_fimage_to_cimage(buf);
+				stbi_write_bmp((spec_mip_dir / filenames[arri]).string().c_str(),
+						buf.width,buf.height,3,rawData);
+				free(rawData);
+
+				gConsole.Log("specular map has been written to ", (spec_mip_dir / filenames[arri]).string()).LineSwitch();
+			}
+		}
+
+		return true;
+	});
+
+
+	taskQueue.push_back([](D3D12Context* context) {
+		gConsole.Log("done! program exists").LineSwitch();
+		return false;
+	});
 
 	return true;
 }
@@ -752,3 +1021,31 @@ bool D3DUpdate(D3D12Context* context) {
 
 	return rv;
 }
+
+
+std::wstring ChooseFilePath(const wchar_t* filter) {
+	OPENFILENAMEW ofn;
+	char szFile[300];
+
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = NULL;
+	ofn.lpstrFile = (LPWSTR)szFile;
+	ofn.lpstrFile[0] = '\0';
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = filter;
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	if (GetOpenFileNameW(&ofn)) {
+		return ofn.lpstrFile;
+	}
+	else {
+		return L"";
+	}
+}
+
+
